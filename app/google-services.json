@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "1064385708335",
+    "project_id": "employeescheduling-22b8b",
+    "storage_bucket": "employeescheduling-22b8b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1064385708335:android:6cd5750c8dd3578b4421da",
+        "android_client_info": {
+          "package_name": "com.bizsync.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1064385708335-e814ilbbd9irtc84gpi5ad82no3ekok3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.bizsync.app",
+            "certificate_hash": "17fc7357a82d5ac12fdfe359725056e03b5c5b93"
+          }
+        },
+        {
+          "client_id": "1064385708335-32pmj2vj0i1fs7cungucfk4d3juenpob.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCU-OIcNcFb98iO6iUpP3tGKlvddG_FftU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1064385708335-32pmj2vj0i1fs7cungucfk4d3juenpob.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
