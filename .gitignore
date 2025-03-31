@@ -1,0 +1,30 @@
+# Cartelle generate da Gradle
+/.gradle/
+/build/
+/out/
+
+# File di configurazione IDE
+/.idea/
+/*.iml
+
+# File di log
+/logs/
+/*.log
+
+# Cache di Android Studio
+/captures/
+/.externalNativeBuild/
+
+# Keystore (evita di committare file sensibili)
+/*.keystore
+/*.jks
+
+# Dipendenze di Firebase
+/google-services.json
+
+# File generati da il sistema operativo
+.DS_Store
+Thumbs.db
+
+# Nodi specifici di Kotlin
+*.kts
