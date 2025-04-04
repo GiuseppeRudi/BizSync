@@ -1,4 +1,4 @@
-package com.bizsync.app
+package com.bizsync.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -30,19 +29,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.bizsync.app.Event
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.bizsync.ui.viewmodels.CalendarViewModel
 import com.kizitonwose.calendar.compose.WeekCalendar
 import com.kizitonwose.calendar.compose.weekcalendar.rememberWeekCalendarState
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+
 
 @Composable
 fun Calendar() {
     val currentDate = remember { LocalDate.now() } // Giorno corrente
     val startDate = remember { currentDate.minusDays(500) }
     val endDate = remember { currentDate.plusDays(500) }
-    var selection by remember { mutableStateOf<LocalDate?>(null) }
-    var events by remember { mutableStateOf(listOf<Event>()) }
+    val calendarviewmodel : CalendarViewModel = viewModel()
+
 
     Column(
         modifier = Modifier
@@ -61,31 +62,18 @@ fun Calendar() {
                 state = state,
                 calendarScrollPaged = false,
                 dayContent = { day ->
-                    val eventsForDay = events.filter { it.date == day.date }
                     Day(
                         date = day.date,
                         isCurrentDay = day.date == currentDate,
-                        selected = selection == day.date,
-                        eventsForDay = eventsForDay.map { it.title } // Passa solo i titoli
+                        selected = calendarviewmodel.selectionData.value == day.date,
                     ) {
-                        selection = it
+                        calendarviewmodel.selectionData.value = it
                     }
                 },
             )
         }
     }
 
-    // Se un giorno è selezionato, mostra pulsante per aggiungere un evento
-    selection?.let { selectedDate ->
-        Button(
-            onClick = {
-                events = events + Event("Evento per il ${selectedDate.dayOfMonth}", selectedDate)
-            },
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(text = "Aggiungi evento per ${selectedDate}")
-        }
-    }
 }
 
 private val dateFormatter = DateTimeFormatter.ofPattern("dd")
@@ -96,7 +84,6 @@ fun Day(
     date: LocalDate,
     isCurrentDay: Boolean = false,
     selected: Boolean = false,
-    eventsForDay: List<String> = emptyList(), // Corretto! Ora corrisponde al nome passato
     onClick: (LocalDate) -> Unit = {},
 ) {
     val configuration = LocalConfiguration.current
@@ -147,15 +134,6 @@ fun Day(
                 fontWeight = FontWeight.Normal,
                 color = Color.LightGray,
             )
-
-            eventsForDay.forEach { eventTitle ->
-                Text(
-                    text = eventTitle,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Normal,
-                    color = Color.LightGray,
-                    modifier = Modifier.padding(top= 2.dp))
-            }
 
         }
     }

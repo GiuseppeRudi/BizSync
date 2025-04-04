@@ -13,13 +13,12 @@
         android:theme="@style/Theme.BizSyncTheme"
         tools:targetApi="31">
         <activity
-            android:name=".ui.theme.SettingsActivity"
+            android:name=".theme.SettingsActivity"
             android:exported="false"
             android:label="@string/title_activity_settings" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/app_name"
             android:theme="@style/Theme.BizSyncTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

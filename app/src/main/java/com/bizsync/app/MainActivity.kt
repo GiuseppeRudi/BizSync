@@ -8,6 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.bizsync.app.screens.AppScaffold
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.google.firebase.FirebaseApp
@@ -49,7 +50,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             if (isUserLoggedIn) {
-                AppNavigator()
+                MainApp()
             } else {
                 Text("Attendere...") // Mostra un messaggio di attesa
             }
@@ -68,5 +69,6 @@ class MainActivity : ComponentActivity() {
         signInLauncher.launch(signInIntent) // ✅ Nuovo modo per gestire i risultati
     }
 }
+
 
 

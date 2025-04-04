@@ -1,4 +1,4 @@
-package com.bizsync.app
+package com.bizsync.model
 
 import java.time.LocalDate
 

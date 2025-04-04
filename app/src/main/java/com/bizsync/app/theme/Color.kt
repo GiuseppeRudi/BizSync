@@ -1,4 +1,4 @@
-package com.bizsync.ui.theme
+package com.bizsync.app.theme
 
 import androidx.compose.ui.graphics.Color
 
