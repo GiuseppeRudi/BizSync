@@ -1,9 +1,11 @@
 package com.bizsync.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -17,7 +19,7 @@ fun DialogAddShif(showDialog: Boolean, onDismiss: () -> Unit) {
 
     if (showDialog) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(16.dp)
+            modifier = Modifier.fillMaxWidth().padding(16.dp).background(Color.White)
         ) {
 
             // Input per aggiungere elementi
@@ -29,13 +31,15 @@ fun DialogAddShif(showDialog: Boolean, onDismiss: () -> Unit) {
             )
 
 
+
+
             Spacer(modifier = Modifier.height(8.dp))
 
             // Bottone per aggiungere l'elemento alla lista
             Button(
                 onClick = {
                     if (dialogviewmodel.text.value.isNotEmpty()) {
-                        dialogviewmodel.itemsList.add(dialogviewmodel.text.value)
+                        //dialogviewmodel.itemsList.add(dialogviewmodel.text.value)
                         dialogviewmodel.text.value = "" // Resetta il campo di input
                     }
                 },
@@ -44,15 +48,15 @@ fun DialogAddShif(showDialog: Boolean, onDismiss: () -> Unit) {
                 Text("Aggiungi")
             }
 
+
+            Button(
+                onClick = onDismiss,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Chiudi")
+            }
         }
 
-
-        Button(
-            onClick = onDismiss,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Chiudi")
-        }
     }
 }
 

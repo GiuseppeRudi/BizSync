@@ -1,4 +1,4 @@
-package com.example.backend
+package com.bizsync.backend
 
 import org.junit.Test
 

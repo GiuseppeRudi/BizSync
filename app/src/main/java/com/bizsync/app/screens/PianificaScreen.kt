@@ -1,5 +1,6 @@
 package com.bizsync.app.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -31,6 +32,8 @@ import com.bizsync.ui.components.Calendar
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.items
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.graphics.Color
 
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bizsync.ui.components.DialogAddShif
@@ -42,37 +45,60 @@ import com.bizsync.ui.viewmodels.DialogAddShiftViewModel
 fun PianificaScreen() {
 
     val dialogviewmodel : DialogAddShiftViewModel = viewModel()
+
+    LaunchedEffect(Unit) {
+        dialogviewmodel.caricaturni()
+    }
+
+    // QUESTO LA VEDIAMO PIU TARDI
     val calendarviewmodel : CalendarViewModel = viewModel()
 
-    Calendar()
 
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+    ) {
 
-    // Lista degli elementi
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
-        items(dialogviewmodel.itemsList) { item ->  // ✅ Qui passa direttamente la lista
-            Card(
+        Calendar()
+
+        Spacer(modifier = Modifier.height(8.dp)) // Spazio tra calendario e lista
+
+        Box(){
+
+            // La lista occupa tutto lo spazio disponibile al centro
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(8.dp)
+                    .fillMaxHeight()
             ) {
-                Text(
-                    text = item,
-                    modifier = Modifier.padding(16.dp),
-                    fontSize = MaterialTheme.typography.bodyLarge.fontSize
-                )
+                items(dialogviewmodel.itemsList) { item ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp)
+                    ) {
+                        Text(
+                            text = item.descrizione,
+                            modifier = Modifier.padding(16.dp),
+                            fontSize = MaterialTheme.typography.bodyLarge.fontSize
+                        )
+                    }
+                }
             }
+
+            Spacer(modifier = Modifier.height(8.dp)) // Spazio tra lista e bottone
+
+
+            RoundedButton(
+                true,
+                onShow = { calendarviewmodel.showDialogShift.value = true },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd) // Posiziona il bottone in basso a destra
+                    .padding(16.dp) // Aggiunge margine dai bordi
+            )
         }
+
     }
-
-
-    Column(    modifier = Modifier
-        .fillMaxSize() // Occupa tutto lo spazio disponibile
-        .padding(16.dp),
-        horizontalAlignment = Alignment.End,  // Allinea orizzontalmente a destra
-        verticalArrangement = Arrangement.Bottom // Posiziona in basso
-    ) {     RoundedButton(true, onShow = { calendarviewmodel.showDialogShift.value = true })
-    }
-
     DialogAddShif(showDialog= calendarviewmodel.showDialogShift.value, onDismiss = { calendarviewmodel.showDialogShift.value = false })
 
 }

@@ -37,6 +37,8 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 
+// QUESTO CALENDAR LO VEDIAMO PIU TARDI
+
 @Composable
 fun Calendar() {
     val currentDate = remember { LocalDate.now() } // Giorno corrente
@@ -47,7 +49,6 @@ fun Calendar() {
 
     Column(
         modifier = Modifier
-            .fillMaxSize()
             .background(Color.White),
     ) {
         val state = rememberWeekCalendarState(

@@ -16,16 +16,16 @@ import androidx.compose.ui.*
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun RoundedButton(enabled : Boolean = false, onShow: () -> Unit) {
+fun RoundedButton(enabled : Boolean = false, onShow: () -> Unit, modifier : Modifier) {
     var buttonText by remember { mutableStateOf("+") }
 
     // Bottone con angoli arrotondati
     Button(
         enabled = enabled ,
-        onClick = { onShow },  // Cosa fare quando il bottone è cliccato
+        onClick = { onShow() },  // Cosa fare quando il bottone è cliccato
         shape = MaterialTheme.shapes.extraLarge,         // Angoli arrotondati con il tema Material
         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE)), // Colore del bottone
-        modifier = Modifier.padding(16.dp)            // Distanza dal bordo
+        modifier = modifier         // Distanza dal bordo
     ) {
         Text(text = buttonText, color = Color.White) // Testo del bottone
     }

@@ -6,3 +6,5 @@ data class Event(
     val title: String,
     val date: LocalDate
 )
+
+
