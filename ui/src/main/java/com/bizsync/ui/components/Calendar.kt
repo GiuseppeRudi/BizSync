@@ -1,5 +1,6 @@
 package com.bizsync.ui.components
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -33,6 +34,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bizsync.ui.viewmodels.CalendarViewModel
 import com.kizitonwose.calendar.compose.WeekCalendar
 import com.kizitonwose.calendar.compose.weekcalendar.rememberWeekCalendarState
+import dagger.hilt.processor.internal.definecomponent.codegen._dagger_hilt_android_components_ViewModelComponent
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -40,12 +42,10 @@ import java.time.format.DateTimeFormatter
 // QUESTO CALENDAR LO VEDIAMO PIU TARDI
 
 @Composable
-fun Calendar() {
+fun Calendar(calendarviewmodel: CalendarViewModel) {
     val currentDate = remember { LocalDate.now() } // Giorno corrente
     val startDate = remember { currentDate.minusDays(500) }
     val endDate = remember { currentDate.plusDays(500) }
-    val calendarviewmodel : CalendarViewModel = viewModel()
-
 
     Column(
         modifier = Modifier
@@ -68,7 +68,9 @@ fun Calendar() {
                         isCurrentDay = day.date == currentDate,
                         selected = calendarviewmodel.selectionData.value == day.date,
                     ) {
+                        Log.d("VERIFICA_GIORNO", "Sono in Calendar $it")
                         calendarviewmodel.selectionData.value = it
+                        Log.d("VERIFICA_GIORNO", calendarviewmodel.selectionData.value.toString())
                     }
                 },
             )
@@ -143,5 +145,6 @@ fun Day(
 @Preview
 @Composable
 private fun CalendarPreview() {
-    Calendar()
+    val calendarviewmodel : CalendarViewModel = viewModel()
+    Calendar(calendarviewmodel)
 }

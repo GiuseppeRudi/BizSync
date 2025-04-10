@@ -21,15 +21,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.setValue
 import com.bizsync.ui.components.Calendar
+import androidx.hilt.navigation.compose.hiltViewModel
 
 
 
-
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.LaunchedEffect
@@ -41,17 +38,27 @@ import com.bizsync.ui.components.RoundedButton
 import com.bizsync.ui.viewmodels.CalendarViewModel
 import com.bizsync.ui.viewmodels.DialogAddShiftViewModel
 
+
 @Composable
 fun PianificaScreen() {
 
-    val dialogviewmodel : DialogAddShiftViewModel = viewModel()
 
-    LaunchedEffect(Unit) {
-        dialogviewmodel.caricaturni()
+    val dialogviewmodel : DialogAddShiftViewModel = hiltViewModel()
+
+    val calendarviewmodel : CalendarViewModel = hiltViewModel()
+
+    Log.d("TURNI_DEBUG", "SONO ENTRATO")
+    Log.d("VERIFICA_GIORNO", "Sono un cavallo " + calendarviewmodel.selectionData.value.toString())
+
+
+
+
+    val giornoSelezionato = calendarviewmodel.selectionData.value
+    if (giornoSelezionato!=null)
+    {
+        dialogviewmodel.caricaturni(giornoSelezionato)
     }
 
-    // QUESTO LA VEDIAMO PIU TARDI
-    val calendarviewmodel : CalendarViewModel = viewModel()
 
 
     Column(
@@ -59,7 +66,7 @@ fun PianificaScreen() {
             .fillMaxSize()
     ) {
 
-        Calendar()
+        Calendar(calendarviewmodel)
 
         Spacer(modifier = Modifier.height(8.dp)) // Spazio tra calendario e lista
 
@@ -78,7 +85,7 @@ fun PianificaScreen() {
                             .padding(8.dp)
                     ) {
                         Text(
-                            text = item.descrizione,
+                            text = item.Nome,
                             modifier = Modifier.padding(16.dp),
                             fontSize = MaterialTheme.typography.bodyLarge.fontSize
                         )

@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.bizsync.model.Turno
 import com.bizsync.ui.viewmodels.DialogAddShiftViewModel
 
 @Composable
@@ -39,7 +40,7 @@ fun DialogAddShif(showDialog: Boolean, onDismiss: () -> Unit) {
             Button(
                 onClick = {
                     if (dialogviewmodel.text.value.isNotEmpty()) {
-                        //dialogviewmodel.itemsList.add(dialogviewmodel.text.value)
+                        dialogviewmodel.itemsList.add(Turno(dialogviewmodel.text.value))
                         dialogviewmodel.text.value = "" // Resetta il campo di input
                     }
                 },
