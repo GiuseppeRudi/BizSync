@@ -23,8 +23,8 @@ class TurnoRepository @Inject constructor(private val db: FirebaseFirestore) {
 
         return try {
             val result = db.collection("turni")
-                .whereGreaterThanOrEqualTo("Data", startTimeStamp)
-                .whereLessThan("Data",endTimestamp)
+                .whereGreaterThanOrEqualTo("data", startTimeStamp)
+                .whereLessThan("data",endTimestamp)
                 .get()
                 .await()
 
@@ -49,6 +49,20 @@ class TurnoRepository @Inject constructor(private val db: FirebaseFirestore) {
         } catch (e: Exception) {
             Log.e("TURNI_DEBUG", "Errore nel caricare i turni", e)
             emptyList()
+        }
+    }
+
+    suspend fun aggiungiTurno(turno : Turno) {
+         try {
+            val result = db.collection("turni").add(turno).await()
+
+            val idGenerato = result.id
+            Log.d("TURNI_DEBUG", "Turno aggiunto con id" + idGenerato.toString())
+
+        }
+        catch (e : Exception)
+        {
+            Log.e("TURNI_DEBUG", "Errore nell'aggiunta del turno ", e)
         }
     }
 

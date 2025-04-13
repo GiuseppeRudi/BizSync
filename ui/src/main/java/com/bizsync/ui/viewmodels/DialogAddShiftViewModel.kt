@@ -30,5 +30,10 @@ class DialogAddShiftViewModel @Inject constructor(private val turnoRepository: T
         }
     }
 
+    fun aggiungiturno(turno: Turno){
+        viewModelScope.launch {
+            turnoRepository.aggiungiTurno(turno)
+        }
+    }
 
 }

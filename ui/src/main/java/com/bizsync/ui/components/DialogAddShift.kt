@@ -11,6 +11,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bizsync.model.Turno
 import com.bizsync.ui.viewmodels.DialogAddShiftViewModel
+import com.google.firebase.Timestamp
 
 @Composable
 fun DialogAddShif(showDialog: Boolean, onDismiss: () -> Unit) {
@@ -40,7 +41,8 @@ fun DialogAddShif(showDialog: Boolean, onDismiss: () -> Unit) {
             Button(
                 onClick = {
                     if (dialogviewmodel.text.value.isNotEmpty()) {
-                        dialogviewmodel.itemsList.add(Turno(dialogviewmodel.text.value))
+                        dialogviewmodel.aggiungiturno(Turno("",dialogviewmodel.text.value,
+                            Timestamp.now()))
                         dialogviewmodel.text.value = "" // Resetta il campo di input
                     }
                 },

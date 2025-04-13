@@ -14,14 +14,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.*
 
 import androidx.compose.ui.unit.dp
+import java.time.LocalDate
 
 @Composable
-fun RoundedButton(enabled : Boolean = false, onShow: () -> Unit, modifier : Modifier) {
+fun RoundedButton(giornoSelezionato : LocalDate?, onShow: () -> Unit, modifier : Modifier) {
     var buttonText by remember { mutableStateOf("+") }
 
     // Bottone con angoli arrotondati
     Button(
-        enabled = enabled ,
+        enabled = !(giornoSelezionato == null),
         onClick = { onShow() },  // Cosa fare quando il bottone è cliccato
         shape = MaterialTheme.shapes.extraLarge,         // Angoli arrotondati con il tema Material
         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE)), // Colore del bottone

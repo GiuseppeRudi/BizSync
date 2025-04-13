@@ -12,8 +12,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.bizsync.app.AppNavigator
-import com.bizsync.ui.components.Calendar
+import com.bizsync.app.navigation.AppNavigator
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

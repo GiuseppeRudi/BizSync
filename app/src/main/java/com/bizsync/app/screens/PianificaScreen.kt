@@ -85,7 +85,7 @@ fun PianificaScreen() {
                             .padding(8.dp)
                     ) {
                         Text(
-                            text = item.Nome,
+                            text = item.nome,
                             modifier = Modifier.padding(16.dp),
                             fontSize = MaterialTheme.typography.bodyLarge.fontSize
                         )
@@ -97,7 +97,7 @@ fun PianificaScreen() {
 
 
             RoundedButton(
-                true,
+                giornoSelezionato,
                 onShow = { calendarviewmodel.showDialogShift.value = true },
                 modifier = Modifier
                     .align(Alignment.BottomEnd) // Posiziona il bottone in basso a destra

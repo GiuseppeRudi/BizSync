@@ -6,8 +6,9 @@ import com.google.firebase.firestore.Exclude
 data class Turno(
     @get:Exclude
     var idDocumento: String = "",
-    val Nome: String = "",
-    val Data: Timestamp = Timestamp.now()
+
+    val nome: String = "",
+    val data: Timestamp = Timestamp.now()
     // Aggiungi altri campi della tua classe Turno qui
 ) {
     // Costruttore senza argomenti necessario per Firestore
