@@ -1,14 +1,17 @@
 package com.bizsync.app
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.bizsync.app.screens.AppScaffold
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.compose.rememberNavController
+import com.bizsync.app.screens.LoginScreen
+import com.bizsync.ui.viewmodels.UserViewModel
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.google.firebase.FirebaseApp
@@ -18,6 +21,8 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+
 
     fun Context.showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
@@ -40,21 +45,31 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        FirebaseApp.initializeApp(this) // ✅ Inizializza Firebase
+        FirebaseApp.initializeApp(this)
 
-        val auth = FirebaseAuth.getInstance()
-
-        if (auth.currentUser == null) {
-            startSignIn()
-        }
-        else
-            isUserLoggedIn = true // ✅ Utente già autenticato
 
         setContent {
+
+            val navController = rememberNavController()
+
+
+            val currentUser = FirebaseAuth.getInstance().currentUser
+
+            Log.d("LOGIN_DEBUG", currentUser?.email.toString())
+            Log.d("LOGIN_DEBUG", currentUser?.uid.toString())
+
+            if (currentUser != null) {
+                currentUser.uid
+
+                isUserLoggedIn = true
+            }
+
+
             if (isUserLoggedIn) {
-                MainApp()
+                MainApp(navController)
             } else {
-                Text("Attendere...") // Mostra un messaggio di attesa
+                LoginScreen(onLoginScreen = { startSignIn() },)
+
             }
         }
     }

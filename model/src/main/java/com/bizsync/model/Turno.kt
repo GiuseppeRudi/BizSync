@@ -17,5 +17,3 @@ data class Turno(
 
 
 
-// val docRef = db.collection("turni").add(nuovoTurno).await()
-// val idGenerato = docRef.id

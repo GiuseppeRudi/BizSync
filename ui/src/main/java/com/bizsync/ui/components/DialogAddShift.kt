@@ -12,11 +12,20 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bizsync.model.Turno
 import com.bizsync.ui.viewmodels.DialogAddShiftViewModel
 import com.google.firebase.Timestamp
+import java.time.LocalDate
+import java.time.ZoneId
+import java.util.Date
 
 @Composable
-fun DialogAddShif(showDialog: Boolean, onDismiss: () -> Unit) {
+fun DialogAddShif(showDialog: Boolean, giornoSelezionato: LocalDate?, onDismiss: () -> Unit) {
 
     val dialogviewmodel : DialogAddShiftViewModel = viewModel()
+
+
+
+
+
+
 
 
     if (showDialog) {
@@ -35,14 +44,15 @@ fun DialogAddShif(showDialog: Boolean, onDismiss: () -> Unit) {
 
 
 
+
             Spacer(modifier = Modifier.height(8.dp))
 
             // Bottone per aggiungere l'elemento alla lista
             Button(
                 onClick = {
-                    if (dialogviewmodel.text.value.isNotEmpty()) {
-                        dialogviewmodel.aggiungiturno(Turno("",dialogviewmodel.text.value,
-                            Timestamp.now()))
+                    if (dialogviewmodel.text.value.isNotEmpty() && giornoSelezionato!=null) {
+                        val timestamp = localDateToTimestamp(giornoSelezionato)
+                        dialogviewmodel.aggiungiturno(Turno("",dialogviewmodel.text.value,timestamp ))
                         dialogviewmodel.text.value = "" // Resetta il campo di input
                     }
                 },
@@ -64,9 +74,17 @@ fun DialogAddShif(showDialog: Boolean, onDismiss: () -> Unit) {
 }
 
 
+fun localDateToTimestamp(localDate: LocalDate): Timestamp {
+
+    val startOfDay = localDate.atStartOfDay(ZoneId.systemDefault()) // mezzanotte nel fuso orario locale
+    val date = Date.from(startOfDay.toInstant())
+    return Timestamp(date)
+}
+
 @Preview
 @Composable
 fun DialogAddShifPreview() {
+    var giornoSelezionato = LocalDate.now()
     var showDialog by remember { mutableStateOf(true) }
-    DialogAddShif(showDialog = showDialog, onDismiss = { showDialog = false })
+    DialogAddShif(showDialog = showDialog,giornoSelezionato, onDismiss = { showDialog = false })
 }

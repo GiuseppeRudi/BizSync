@@ -3,6 +3,7 @@ package com.bizsync.app
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.bizsync.app.screens.AppScaffold
 import com.bizsync.app.screens.SplashScreen
@@ -11,8 +12,8 @@ import kotlinx.coroutines.delay
 
 
 @Composable
-fun MainApp() {
-    val navController = rememberNavController()
+fun MainApp(navController : NavHostController) {
+
     val splashScreenViewModel : SplashViewModel = viewModel()
 
     // Usa un LaunchedEffect per nascondere lo SplashScreen dopo un certo tempo
