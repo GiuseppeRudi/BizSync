@@ -1,34 +1,84 @@
 package com.bizsync.app.screens
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 @Composable
-fun LoginScreen(onLoginScreen : () -> Unit)
-{
+fun LoginScreen(onLoginScreen: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            Text(
+                text = "Benvenuto su",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Normal,
+                color = Color.Gray
+            )
 
+            Text(
+                text = "BizSync",
+                fontSize = 36.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF1976D2)
+            )
 
-    Column {
-        Text(text = "Benvenuto su BizSync ")
+            Text(
+                text = "Il nuovo modo di vivere e gestire l'azienda,\nsmart e in tempo reale.",
+                fontSize = 16.sp,
+                fontStyle = FontStyle.Italic,
+                color = Color.DarkGray,
+                textAlign = TextAlign.Center
+            )
 
-        Text(text = " Se sei nuovo effettua il login ")
-
-        Button(onClick = onLoginScreen) { }
-
-        Text(text = " Altrimenti registrati  ")
+            Button(
+                onClick = onLoginScreen,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+            ) {
+                Text(
+                    text = "Entra",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
     }
-
 }
+
 
 
 
 @Preview
 @Composable
 private fun LoginPreview(){
-
     LoginScreen(onLoginScreen = { "ciao"})
 }
 

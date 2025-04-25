@@ -17,15 +17,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.bizsync.ui.viewmodels.WelcomeViewModel
+import com.bizsync.ui.viewmodels.AddAziendaViewModel
 
 
 @Composable
-fun SettoreSelector(welcomeviewmodel: WelcomeViewModel)
+fun SettoreSelector(addaziendaviewmodel: AddAziendaViewModel)
 {
     val settori = listOf("Informatica", "Edilizia" , "Commercio" , "Sanità", "Turismo" , "Altro")
-    val selectedSettore = welcomeviewmodel.settore
-    val customSettore = welcomeviewmodel.customSettore
+    val selectedSettore = addaziendaviewmodel.settore
+    val customSettore = addaziendaviewmodel.customSettore
     val isCustom = remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxWidth()){

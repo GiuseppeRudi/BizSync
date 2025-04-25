@@ -3,7 +3,6 @@ package com.bizsync.backend.repository
 import android.util.Log
 import com.bizsync.model.User
 import com.google.firebase.firestore.FirebaseFirestore
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
@@ -18,7 +17,7 @@ class UserRepository @Inject constructor(private val db : FirebaseFirestore) {
                 .get()
                 .await()
 
-            return result.toObject(User::class.java)
+            return result.toObject(User::class.java)?.copy(uid = result.id )
 
         }
 
@@ -28,6 +27,18 @@ class UserRepository @Inject constructor(private val db : FirebaseFirestore) {
         }
     }
 
+    suspend fun addUser(user: User,uid : String) {
+        try {
+            val result = db.collection("utenti")
+                .document(uid)
+                .set(user)
+                .await()
+
+        }
+        catch (e: Exception) {
+            Log.e("USER_DEBUG", "Errore nel aggiungere l'utente", e)
+        }
+    }
 
 
 }

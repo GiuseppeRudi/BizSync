@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.remember
 import com.bizsync.app.navigation.LocalNavController
+import com.bizsync.app.navigation.LocalUserViewModel
 
 import com.bizsync.ui.components.DialogAddShif
 import com.bizsync.ui.components.RoundedButton
@@ -40,12 +41,9 @@ import com.bizsync.ui.viewmodels.UserViewModel
 fun PianificaScreen() {
 
     val navController = LocalNavController.current
-    val parentEntry = remember(navController) {
-        navController.getBackStackEntry("home")
-    }
-    val userviewmodel: UserViewModel = hiltViewModel(parentEntry)
+    val userviewmodel = LocalUserViewModel.current
 
-    Log.d("LOGIN_DEBUG", userviewmodel.uid.value.toString())
+    Log.d("LOGINREPO_DEBUG", "FUNZIONA? " + userviewmodel.user.value?.uid)
 
     val dialogviewmodel : DialogAddShiftViewModel = hiltViewModel()
     val calendarviewmodel : CalendarViewModel = hiltViewModel()

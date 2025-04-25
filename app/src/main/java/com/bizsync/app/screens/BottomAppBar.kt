@@ -13,10 +13,13 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.ui.Alignment
 import androidx.navigation.NavController
+import com.bizsync.app.navigation.LocalNavController
 
 @Composable
-fun BottomBar(navController: NavController) {
+fun BottomBar() {
     BottomAppBar {
+
+        var navController = LocalNavController.current
         val buttons = listOf(
             "home" to Icons.Filled.Home,
             "pianifica" to Icons.Filled.DateRange,

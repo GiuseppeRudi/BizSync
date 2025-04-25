@@ -16,7 +16,7 @@ import com.bizsync.app.navigation.AppNavigator
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppScaffold(navcontroller : NavHostController) {
+fun AppScaffold() {
 
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
 
@@ -55,20 +55,18 @@ fun AppScaffold(navcontroller : NavHostController) {
             )
         },
         bottomBar = {
-            BottomBar(navcontroller)
+            BottomBar()
         }
     ) { innerPadding ->
-        AppNavigator(navcontroller, modifier = Modifier.padding(innerPadding))
+        AppNavigator(modifier = Modifier.padding(innerPadding))
     }
 }
 
 @Preview(showBackground = true, name = "Scaffold")
 @Composable
 private fun ScaffoldPreview() {
-    val navController = rememberNavController() // ✅ Crea un NavController per il preview
-
     MaterialTheme {
-        AppScaffold(navcontroller = navController) // ✅ Passa il controller corretto
+        AppScaffold() // ✅ Passa il controller corretto
     }
 }
 
