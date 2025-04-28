@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.ui.components.DipendentiSelector
 import com.bizsync.ui.components.SettoreSelector
 import com.bizsync.ui.viewmodels.AddAziendaViewModel
@@ -25,6 +26,9 @@ fun AddAzienda() {
 
     val addaziendaviewmodel :  AddAziendaViewModel = hiltViewModel()
 
+    val userviewmodel = LocalUserViewModel.current
+
+    val uid = userviewmodel.uid.value
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         when (addaziendaviewmodel.currentStep.value) {
@@ -49,7 +53,11 @@ fun AddAzienda() {
                     Text("Avanti")
                 }
             } else {
-                Button(onClick = { addaziendaviewmodel.aggiungiAzienda() }) {
+                Button(onClick = { addaziendaviewmodel.aggiungiAzienda(uid)
+                                    addaziendaviewmodel.ottieniAzienda(uid)
+                                    userviewmodel.user.value?.idAzienda = addaziendaviewmodel.idAzienda.value
+                                    })
+                {
                     Text("Conferma")
                 }
             }

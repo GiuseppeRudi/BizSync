@@ -15,16 +15,20 @@ import javax.inject.Inject
 class UserViewModel @Inject constructor(private val userRepository: UserRepository) : ViewModel() {
 
     var user = mutableStateOf<User?>(null)
-    var uid = mutableStateOf<String>("ciao")
+    var uid = mutableStateOf<String>("nullo")
 
 
-    fun getUser(userId: String)
+    suspend fun getUser(userId: String)
     {
-        viewModelScope.launch {
             user.value = userRepository.getUserById(userId)
+            uid.value= userId
             Log.d("LOGINREPO_DEBUG", user.toString())
-        }
-
     }
+
+    suspend fun checkUser(userId : String) : Boolean
+    {
+            return userRepository.checkUser(userId)
+    }
+
 
 }

@@ -1,6 +1,7 @@
 package com.bizsync.ui.viewmodels
 
 import android.net.Uri
+import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -14,18 +15,20 @@ import javax.inject.Inject
 class AddUtenteViewModel  @Inject constructor(private val userRepository: UserRepository): ViewModel() {
     var currentStep = mutableStateOf(1)
     var uid = mutableStateOf("")
-
+    var utente = mutableStateOf<User?>(null)
     var nome = mutableStateOf(" Ciccio ")
     var email  = mutableStateOf("")
     var cognome = mutableStateOf(" Pasticcio ")
-    var photourl = mutableStateOf<Uri?>(null)
+    var photourl = mutableStateOf<String?>(null)
 
 
-    fun addUser()
+    suspend fun addUser()
     {
-        viewModelScope.launch {
-            userRepository.addUser(User("",email.value,nome.value,cognome.value,photourl.value), uid.value)
-        }
+            userRepository.addUser(User("",email.value,nome.value,cognome.value,photourl.value,""), uid.value)
+            utente.value =  userRepository.getUserById(uid.value)
+            Log.d("USER_DEBUG" , utente.value.toString())
+            Log.d("USER_DEBUG" , uid.value.toString())
+
     }
 
 }

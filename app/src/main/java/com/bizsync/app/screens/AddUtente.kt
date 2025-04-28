@@ -1,6 +1,8 @@
 package com.bizsync.app.screens
 
 import ImageUi
+import android.util.Log
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,22 +18,28 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.bizsync.app.navigation.LocalNavController
+import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.ui.viewmodels.AddUtenteViewModel
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.launch
 import java.io.File
 
 
 @Composable
-fun AddUtente() {
+fun AddUtente(
+    onChooseAzienda : () -> Unit
+) {
 
 
     val addutenteviewmodel :  AddUtenteViewModel = hiltViewModel()
-
-
+    val userviewmodel = LocalUserViewModel.current
+    val uiScope = rememberCoroutineScope()
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         when (addutenteviewmodel.currentStep.value) {
@@ -44,7 +52,8 @@ fun AddUtente() {
 
         Row {
             if (addutenteviewmodel.currentStep.value > 1) {
-                Button(onClick = { addutenteviewmodel.currentStep.value-- }) {
+                Button(onClick = { addutenteviewmodel.currentStep.value-- })
+                {
                     Text("Indietro")
                 }
             }
@@ -56,7 +65,22 @@ fun AddUtente() {
                     Text("Avanti")
                 }
             } else {
-                Button(onClick = { addutenteviewmodel.addUser() }) {
+                Button(onClick = {
+                    uiScope.launch {
+                        // 1) chiamo la suspend addUser e aspetto che finisca
+                        addutenteviewmodel.addUser()
+
+                        // 2) poi propaghiamo lo User e l'UID ai tuoi viewmodel
+                        userviewmodel.user.value = addutenteviewmodel.utente.value
+                        userviewmodel.uid.value  = addutenteviewmodel.utente.value?.uid.orEmpty()
+
+                        Log.d("AZIENDA_DEBUG", "USER VM user: ${userviewmodel.user.value}")
+                        Log.d("AZIENDA_DEBUG", "USER VM uid: ${userviewmodel.uid.value}")
+
+                        // 3) infine navighiamo
+                        onChooseAzienda()
+                    }
+                }) {
                     Text("Conferma")
                 }
             }
@@ -75,9 +99,11 @@ fun StepOne(addutenteviewmodel : AddUtenteViewModel) {
     // DA VERIFCIARE
     addutenteviewmodel.email.value = currentuser?.email.toString()
     addutenteviewmodel.uid.value = currentuser?.uid.toString()
-    addutenteviewmodel.photourl.value =currentuser?.photoUrl
+    addutenteviewmodel.photourl.value = currentuser?.photoUrl.toString()
 
-    ImageUi(addutenteviewmodel.photourl.value)
+
+    //val uri = addutenteviewmodel.photourl?.value.let { Uri.parse(it) }
+    // ImageUi(uri)
 
     // BOTTONE MODIFICA CHE PERMETTE DI SCEGLEIRE UN' ALTRA IMMAGINE PROFILO DALLA GALLERIA E SALVARLA IN LOCALE SU UNA CARTELLA DELL'APP
 

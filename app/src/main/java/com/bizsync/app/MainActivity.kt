@@ -98,7 +98,7 @@ class MainActivity : ComponentActivity() {
             .setIsSmartLockEnabled(false)
             .build()
 
-        signInLauncher.launch(signInIntent) // ✅ Nuovo modo per gestire i risultati
+        signInLauncher.launch(signInIntent)
     }
 }
 
