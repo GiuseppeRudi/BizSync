@@ -8,8 +8,11 @@ import com.bizsync.backend.repository.AziendaRepository
 import com.bizsync.backend.repository.UserRepository
 import com.bizsync.model.Azienda
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+
 
 @HiltViewModel
 class AddAziendaViewModel  @Inject constructor(private val aziendaRepository: AziendaRepository, private val userRepository: UserRepository): ViewModel() {
@@ -23,32 +26,25 @@ class AddAziendaViewModel  @Inject constructor(private val aziendaRepository: Az
     val customSettore = mutableStateOf("")
     val idAzienda = mutableStateOf<String?>("")
 
-    fun aggiungiAzienda(idUtente: String) {
-        viewModelScope.launch {
-            try {
-                val idAzienda = aziendaRepository.creaAzienda(Azienda("", nomeAzienda.value))
-                Log.d("AZIENDA_DEBUG", "VEDO SE CE L'ID AZIENDA"  + idAzienda.toString())
-                Log.d("AZIENDA_DEBUG", "VEDO SE CE L'ID UTENTE"  + idUtente)
+    fun aggiungiAzienda(idUtente: String, userViewModel: UserViewModel) {
+        CoroutineScope(Dispatchers.IO).launch{
+            idAzienda.value = aziendaRepository.creaAzienda(Azienda("", nomeAzienda.value))
 
-                if (idAzienda != null) {
-                    userRepository.aggiornaAzienda(idAzienda, idUtente)
-                    Log.d("AZIENDA_DEBUG", "Campo aggiornato con successo")
-                } else {
-                    Log.e("AZIENDA_DEBUG", "ID azienda è nullo")
-                }
-            } catch (e: Exception) {
-                Log.e("AZIENDA_DEBUG", "Errore durante creazione o aggiornamento", e)
+            var azienda = idAzienda.value
+            Log.d("AZIENDA_DEBUG", "VEDO SE CE L'ID AZIENDA"  + idAzienda.toString())
+            Log.d("AZIENDA_DEBUG", "VEDO SE CE L'ID UTENTE"  + idUtente)
+
+            if (azienda != null) {
+                userRepository.aggiornaAzienda(azienda, idUtente)
+                userViewModel.user.value?.idAzienda = azienda
+                Log.d("AZIENDA_DEBUG", "Campo aggiornato con successo")
+            } else {
+                Log.e("AZIENDA_DEBUG", "ID azienda è nullo")
             }
+
         }
     }
 
-
-    fun ottieniAzienda(idUtente : String) {
-        viewModelScope.launch {
-            idAzienda.value = userRepository.ottieniIdAzienda(idUtente)
-            Log.d("AZIENDA_DEBUG", "voglio ottenere l'azienda" + idAzienda.value.toString())
-        }
-    }
 
 
 }

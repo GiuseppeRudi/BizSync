@@ -1,13 +1,9 @@
 package com.bizsync.app.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.bizsync.app.MainApp
-import com.bizsync.app.screens.AddUtente
 import com.bizsync.app.screens.ChatScreen
 import com.bizsync.app.screens.GestioneScreen
 import com.bizsync.app.screens.GraficiScreen

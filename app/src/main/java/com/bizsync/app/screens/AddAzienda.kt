@@ -22,10 +22,9 @@ import com.bizsync.ui.viewmodels.AddAziendaViewModel
 
 
 @Composable
-fun AddAzienda() {
+fun AddAzienda(onTerminate : () -> Unit) {
 
     val addaziendaviewmodel :  AddAziendaViewModel = hiltViewModel()
-
     val userviewmodel = LocalUserViewModel.current
 
     val uid = userviewmodel.uid.value
@@ -53,9 +52,8 @@ fun AddAzienda() {
                     Text("Avanti")
                 }
             } else {
-                Button(onClick = { addaziendaviewmodel.aggiungiAzienda(uid)
-                                    addaziendaviewmodel.ottieniAzienda(uid)
-                                    userviewmodel.user.value?.idAzienda = addaziendaviewmodel.idAzienda.value
+                Button(onClick = { addaziendaviewmodel.aggiungiAzienda(uid , userviewmodel)
+                                    onTerminate()
                                     })
                 {
                     Text("Conferma")

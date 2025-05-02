@@ -28,16 +28,17 @@ class TurnoRepository @Inject constructor(private val db: FirebaseFirestore) {
                 .get()
                 .await()
 
+
             if (result.isEmpty) {
                 Log.d("TURNI_DEBUG", "Nessun dato trovato nella collezione 'turni'")
             } else {
                 Log.d("TURNI_DEBUG", "Dati trovati nella collezione 'turni'")
             }
 
-            // Mappa i risultati in oggetti Turno e assegna l'id del documento
+
             val turni = result.mapNotNull { document ->
                 val turno = document.toObject(Turno::class.java)
-                turno.idDocumento = document.id  // 🔥 qui salvi l'ID del documento
+                turno.idDocumento = document.id
                 turno
             }
 

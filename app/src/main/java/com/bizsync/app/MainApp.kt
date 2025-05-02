@@ -1,7 +1,10 @@
 package com.bizsync.app
 
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.app.screens.AddUtente
@@ -10,37 +13,37 @@ import com.bizsync.app.screens.SplashScreen
 import com.bizsync.ui.viewmodels.SplashViewModel
 import com.google.firebase.auth.FirebaseAuth
 import androidx.compose.runtime.produceState
+import androidx.navigation.compose.rememberNavController
+import com.bizsync.app.navigation.OnboardingNavHost
+import com.bizsync.app.navigation.sealedClass.OnboardingScreen
 import com.bizsync.app.screens.AddAzienda
 import com.bizsync.app.screens.ChooseAzienda
+import com.bizsync.app.screens.ChooseInvito
+import com.google.android.material.progressindicator.CircularProgressIndicatorSpec
 
 
 @Composable
 fun MainApp() {
-
-
     val splashVM: SplashViewModel = viewModel()
     val userVM = LocalUserViewModel.current
+    val check =  userVM.check.collectAsState(initial = null)
     val uid = FirebaseAuth.getInstance().currentUser?.uid
 
 
-    val isCreated = produceState<Boolean?>(initialValue = null, key1 = uid) {
+    //2) al lancio (o al cambio di uid) lo imposto dal repo
+    LaunchedEffect(uid) {
         if (uid != null) {
-            value = userVM.checkUser(uid)
+            userVM.checkUser(uid)
+            splashVM.hideSplash()
         }
     }
 
-
-    LaunchedEffect(isCreated) {
-        if (isCreated.value != null) splashVM.hideSplash()
+    //3) branching su null/false/true
+    when (check.value) {
+        null  -> SplashScreen()
+        false -> OnboardingFlow(onSuccess = { userVM.change() })
+        true  -> AppScaffold()
     }
-
-    when (isCreated.value) {
-        null -> SplashScreen()
-        false -> OnboardingFlow(onSuccess = {})
-        true -> AppScaffold()
-    }
-
-
 }
 
 
@@ -48,49 +51,17 @@ fun MainApp() {
 @Composable
 fun OnboardingFlow(onSuccess : () -> Unit)
 {
-    var splashScreenViewModel : SplashViewModel = viewModel()
+    var userVM = LocalUserViewModel.current
 
+    val navController = rememberNavController()
 
-
-
-
-    if (splashScreenViewModel.chooseAzienda.value == false) {
-        AddUtente(onChooseAzienda = {
-            splashScreenViewModel.chooseAzienda.value = true
-        })
-    } else if (splashScreenViewModel.chooseAzienda.value && !splashScreenViewModel.creaAzienda.value && !splashScreenViewModel.chooseInvito.value) {
-        ChooseAzienda(
-            onCreaAzienda = { splashScreenViewModel.creaAzienda.value = true },
-            onVisualizzaInviti = { splashScreenViewModel.chooseInvito.value = true }
-        )
+    if(userVM.user.value == null){
+        OnboardingNavHost(navController, onSuccess,OnboardingScreen.AddUtente.route)
     }
-    else if (splashScreenViewModel.chooseAzienda.value && splashScreenViewModel.creaAzienda.value) {
-        AddAzienda()
-    }
-    else if (splashScreenViewModel.chooseAzienda.value && splashScreenViewModel.chooseInvito.value) {
-        // VA CREATO
-    }
-    // 2 SE LUTENTE NON CE =>
-
-    // GLI DICO BENVENUTO HO VERIFICATO CHE SEI NUOOVO DAMMI ALTRE INFORMAZIONI PER PROSEGUIRE
-
-    // E POI LO PORTO ALLA SCHERMATA DI CREA O ADERISIC AD AZIENDA
-
-
-
-
-    // 1 SE L'UTENTE CE =>
-    // VERIFICO SUCCESSSIVAMENTE SE HA GIA UN AZIENDA SU CUI ADERISCO OPPURE
-    // FACCIO VEDERE LA SCHERMATA CREA O ADERISICI AD AZIENDA
-
-
-    // SE CREA MI FACCIO DARE TUTIT I DATI PER CREARE L'AZIENDA
-    // SE ADERISCE MI PRENDO LA SUA EMAIL E VERIFICO SE QUALCHE AMMINISTRATORE DI QUALCHE AZIENDA HA INVIATO
-    // UN EMAIL DI INVITO ALLA SUA EMAIL  E POI GLI DICO SE VUOLE ACCETTARE O RIFIUTARE L'INVITO
-
-    if (splashScreenViewModel.terminate.value )
+    else
     {
-        onSuccess
+        OnboardingNavHost(navController, onSuccess,OnboardingScreen.ChooseAzienda.route)
+
     }
 
 }
