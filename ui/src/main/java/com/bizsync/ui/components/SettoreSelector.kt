@@ -12,11 +12,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.getValue
 import com.bizsync.ui.viewmodels.AddAziendaViewModel
 
 
@@ -24,8 +26,8 @@ import com.bizsync.ui.viewmodels.AddAziendaViewModel
 fun SettoreSelector(addaziendaviewmodel: AddAziendaViewModel)
 {
     val settori = listOf("Informatica", "Edilizia" , "Commercio" , "Sanità", "Turismo" , "Altro")
-    val selectedSettore = addaziendaviewmodel.settore
-    val customSettore = addaziendaviewmodel.customSettore
+    val selectedSettore by addaziendaviewmodel.sector.collectAsState()
+    val customSettore by addaziendaviewmodel.customSector.collectAsState()
     val isCustom = remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxWidth()){
@@ -33,11 +35,11 @@ fun SettoreSelector(addaziendaviewmodel: AddAziendaViewModel)
             Card( modifier = Modifier.fillMaxWidth()
                 .padding(vertical = 4.dp)
                 .clickable{
-                    selectedSettore.value = settore
+                    addaziendaviewmodel.onSectorChanged(settore)
                     isCustom.value = settore == "Altro"}
                 ,
                 colors = CardDefaults.cardColors(
-                    containerColor = if (selectedSettore.value == settore) Color.Black
+                    containerColor = if (selectedSettore == settore) Color.Black
                     else MaterialTheme.colorScheme.surfaceVariant),
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             )
@@ -45,7 +47,7 @@ fun SettoreSelector(addaziendaviewmodel: AddAziendaViewModel)
                 Text(
                     text = settore,
                     modifier = Modifier.padding(16.dp),
-                    color = if (selectedSettore.value == settore) Color.White
+                    color = if (selectedSettore == settore) Color.White
                     else MaterialTheme.colorScheme.onSurface
                 )
             }
@@ -55,8 +57,8 @@ fun SettoreSelector(addaziendaviewmodel: AddAziendaViewModel)
             Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedTextField(
-                value = selectedSettore.value,
-                onValueChange = {selectedSettore.value= it},
+                value = selectedSettore,
+                onValueChange = {addaziendaviewmodel.onSectorChanged(it)},
                 label = { Text("Inserisci il tuo settore")},
                 modifier = Modifier.fillMaxWidth()
             )

@@ -1,9 +1,5 @@
 package com.bizsync.app.screens
 
-import ImageUi
-import android.util.Log
-import android.net.Uri
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,24 +7,21 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.bizsync.app.navigation.LocalNavController
 import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.ui.viewmodels.AddUtenteViewModel
 import com.google.firebase.auth.FirebaseAuth
-import kotlinx.coroutines.launch
-import java.io.File
+import androidx.compose.runtime.getValue
+import com.bizsync.ui.components.ErrorDialog
 
 
 @Composable
@@ -38,11 +31,21 @@ fun AddUtente(
 
 
     val addutenteviewmodel :  AddUtenteViewModel = hiltViewModel()
+    val currentStep by addutenteviewmodel.currentStep.collectAsState()
+    val errore by addutenteviewmodel.erroreSalvataggio.collectAsState()
+
     val userviewmodel = LocalUserViewModel.current
-    val uiScope = rememberCoroutineScope()
+
+    val isUserAdded by addutenteviewmodel.isUserAdded.collectAsState()
+
+    LaunchedEffect(isUserAdded) {
+        if (isUserAdded) {
+            onChooseAzienda()
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        when (addutenteviewmodel.currentStep.value) {
+        when (currentStep) {
             1 -> StepOne(addutenteviewmodel)
             2 -> StepTwo(addutenteviewmodel)
             3 -> StepThree(addutenteviewmodel)
@@ -51,8 +54,8 @@ fun AddUtente(
         Spacer(modifier = Modifier.height(16.dp))
 
         Row {
-            if (addutenteviewmodel.currentStep.value > 1) {
-                Button(onClick = { addutenteviewmodel.currentStep.value-- })
+            if (currentStep > 1) {
+                Button(onClick = { addutenteviewmodel.onCurrentStepDown()})
                 {
                     Text("Indietro")
                 }
@@ -60,34 +63,25 @@ fun AddUtente(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            if (addutenteviewmodel.currentStep.value < 3) {
-                Button(onClick = { addutenteviewmodel.currentStep.value++ }) {
+            if (currentStep < 3) {
+                Button(onClick = { addutenteviewmodel.onCurrentStepUp() }) {
                     Text("Avanti")
                 }
             } else {
                 Button(onClick = {
-                    uiScope.launch {
-                        // 1) chiamo la suspend addUser e aspetto che finisca
-                        addutenteviewmodel.addUser()
-
-                        // 2) poi propaghiamo lo User e l'UID ai tuoi viewmodel
-                        userviewmodel.user.value = addutenteviewmodel.utente.value
-                        userviewmodel.uid.value  = addutenteviewmodel.utente.value?.uid.orEmpty()
-
-                        Log.d("AZIENDA_DEBUG", "USER VM user: ${userviewmodel.user.value}")
-                        Log.d("AZIENDA_DEBUG", "USER VM uid: ${userviewmodel.uid.value}")
-
-                        // 3) infine navighiamo
-                        onChooseAzienda()
-                    }
+                        addutenteviewmodel.addUserAndPropaga(userviewmodel)
                 }) {
                     Text("Conferma")
                 }
             }
         }
     }
-}
 
+    ErrorDialog(
+        errorMessage = errore,
+        onDismiss = { addutenteviewmodel.setErrore(null) }
+    )
+}
 
 @Composable
 fun StepOne(addutenteviewmodel : AddUtenteViewModel) {
@@ -96,11 +90,12 @@ fun StepOne(addutenteviewmodel : AddUtenteViewModel) {
 
     val currentuser =  FirebaseAuth.getInstance().currentUser
 
-    // DA VERIFCIARE
-    addutenteviewmodel.email.value = currentuser?.email.toString()
-    addutenteviewmodel.uid.value = currentuser?.uid.toString()
-    addutenteviewmodel.photourl.value = currentuser?.photoUrl.toString()
+    addutenteviewmodel.onEmailChanged(currentuser?.email.toString())
+    addutenteviewmodel.onUidChanged(currentuser?.uid.toString())
+    addutenteviewmodel.onPhotoUrlChanged(currentuser?.photoUrl.toString())
 
+    val nome by addutenteviewmodel.nome.collectAsState()
+    val cognome by addutenteviewmodel.cognome.collectAsState()
 
     //val uri = addutenteviewmodel.photourl?.value.let { Uri.parse(it) }
     // ImageUi(uri)
@@ -115,8 +110,8 @@ fun StepOne(addutenteviewmodel : AddUtenteViewModel) {
     Spacer(modifier = Modifier.padding(16.dp))
 
     OutlinedTextField(
-        value = addutenteviewmodel.nome.value,
-        onValueChange = { addutenteviewmodel.nome.value = it },
+        value = nome,
+        onValueChange = { addutenteviewmodel.onNomeChanged(it) },
         modifier = Modifier.fillMaxWidth()
     )
 
@@ -127,8 +122,8 @@ fun StepOne(addutenteviewmodel : AddUtenteViewModel) {
     Spacer(modifier = Modifier.padding(16.dp))
 
     OutlinedTextField(
-        value = addutenteviewmodel.cognome.value,
-        onValueChange = { addutenteviewmodel.cognome.value = it },
+        value = cognome,
+        onValueChange = { addutenteviewmodel.onCognomeChanged(it) },
         modifier = Modifier.fillMaxWidth()
     )
 }
@@ -149,4 +144,7 @@ fun StepThree(addutenteviewmodel: AddUtenteViewModel) {
     Text("Schermata 3:  ALTRE COSE  " )
 
 }
+
+
+
 

@@ -29,18 +29,20 @@ class UserRepository @Inject constructor(private val db : FirebaseFirestore) {
         }
     }
 
-    suspend fun addUser(user: User,uid : String) {
-         try {
-            val result = db.collection("utenti")
+    suspend fun addUser(user: User,uid : String) : Boolean {
+         return try {
+             db.collection("utenti")
                 .document(uid)
                 .set(user)
                 .await()
 
              Log.e("USER_DEBUG", "CARICAMENTO UTENTE ESEGUITO CON SUCCESSO")
-
+             true
         }
         catch (e: Exception) {
+
             Log.e("USER_DEBUG", "Errore nel aggiungere l'utente", e)
+            false
         }
     }
 

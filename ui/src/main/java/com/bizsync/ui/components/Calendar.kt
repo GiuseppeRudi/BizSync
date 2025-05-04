@@ -17,6 +17,7 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,6 +48,8 @@ fun Calendar(calendarviewmodel: CalendarViewModel) {
     val startDate = remember { currentDate.minusDays(500) }
     val endDate = remember { currentDate.plusDays(500) }
 
+    val selectionData by calendarviewmodel.selectionData.collectAsState()
+
     Column(
         modifier = Modifier
             .background(Color.White),
@@ -66,10 +69,10 @@ fun Calendar(calendarviewmodel: CalendarViewModel) {
                     Day(
                         date = day.date,
                         isCurrentDay = day.date == currentDate,
-                        selected = calendarviewmodel.selectionData.value == day.date,
+                        selected = selectionData == day.date,
                     ) {
                         Log.d("VERIFICA_GIORNO", "Sono in Calendar $it")
-                        calendarviewmodel.selectionData.value = it
+                        calendarviewmodel.onSelectionDataChanged(it)
                         Log.d("VERIFICA_GIORNO", calendarviewmodel.selectionData.value.toString())
                     }
                 },

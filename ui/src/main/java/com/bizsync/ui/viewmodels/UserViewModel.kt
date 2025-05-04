@@ -1,6 +1,7 @@
 package com.bizsync.ui.viewmodels
 
 import android.util.Log
+import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -17,8 +18,21 @@ import javax.inject.Inject
 @HiltViewModel
 class UserViewModel @Inject constructor(private val userRepository: UserRepository) : ViewModel() {
 
-    var user = mutableStateOf<User?>(null)
-    var uid = mutableStateOf<String>("nullo")
+    private val _user = MutableStateFlow<User?>(null)
+    val user : StateFlow<User?> = _user
+
+    private val _uid = MutableStateFlow<String>("nullo")
+    val uid : StateFlow<String> = _uid
+
+    fun onUserChanged(newValue : User)
+    {
+        _user.value = newValue
+    }
+
+    fun onUidChanged(newValue : String)
+    {
+        _uid.value = newValue
+    }
 
     private var _check = MutableStateFlow<Boolean?>(null)
     var check : StateFlow<Boolean?> = _check
@@ -26,8 +40,8 @@ class UserViewModel @Inject constructor(private val userRepository: UserReposito
 
     suspend fun getUser(userId: String)
     {
-            user.value = userRepository.getUserById(userId)
-            uid.value= userId
+            _user.value = userRepository.getUserById(userId)
+            _uid.value= userId
             Log.d("LOGINREPO_DEBUG", user.toString())
     }
 
@@ -50,7 +64,7 @@ class UserViewModel @Inject constructor(private val userRepository: UserReposito
 
     fun aggiornaAzienda(idAzienda : String)
     {
-        user.value?.idAzienda = idAzienda
+        _user.value?.idAzienda = idAzienda
     }
 
     fun change()

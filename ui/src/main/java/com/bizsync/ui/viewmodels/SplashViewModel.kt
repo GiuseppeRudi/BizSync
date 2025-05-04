@@ -1,16 +1,24 @@
 package com.bizsync.ui.viewmodels
 
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.traceEventEnd
 import androidx.lifecycle.ViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 class SplashViewModel : ViewModel() {
 
 
-    var isSplashVisible = mutableStateOf(true)
+    private  val _isSplashVisible = MutableStateFlow(true)
+    val isSplashVisible : StateFlow<Boolean> = _isSplashVisible
 
+    fun onSplashVisibleChanged(newValue : Boolean)
+    {
+        _isSplashVisible.value = newValue
+    }
 
     fun hideSplash(){
-        isSplashVisible.value = false
+        _isSplashVisible.value = false
     }
 
 

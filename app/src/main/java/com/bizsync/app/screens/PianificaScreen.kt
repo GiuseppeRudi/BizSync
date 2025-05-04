@@ -19,42 +19,47 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.bizsync.ui.components.Calendar
 import androidx.hilt.navigation.compose.hiltViewModel
-
-
-
+import androidx.compose.runtime.getValue
 import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.items
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.collectAsState
 import com.bizsync.app.navigation.LocalNavController
 import com.bizsync.app.navigation.LocalUserViewModel
-
 import com.bizsync.ui.components.DialogAddShif
 import com.bizsync.ui.components.RoundedButton
 import com.bizsync.ui.viewmodels.CalendarViewModel
 import com.bizsync.ui.viewmodels.DialogAddShiftViewModel
-import com.bizsync.ui.viewmodels.UserViewModel
 
 
-@SuppressLint("UnrememberedGetBackStackEntry")
+
 @Composable
 fun PianificaScreen() {
 
     val navController = LocalNavController.current
     val userviewmodel = LocalUserViewModel.current
 
-    Log.d("LOGINREPO_DEBUG", "FUNZIONA? " + userviewmodel.user.value?.uid)
+    val user by userviewmodel.user.collectAsState()
+    val uid by userviewmodel.uid.collectAsState()
+
+    Log.d("LOGINREPO_DEBUG", "FUNZIONA? " +uid)
 
     val dialogviewmodel : DialogAddShiftViewModel = hiltViewModel()
     val calendarviewmodel : CalendarViewModel = hiltViewModel()
 
+
+    val showDialogShift by calendarviewmodel.showDialogShift.collectAsState()
+    val selectionData by calendarviewmodel.selectionData.collectAsState()
+
+    val itemsList by dialogviewmodel.itemsList.collectAsState()
+
     Log.d("TURNI_DEBUG", "SONO ENTRATO")
-    Log.d("VERIFICA_GIORNO", "Sono un cavallo " + calendarviewmodel.selectionData.value.toString())
+    Log.d("VERIFICA_GIORNO", "GIORNO" + selectionData.toString())
 
 
 
 
-    val giornoSelezionato = calendarviewmodel.selectionData.value
+    val giornoSelezionato = selectionData
     if (giornoSelezionato!=null)
     {
         dialogviewmodel.caricaturni(giornoSelezionato)
@@ -79,7 +84,7 @@ fun PianificaScreen() {
                     .fillMaxWidth()
                     .fillMaxHeight()
             ) {
-                items(dialogviewmodel.itemsList) { item ->
+                items(itemsList) { item ->
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -99,7 +104,7 @@ fun PianificaScreen() {
 
             RoundedButton(
                 giornoSelezionato,
-                onShow = { calendarviewmodel.showDialogShift.value = true },
+                onShow = { calendarviewmodel.onShowDialogShiftChanged(true)},
                 modifier = Modifier
                     .align(Alignment.BottomEnd) // Posiziona il bottone in basso a destra
                     .padding(16.dp) // Aggiunge margine dai bordi
@@ -107,10 +112,9 @@ fun PianificaScreen() {
         }
 
     }
-    DialogAddShif(showDialog = calendarviewmodel.showDialogShift.value, giornoSelezionato, onDismiss = { calendarviewmodel.showDialogShift.value = false })
+    DialogAddShif(showDialog = showDialogShift, giornoSelezionato, onDismiss = { calendarviewmodel.onShowDialogShiftChanged(false)})
 
 }
-
 
 
 @Preview

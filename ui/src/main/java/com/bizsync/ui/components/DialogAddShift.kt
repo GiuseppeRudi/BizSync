@@ -21,7 +21,7 @@ fun DialogAddShif(showDialog: Boolean, giornoSelezionato: LocalDate?, onDismiss:
 
     val dialogviewmodel : DialogAddShiftViewModel = viewModel()
 
-
+    val text by dialogviewmodel.text.collectAsState()
 
 
 
@@ -35,8 +35,8 @@ fun DialogAddShif(showDialog: Boolean, giornoSelezionato: LocalDate?, onDismiss:
 
             // Input per aggiungere elementi
             OutlinedTextField(
-                value = dialogviewmodel.text.value,
-                onValueChange = { dialogviewmodel.text.value = it },
+                value = text,
+                onValueChange = { dialogviewmodel.onTextChanged(it) },
                 label = { Text("Aggiungi elemento") },
                 modifier = Modifier.fillMaxWidth()
             )
@@ -50,10 +50,10 @@ fun DialogAddShif(showDialog: Boolean, giornoSelezionato: LocalDate?, onDismiss:
             // Bottone per aggiungere l'elemento alla lista
             Button(
                 onClick = {
-                    if (dialogviewmodel.text.value.isNotEmpty() && giornoSelezionato!=null) {
+                    if (text.isNotEmpty() && giornoSelezionato!=null) {
                         val timestamp = localDateToTimestamp(giornoSelezionato)
                         dialogviewmodel.aggiungiturno(Turno("",dialogviewmodel.text.value,timestamp ))
-                        dialogviewmodel.text.value = "" // Resetta il campo di input
+                        dialogviewmodel.onTextChanged("") // Resetta il campo di input
                     }
                 },
                 modifier = Modifier.fillMaxWidth()

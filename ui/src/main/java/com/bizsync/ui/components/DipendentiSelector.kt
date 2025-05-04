@@ -9,16 +9,18 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.getValue
 import com.bizsync.ui.viewmodels.AddAziendaViewModel
 
 @Composable
 fun DipendentiSelector(addaziendaviewmodel: AddAziendaViewModel)
 {
     val ranges = listOf("0 - 20", "21 - 40" , "41 - 60", "61 - 100" , " 100+ ")
-    val selectedRange = addaziendaviewmodel.numDipendentiRange
+    val selectedRange by addaziendaviewmodel.numDipendentiRange.collectAsState()
 
     Column(modifier = Modifier.fillMaxWidth())
     {
@@ -26,9 +28,9 @@ fun DipendentiSelector(addaziendaviewmodel: AddAziendaViewModel)
 
             Card(modifier = Modifier.fillMaxWidth()
                 .padding(vertical = 4.dp)
-                .clickable { selectedRange.value = range},
+                .clickable { addaziendaviewmodel.onNumDipendentiRangeChanged(range)},
 
-                colors = CardDefaults.cardColors( containerColor = if (selectedRange.value == range) MaterialTheme.colorScheme.primary
+                colors = CardDefaults.cardColors( containerColor = if (selectedRange == range) MaterialTheme.colorScheme.primary
                 else
                     MaterialTheme.colorScheme.surfaceVariant),
 
@@ -37,7 +39,7 @@ fun DipendentiSelector(addaziendaviewmodel: AddAziendaViewModel)
 
                 Text( text = range,
                     modifier = Modifier.padding(16.dp),
-                    color = if (selectedRange.value == range) Color.White else Color.Black)
+                    color = if (selectedRange == range) Color.White else Color.Black)
             }
         }
     }
