@@ -1,8 +1,6 @@
 package com.bizsync.model
 
-import android.net.Uri
 import com.google.firebase.firestore.Exclude
-import com.google.firebase.firestore.ServerTimestamp
 
 data class User(
 
@@ -12,7 +10,9 @@ data class User(
     var nome : String,
     var cognome : String,
     var photourl : String? = null,
-    var idAzienda : String?
+    var idAzienda : String?,
+    var manager : Boolean = false,
+    var ruolo : String? = null
 ){
-    constructor() : this("","","","","","")
+    constructor() : this("","","","","","",false,null)
 }

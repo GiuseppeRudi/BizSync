@@ -21,7 +21,6 @@ import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.ui.viewmodels.AddUtenteViewModel
 import com.google.firebase.auth.FirebaseAuth
 import androidx.compose.runtime.getValue
-import com.bizsync.ui.components.ErrorDialog
 
 
 @Composable
@@ -77,10 +76,7 @@ fun AddUtente(
         }
     }
 
-    ErrorDialog(
-        errorMessage = errore,
-        onDismiss = { addutenteviewmodel.setErrore(null) }
-    )
+
 }
 
 @Composable

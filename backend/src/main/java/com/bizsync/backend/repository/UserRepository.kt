@@ -2,6 +2,7 @@ package com.bizsync.backend.repository
 
 import android.util.Log
 import com.bizsync.model.Azienda
+import com.bizsync.model.Invito
 import com.bizsync.model.User
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
@@ -94,6 +95,27 @@ class UserRepository @Inject constructor(private val db : FirebaseFirestore) {
         } catch (e: Exception) {
             Log.e("USER_DEBUG", "Errore nell'ottenere l'idAzienda", e)
             null
+        }
+    }
+
+    suspend fun updateAcceptInvite(invite : Invito, uid : String) : Boolean {
+        return try {
+            Log.d("INVITO_DEBUG", invite.toString())
+
+            db.collection("utenti")
+                .document(uid)
+                .update(
+                    "idAzienda", invite.azienda,
+                    "manager", invite.manager,
+                    "ruolo", invite.nomeRuolo
+                )
+                .await()
+            true
+        }
+        catch (e: Exception) {
+            Log.d("INVITO_DEBUG", e.toString())
+
+            false
         }
     }
 

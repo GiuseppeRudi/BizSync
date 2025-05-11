@@ -1,5 +1,3 @@
-package com.bizsync.app.screens
-
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,7 +21,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun LoginScreen(onLoginScreen: () -> Unit) {
+fun LoginScreen(
+    onLoginScreen: () -> Unit,
+    lastUserEmail: String? = null,
+    onLoginWithLastAccount: () -> Unit
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -56,6 +58,41 @@ fun LoginScreen(onLoginScreen: () -> Unit) {
                 textAlign = TextAlign.Center
             )
 
+            // Se abbiamo un account precedente, mostriamo l'opzione per usarlo
+            if (lastUserEmail != null) {
+                Button(
+                    onClick = onLoginWithLastAccount,
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF4CAF50)
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Accedi con",
+                            fontSize = 14.sp
+                        )
+                        Text(
+                            text = lastUserEmail,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+
+                Text(
+                    text = "oppure",
+                    fontSize = 14.sp,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+            }
+
             Button(
                 onClick = onLoginScreen,
                 shape = RoundedCornerShape(16.dp),
@@ -64,7 +101,7 @@ fun LoginScreen(onLoginScreen: () -> Unit) {
                     .height(56.dp)
             ) {
                 Text(
-                    text = "Entra",
+                    text = if (lastUserEmail == null) "Entra" else "Accedi con un altro account",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -73,12 +110,22 @@ fun LoginScreen(onLoginScreen: () -> Unit) {
     }
 }
 
-
-
-
 @Preview
 @Composable
 private fun LoginPreview(){
-    LoginScreen(onLoginScreen = { "ciao"})
+    LoginScreen(
+        onLoginScreen = { },
+        lastUserEmail = "utente@gmail.com",
+        onLoginWithLastAccount = { }
+    )
 }
 
+@Preview
+@Composable
+private fun LoginPreviewNoLastUser(){
+    LoginScreen(
+        onLoginScreen = { },
+        lastUserEmail = null,
+        onLoginWithLastAccount = { }
+    )
+}

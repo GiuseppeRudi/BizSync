@@ -3,6 +3,8 @@ package com.bizsync.app.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -14,7 +16,8 @@ import com.bizsync.app.navigation.AppNavigator
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppScaffold() {
+
+fun AppScaffold(onLogout: () -> Unit) {
 
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
     var currentScreen = 0
@@ -41,12 +44,13 @@ fun AppScaffold() {
                         }
                     },
                     actions = {
-                        IconButton(onClick = { }) {
+                        IconButton(onClick = { onLogout() }) {
                             Icon(
-                                imageVector = Icons.Filled.Menu,
-                                contentDescription = "Menu"
+                                imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                                contentDescription = "Logout"
                             )
                         }
+                        
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -73,8 +77,13 @@ fun AppScaffold() {
 @Preview(showBackground = true, name = "Scaffold")
 @Composable
 private fun ScaffoldPreview() {
+
+    fun onLogout()
+    {
+
+    }
     MaterialTheme {
-        AppScaffold()
+        AppScaffold( onLogout = {})
     }
 }
 

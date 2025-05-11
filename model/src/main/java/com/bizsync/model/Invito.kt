@@ -8,10 +8,13 @@ data class Invito (
 
 
     val aziendaNome: String,
-    val utente: String,
+    val email: String,
     val azienda: String,
+    val manager : Boolean,
+    val nomeRuolo : String,
+    val stato : String
 
     )
 {
-    constructor() : this("","","","")
+    constructor() : this("","","","",false,"","")
 }

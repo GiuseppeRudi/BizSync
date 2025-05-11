@@ -8,7 +8,6 @@ data class Azienda(
 
     @get:Exclude
     var idAzienda: String = "",
-
     var Nome : String
 ) {
     // Costruttore senza argomenti necessario per Firestore

@@ -34,7 +34,7 @@ class AddUtenteViewModel  @Inject constructor(private val userRepository: UserRe
     private val _photoUrl = MutableStateFlow<String?>(null)
     val photoUrl: StateFlow<String?> = _photoUrl
 
-    private val _isUserAdded = MutableStateFlow(true)
+    private val _isUserAdded = MutableStateFlow(false)
     val isUserAdded : StateFlow<Boolean> = _isUserAdded
 
     private val _erroreSalvataggio = MutableStateFlow<String?>(null)

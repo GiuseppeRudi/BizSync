@@ -12,7 +12,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bizsync.app.navigation.LocalNavController
 import com.bizsync.ui.components.Calendar
-import com.bizsync.ui.components.ErrorDialog
 import com.bizsync.ui.viewmodels.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
 
@@ -31,7 +30,6 @@ fun HomeScreen() {
 
     Button(onClick = { navController.navigate("pianifica")} ) { }
 
-    ErrorDialog(errore.value, onDismiss = { errore.value= null})
 
 }
 
