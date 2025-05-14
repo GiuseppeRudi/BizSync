@@ -1,8 +1,9 @@
+// MainActivity.kt
 package com.bizsync.app
+
 import LoginScreen
 import android.content.Context
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -19,91 +20,78 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint
 
-
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    var currentUserLogin = mutableStateOf(false)
+    // stato di login
+    private val currentUserLogin = mutableStateOf(false)
 
-
-    fun Context.showToast(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-    }
-
-
-    private val signInLauncher =
-        registerForActivityResult(FirebaseAuthUIActivityResultContract()) { result ->
-            val user = FirebaseAuth.getInstance().currentUser
-            if (result.resultCode == RESULT_OK && user != null) {
-                currentUserLogin.value = true
-                showToast("Login riuscito: ${user.email}")
-            } else {
-                showToast("Errore login! Codice: ${result.resultCode}")
-            }
+    // launcher per FirebaseUI
+    private val signInLauncher = registerForActivityResult(
+        FirebaseAuthUIActivityResultContract()
+    ) { result ->
+        val user = FirebaseAuth.getInstance().currentUser
+        if (result.resultCode == RESULT_OK && user != null) {
+            currentUserLogin.value = true
+            showToast("Login riuscito: ${user.email}")
+        } else {
+            showToast("Login annullato o fallito")
         }
-
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         FirebaseApp.initializeApp(this)
 
-
         setContent {
-
             val navController = rememberNavController()
-            val userViewModel : UserViewModel = hiltViewModel()
-            val currentUser = FirebaseAuth.getInstance().currentUser
+            val userViewModel: UserViewModel = hiltViewModel()
+            val firebaseUser = FirebaseAuth.getInstance().currentUser
 
-            Log.d("LOGIN_DEBUG", currentUser?.email.toString())
-            Log.d("LOGIN_DEBUG", currentUser?.uid.toString())
-
-            if (currentUser == null) {
-
-                // NON SONO LOGGATO VUOL DIRE CHE 2 COSE
-                // APRO IL LOGINSCREEN CON TASTO ENTRA
-                LoginScreen(
-                    onLoginScreen = { startSignIn() },
-                    lastUserEmail = TODO(),
-                    onLoginWithLastAccount = TODO(),
-                )
-            }
-            else
-            {
+            // Se già loggato, salto al MainApp
+            if (firebaseUser != null) {
                 currentUserLogin.value = true
             }
 
-
-            if ( currentUserLogin.value)
-            {
+            if (!currentUserLogin.value) {
+                // Schermata di login con un solo bottone “Accedi”
+                LoginScreen(onLogin = { launchLoginFlow() })
+            } else {
                 CompositionLocalProvider(
                     LocalNavController provides navController,
                     LocalUserViewModel provides userViewModel
                 ) {
-                    MainApp(onLogout = {
-                        FirebaseAuth.getInstance().signOut()
-                        currentUserLogin.value = false
-                        showToast("Logout effettuato")
-                    })
+                    MainApp(onLogout = { performLogout() })
                 }
-
             }
         }
     }
 
-
-    private fun startSignIn() {
-        val providers = arrayListOf(AuthUI.IdpConfig.GoogleBuilder().build())
-
-        val signInIntent = AuthUI.getInstance()
+    /** Avvia FirebaseUI con Smart Lock + auto-sign-in */
+    private fun launchLoginFlow() {
+        val providers = listOf(AuthUI.IdpConfig.GoogleBuilder().build())
+        val intent = AuthUI.getInstance()
             .createSignInIntentBuilder()
             .setAvailableProviders(providers)
-            .setIsSmartLockEnabled(false)
+            // enableCredentials = true per salvare in Smart Lock
+            // enableAutoSignIn = true per auto-login senza UI
+            .setIsSmartLockEnabled(true)
             .build()
+        signInLauncher.launch(intent)
+    }
 
-        signInLauncher.launch(signInIntent)
+    /** Logout completo (Firebase + Smart Lock) */
+    private fun performLogout() {
+        AuthUI.getInstance()
+            .signOut(this)
+            .addOnCompleteListener {
+                currentUserLogin.value = false
+                showToast("Logout effettuato")
+            }
+    }
+
+    /** Helper per toast */
+    private fun Context.showToast(msg: String) {
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
     }
 }
-
-
-
