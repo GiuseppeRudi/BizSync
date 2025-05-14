@@ -1,7 +1,5 @@
-package com.bizsync.model
+package com.bizsync.model.domain
 
-import com.bizsync.model.Turno
-import com.google.firebase.Timestamp
 import com.google.firebase.firestore.Exclude
 
 data class Azienda(
@@ -13,4 +11,3 @@ data class Azienda(
     // Costruttore senza argomenti necessario per Firestore
     constructor() : this("","")
 }
-

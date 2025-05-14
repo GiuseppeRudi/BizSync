@@ -1,4 +1,4 @@
-package com.bizsync.model
+package com.bizsync.model.domain
 
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.Exclude
@@ -14,6 +14,3 @@ data class Turno(
     // Costruttore senza argomenti necessario per Firestore
     constructor() : this("", "", Timestamp.now())
 }
-
-
-

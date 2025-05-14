@@ -7,9 +7,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.repository.AziendaRepository
 import com.bizsync.backend.repository.UserRepository
-import com.bizsync.model.Azienda
-import com.bizsync.model.Invito
-import com.bizsync.model.User
+import com.bizsync.model.domain.Azienda
+import com.bizsync.model.domain.Invito
+import com.bizsync.model.domain.User
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow

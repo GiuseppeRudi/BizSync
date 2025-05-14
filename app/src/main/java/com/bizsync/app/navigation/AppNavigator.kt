@@ -9,18 +9,18 @@ import com.bizsync.app.screens.GestioneScreen
 import com.bizsync.app.screens.GraficiScreen
 import com.bizsync.app.screens.HomeScreen
 import com.bizsync.app.screens.PianificaScreen
-
+import com.bizsync.model.sealedClass.Screen
 
 @Composable
 fun AppNavigator( modifier: Modifier) {
 
     val navController = LocalNavController.current
     NavHost(navController = navController, startDestination = "home", modifier= modifier) {
-        composable("home") { HomeScreen() }
-        composable("pianifica") { PianificaScreen() }
-        composable("chat") { ChatScreen() }
-        composable("gestione") { GestioneScreen() }
-        composable("grafici") { GraficiScreen() }
+        composable(Screen.Home.route) { HomeScreen() }
+        composable(Screen.Pianifica.route) { PianificaScreen() }
+        composable(Screen.Chat.route) { ChatScreen() }
+        composable(Screen.Gestione.route) { GestioneScreen() }
+        composable(Screen.Grafici.route) { GraficiScreen() }
     }
 
 }

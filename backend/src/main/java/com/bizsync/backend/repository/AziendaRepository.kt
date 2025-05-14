@@ -1,8 +1,8 @@
 package com.bizsync.backend.repository
 
 import android.util.Log
-import com.bizsync.model.Azienda
-import com.bizsync.model.User
+import com.bizsync.model.domain.Azienda
+import com.bizsync.model.domain.User
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject

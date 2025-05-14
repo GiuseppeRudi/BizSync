@@ -6,8 +6,8 @@ import androidx.compose.runtime.State
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.repository.InvitoRepository
-import com.bizsync.model.Azienda
-import com.bizsync.model.Invito
+import com.bizsync.model.domain.Azienda
+import com.bizsync.model.domain.Invito
 import com.bizsync.ui.components.DialogStatusType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

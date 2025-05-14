@@ -1,4 +1,4 @@
-package com.bizsync.model
+package com.bizsync.model.domain
 
 import com.google.firebase.firestore.Exclude
 

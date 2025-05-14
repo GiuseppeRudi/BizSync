@@ -1,7 +1,7 @@
 package com.bizsync.backend.repository
 
 import android.util.Log
-import com.bizsync.model.Turno
+import com.bizsync.model.domain.Turno
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await

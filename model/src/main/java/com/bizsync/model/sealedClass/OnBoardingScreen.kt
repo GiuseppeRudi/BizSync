@@ -1,4 +1,4 @@
-package com.bizsync.app.navigation.sealedClass
+package com.bizsync.model.sealedClass
 
 sealed class OnboardingScreen(val route: String) {
     object AddUtente : OnboardingScreen("add_utente")

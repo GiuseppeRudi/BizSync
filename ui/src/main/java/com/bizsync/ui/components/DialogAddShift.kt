@@ -9,7 +9,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.bizsync.model.Turno
+import com.bizsync.model.domain.Turno
 import com.bizsync.ui.viewmodels.DialogAddShiftViewModel
 import com.google.firebase.Timestamp
 import java.time.LocalDate

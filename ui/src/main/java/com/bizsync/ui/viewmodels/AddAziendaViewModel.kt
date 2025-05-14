@@ -6,7 +6,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import com.bizsync.backend.repository.AziendaRepository
 import com.bizsync.backend.repository.UserRepository
-import com.bizsync.model.Azienda
+import com.bizsync.model.domain.Azienda
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
