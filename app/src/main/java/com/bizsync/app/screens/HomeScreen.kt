@@ -1,39 +1,42 @@
 package com.bizsync.app.screens
 
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Text
+
+import android.annotation.SuppressLint
+import android.util.Log
+import androidx.compose.material3.Button
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
-import com.bizsync.app.Calendar
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.bizsync.app.navigation.LocalNavController
+import com.bizsync.ui.components.Calendar
+import com.bizsync.ui.viewmodels.UserViewModel
+import com.google.firebase.auth.FirebaseAuth
 
 
 @Composable
-fun HomeScreen(navController: NavController) {
-    // Usa remember con mutableStateOf per tenere traccia del valore della variabile message
-    val message = remember { mutableStateOf("ciao") }
+fun HomeScreen() {
+    val userviewmodel : UserViewModel = hiltViewModel()
+    val navController = LocalNavController.current
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    val currentUser = FirebaseAuth.getInstance().currentUser
 
-        Calendar()
+    val errore = remember {mutableStateOf<String?>("errore")}
 
-    }
+    userviewmodel.onUidChanged(currentUser?.uid.toString())
+
+
+    Button(onClick = { navController.navigate("pianifica")} ) { }
+
+
 }
 
 
 
-@Composable
-fun DetailsScreen(){
 
-    Text(text = "Sezione dei dettagli del sito", fontSize = 24.sp, modifier = Modifier.padding(50.dp))
-}
+
 
 
 
