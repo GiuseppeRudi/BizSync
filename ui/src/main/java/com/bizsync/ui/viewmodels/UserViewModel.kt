@@ -10,6 +10,7 @@ import com.bizsync.backend.repository.UserRepository
 import com.bizsync.model.domain.Azienda
 import com.bizsync.model.domain.Invito
 import com.bizsync.model.domain.User
+import com.bizsync.model.sealedClass.RuoliAzienda
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -56,6 +57,11 @@ class UserViewModel @Inject constructor(private val userRepository: UserReposito
             Log.d("LOGINREPO_DEBUG", user.toString())
     }
 
+    fun onAddAziendaRole(ruolo : RuoliAzienda, azienda: String)
+    {
+        _user.value = _user.value?.copy(idAzienda = azienda, ruolo = ruolo.route, manager = ruolo.isPrivileged)
+    }
+
     fun checkUser(userId : String)
     {
         viewModelScope.launch(Dispatchers.IO){
@@ -90,6 +96,13 @@ class UserViewModel @Inject constructor(private val userRepository: UserReposito
     suspend  fun fetchAzienda(){
 
         _azienda.value = aziendaRepository.getAziendaById(_user.value?.idAzienda.toString())
+    }
+
+    fun clear() {
+        _user.value = null
+        _azienda.value = null
+        _uid.value = "nullo"
+        _check.value = null
     }
 
     fun aggiornaAzienda(idAzienda : String)

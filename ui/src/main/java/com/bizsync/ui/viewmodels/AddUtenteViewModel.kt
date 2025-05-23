@@ -1,5 +1,6 @@
 package com.bizsync.ui.viewmodels
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.repository.UserRepository
@@ -49,6 +50,7 @@ class AddUtenteViewModel  @Inject constructor(private val userRepository: UserRe
 
     fun addUserAndPropaga(userviewmodel: UserViewModel) {
         viewModelScope.launch {
+            Log.d("CONTROLLO_USER_FINAL" ,uid.value)
             val utenteCreato = User("",email.value,nome.value,cognome.value,photoUrl.value,"")
             val success = userRepository.addUser(utenteCreato, uid.value)
 

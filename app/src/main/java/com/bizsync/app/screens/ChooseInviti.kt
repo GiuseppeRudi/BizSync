@@ -93,7 +93,6 @@ fun ChooseInvito(onTerminate: () -> Unit) {
                         InviteCard(
                             invite = invite,
                             onAccept = { invitiVM.acceptInvite(invite, userVM)
-
                                           onTerminate()},
                             onDetails = { invitiVM.showDetails(invite) },
                             onDecline = { invitiVM.declineInvite(invite) }

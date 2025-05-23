@@ -27,14 +27,13 @@ import com.bizsync.ui.viewmodels.AddAziendaViewModel
 fun AddAzienda(onTerminate : () -> Unit) {
 
     val addaziendaviewmodel :  AddAziendaViewModel = hiltViewModel()
+    val userviewmodel = LocalUserViewModel.current
 
     val currentStep by addaziendaviewmodel.currentStep.collectAsState()
     val nomeAzienda by addaziendaviewmodel.nomeAzienda.collectAsState()
+    val uid by userviewmodel.uid.collectAsState()
 
 
-    val userviewmodel = LocalUserViewModel.current
-
-    val uid = userviewmodel.uid.value
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         when (currentStep) {

@@ -61,9 +61,11 @@ class MainActivity : ComponentActivity() {
                     LocalNavController provides navController,
                     LocalUserViewModel provides userViewModel
                 ) {
-                    MainApp(onLogout = { performLogout() })
+                    MainApp(onLogout = { userViewModel.clear()
+                                            performLogout() })
                 }
             }
+
         }
     }
 
@@ -88,6 +90,9 @@ class MainActivity : ComponentActivity() {
                 currentUserLogin.value = false
                 showToast("Logout effettuato")
             }
+
+
+
     }
 
     /** Helper per toast */

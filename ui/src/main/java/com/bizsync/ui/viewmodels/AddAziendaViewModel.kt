@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import com.bizsync.backend.repository.AziendaRepository
 import com.bizsync.backend.repository.UserRepository
 import com.bizsync.model.domain.Azienda
+import com.bizsync.model.sealedClass.RuoliAzienda
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -53,8 +54,18 @@ class AddAziendaViewModel  @Inject constructor(private val aziendaRepository: Az
             Log.d("AZIENDA_DEBUG", "VEDO SE CE L'ID UTENTE"  + idUtente)
 
             if (azienda != null) {
-                userRepository.aggiornaAzienda(azienda, idUtente)
-                userViewModel.user.value?.idAzienda = azienda
+                var check  = userRepository.aggiornaAzienda(azienda, idUtente, RuoliAzienda.Proprietario)
+
+                if (check)
+                {
+                    userViewModel.onAddAziendaRole(RuoliAzienda.Proprietario,azienda)
+                }
+                else
+                {
+                    error("Errore")
+                }
+
+
                 Log.d("AZIENDA_DEBUG", "Campo aggiornato con successo")
             } else {
                 Log.e("AZIENDA_DEBUG", "ID azienda è nullo")
@@ -62,6 +73,7 @@ class AddAziendaViewModel  @Inject constructor(private val aziendaRepository: Az
 
         }
     }
+
 
 
     fun onIdAzienda(newValue: String)
