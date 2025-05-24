@@ -1,6 +1,7 @@
 package com.bizsync.backend.repository
 
 import android.util.Log
+import com.bizsync.backend.constantsFirestore.TurniFirestore
 import com.bizsync.model.domain.Turno
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
@@ -22,9 +23,9 @@ class TurnoRepository @Inject constructor(private val db: FirebaseFirestore) {
         val endTimestamp = Timestamp(Date.from(endOfDay))
 
         return try {
-            val result = db.collection("turni")
-                .whereGreaterThanOrEqualTo("data", startTimeStamp)
-                .whereLessThan("data",endTimestamp)
+            val result = db.collection(TurniFirestore.COLLECTION)
+                .whereGreaterThanOrEqualTo(TurniFirestore.Fields.DATA, startTimeStamp)
+                .whereLessThan(TurniFirestore.Fields.DATA,endTimestamp)
                 .get()
                 .await()
 
@@ -55,7 +56,10 @@ class TurnoRepository @Inject constructor(private val db: FirebaseFirestore) {
 
     suspend fun aggiungiTurno(turno : Turno) {
          try {
-            val result = db.collection("turni").add(turno).await()
+            val result =
+                db.collection(TurniFirestore.COLLECTION)
+                    .add(turno)
+                    .await()
 
             val idGenerato = result.id
             Log.d("TURNI_DEBUG", "Turno aggiunto con id" + idGenerato.toString())

@@ -1,6 +1,5 @@
 package com.bizsync.app.screens
 
-import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -26,10 +25,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.collectAsState
 import com.bizsync.app.navigation.LocalNavController
 import com.bizsync.app.navigation.LocalUserViewModel
-import com.bizsync.ui.components.DialogAddShif
 import com.bizsync.ui.components.RoundedButton
+import com.bizsync.ui.components.TurnoDialog
 import com.bizsync.ui.viewmodels.CalendarViewModel
-import com.bizsync.ui.viewmodels.DialogAddShiftViewModel
+import com.bizsync.ui.viewmodels.TurnoDialogViewModel
 
 
 
@@ -44,7 +43,7 @@ fun PianificaScreen() {
 
     Log.d("LOGINREPO_DEBUG", "FUNZIONA? " +uid)
 
-    val dialogviewmodel : DialogAddShiftViewModel = hiltViewModel()
+    val dialogviewmodel : TurnoDialogViewModel = hiltViewModel()
     val calendarviewmodel : CalendarViewModel = hiltViewModel()
 
 
@@ -112,7 +111,7 @@ fun PianificaScreen() {
         }
 
     }
-    DialogAddShif(showDialog = showDialogShift, giornoSelezionato, onDismiss = { calendarviewmodel.onShowDialogShiftChanged(false)})
+    TurnoDialog(showDialog = showDialogShift, giornoSelezionato, onDismiss = { calendarviewmodel.onShowDialogShiftChanged(false)})
 
 }
 

@@ -8,21 +8,30 @@ import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.bizsync.app.navigation.AppNavigator
-
+import com.bizsync.ui.viewmodels.ScaffoldViewModel
+import androidx.compose.runtime.getValue
+import com.bizsync.app.navigation.LocalUserViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 
 fun AppScaffold(onLogout: () -> Unit) {
 
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
-    var currentScreen = 0
-    if(currentScreen==0) {
+    var userVM = LocalUserViewModel.current
 
+    val azienda by userVM.azienda.collectAsState()
+    var scaffoldVM : ScaffoldViewModel = hiltViewModel()
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
+
+    val fullScreen by scaffoldVM.fullScreen.collectAsState()
+
+    if(fullScreen) {
 
         Scaffold(
             modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -30,13 +39,13 @@ fun AppScaffold(onLogout: () -> Unit) {
                 TopAppBar(
                     title = {
                         Text(
-                            "Home",
+                            azienda.Nome,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                     },
                     navigationIcon = {
-                        IconButton(onClick = { currentScreen=1}) {
+                        IconButton(onClick = { scaffoldVM.onFullScreenChanged(false)}) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "Back"

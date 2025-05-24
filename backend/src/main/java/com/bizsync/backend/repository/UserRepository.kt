@@ -1,12 +1,14 @@
 package com.bizsync.backend.repository
 
 import android.util.Log
+import com.bizsync.backend.constantsFirestore.UtentiFirestore
 import com.bizsync.model.domain.Azienda
 import com.bizsync.model.domain.Invito
 import com.bizsync.model.domain.User
 import com.bizsync.model.sealedClass.RuoliAzienda
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
+import java.time.temporal.UnsupportedTemporalTypeException
 import javax.inject.Inject
 
 
@@ -15,7 +17,7 @@ class UserRepository @Inject constructor(private val db : FirebaseFirestore) {
 
     suspend fun getUserById(userId: String): User? {
         try {
-            val result = db.collection("utenti")
+            val result = db.collection(UtentiFirestore.COLLECTION)
                 .document(userId)
                 .get()
                 .await()
@@ -33,7 +35,7 @@ class UserRepository @Inject constructor(private val db : FirebaseFirestore) {
 
     suspend fun addUser(user: User,uid : String) : Boolean {
          return try {
-             db.collection("utenti")
+             db.collection(UtentiFirestore.COLLECTION)
                 .document(uid)
                 .set(user)
                 .await()
@@ -53,13 +55,13 @@ class UserRepository @Inject constructor(private val db : FirebaseFirestore) {
         Log.d("AZIENDA_DEBUG", "SONO NEL REPOSITORY E ID AZIENDA " + idAzienda.toString())
 
         val updates = mapOf(
-            "idAzienda" to idAzienda,
-            "ruolo" to ruolo.route,
-            "manager" to ruolo.isPrivileged
+            UtentiFirestore.Fields.ID_AZIENDA to idAzienda,
+            UtentiFirestore.Fields.RUOLO      to ruolo.route,
+            UtentiFirestore.Fields.MANAGER    to ruolo.isPrivileged
         )
 
         return try {
-            val result = db.collection("utenti")
+            val result = db.collection(UtentiFirestore.COLLECTION)
                 .document(idUtente)
                 .update(updates)
                 .await()
@@ -74,7 +76,7 @@ class UserRepository @Inject constructor(private val db : FirebaseFirestore) {
 
     suspend fun checkUser(idUtente : String) : Boolean {
         return try {
-            val result = db.collection("utenti")
+            val result = db.collection(UtentiFirestore.COLLECTION)
                 .document(idUtente)
                 .get()
                 .await()
@@ -92,12 +94,12 @@ class UserRepository @Inject constructor(private val db : FirebaseFirestore) {
 
     suspend fun ottieniIdAzienda(idUtente: String): String? {
         return try {
-            val document = db.collection("utenti")
+            val document = db.collection(UtentiFirestore.COLLECTION)
                 .document(idUtente)
                 .get()
                 .await()
 
-            val idAzienda = document.getString("idAzienda")
+            val idAzienda = document.getString(UtentiFirestore.Fields.ID_AZIENDA)
             Log.d("USER_DEBUG", "ID Azienda: $idAzienda")
             idAzienda
         } catch (e: Exception) {
@@ -110,12 +112,12 @@ class UserRepository @Inject constructor(private val db : FirebaseFirestore) {
         return try {
             Log.d("INVITO_DEBUG", invite.toString())
 
-            db.collection("utenti")
+            db.collection(UtentiFirestore.COLLECTION)
                 .document(uid)
                 .update(
-                    "idAzienda", invite.azienda,
-                    "manager", invite.manager,
-                    "ruolo", invite.nomeRuolo
+                    UtentiFirestore.Fields.ID_AZIENDA, invite.azienda,
+                    UtentiFirestore.Fields.MANAGER, invite.manager,
+                    UtentiFirestore.Fields.RUOLO, invite.nomeRuolo
                 )
                 .await()
             true

@@ -40,7 +40,7 @@ class InvitiViewModel @Inject constructor(private val invitoRepository: InvitoRe
     fun fetchInvites(email : String) = viewModelScope.launch {
         _isLoading.value = true
          _email.value = email
-        //qui la chiamata a Firebase, poi:
+
         val list =  invitoRepository.loadInvito(email)
         Log.d("INVITI_DEBUG" , "LISTA" + list.toString())
         _invites.value = list

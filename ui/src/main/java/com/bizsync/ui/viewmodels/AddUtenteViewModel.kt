@@ -20,8 +20,8 @@ class AddUtenteViewModel  @Inject constructor(private val userRepository: UserRe
     private val _uid = MutableStateFlow("")
     val uid : StateFlow<String> = _uid
 
-    private val _utente = MutableStateFlow<User?>(null)
-    val utente : StateFlow<User?> = _utente
+    private val _utente = MutableStateFlow<User>(User())
+    val utente : StateFlow<User> = _utente
 
     private val _nome = MutableStateFlow("Ciccio")
     val nome: StateFlow<String> = _nome
@@ -32,8 +32,8 @@ class AddUtenteViewModel  @Inject constructor(private val userRepository: UserRe
     private val _cognome = MutableStateFlow("Pasticcio")
     val cognome: StateFlow<String> = _cognome
 
-    private val _photoUrl = MutableStateFlow<String?>(null)
-    val photoUrl: StateFlow<String?> = _photoUrl
+    private val _photoUrl = MutableStateFlow<String>("")
+    val photoUrl: StateFlow<String> = _photoUrl
 
     private val _isUserAdded = MutableStateFlow(false)
     val isUserAdded : StateFlow<Boolean> = _isUserAdded
@@ -98,7 +98,7 @@ class AddUtenteViewModel  @Inject constructor(private val userRepository: UserRe
         _cognome.value = newValue
     }
 
-    fun onPhotoUrlChanged(newValue: String?) {
+    fun onPhotoUrlChanged(newValue: String) {
         _photoUrl.value = newValue
     }
 

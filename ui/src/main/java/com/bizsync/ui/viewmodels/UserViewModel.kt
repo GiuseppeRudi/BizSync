@@ -22,11 +22,11 @@ import javax.inject.Inject
 @HiltViewModel
 class UserViewModel @Inject constructor(private val userRepository: UserRepository, private val aziendaRepository: AziendaRepository) : ViewModel() {
 
-    private val _user = MutableStateFlow<User?>(null)
-    val user : StateFlow<User?> = _user
+    private val _user = MutableStateFlow<User>(User())
+    val user : StateFlow<User> = _user
 
-    private val _azienda = MutableStateFlow<Azienda?>(null)
-    val azienda : StateFlow<Azienda?> = _azienda
+    private val _azienda = MutableStateFlow<Azienda>(Azienda())
+    val azienda : StateFlow<Azienda> = _azienda
 
     fun onAziendaChanged(newValue : Azienda)
     {
@@ -52,14 +52,24 @@ class UserViewModel @Inject constructor(private val userRepository: UserReposito
 
     suspend fun getUser(userId: String)
     {
-            _user.value = userRepository.getUserById(userId)
-            _uid.value= userId
+             var loaded = userRepository.getUserById(userId)
+
+             if(loaded!=null)
+             {
+                 _user.value = loaded
+                 _uid.value= userId
+             }
+
+            else {
+                //MANDARE IN ERORRE
+             }
+
             Log.d("LOGINREPO_DEBUG", user.toString())
     }
 
     fun onAddAziendaRole(ruolo : RuoliAzienda, azienda: String)
     {
-        _user.value = _user.value?.copy(idAzienda = azienda, ruolo = ruolo.route, manager = ruolo.isPrivileged)
+        _user.value = _user.value.copy(idAzienda = azienda, ruolo = ruolo.route, manager = ruolo.isPrivileged)
     }
 
     fun checkUser(userId : String)
@@ -71,12 +81,21 @@ class UserViewModel @Inject constructor(private val userRepository: UserReposito
             if(controllo)
             {getUser(userId)}
 
-            if(user.value?.idAzienda != "" && controllo)
+            if(user.value.idAzienda.isNotEmpty() && controllo)
             {
-                _azienda.value = aziendaRepository.getAziendaById(_user.value?.idAzienda.toString())
+                var loaded = aziendaRepository.getAziendaById(_user.value.idAzienda.toString())
+
+                if (loaded!=null)
+                {
+                    _azienda.value = loaded
+                }
+                else
+                {
+                    //GESTIRE
+                }
             }
 
-            if(user.value?.idAzienda == "" && controllo)
+            if(user.value.idAzienda.isEmpty() && controllo)
             {   Log.d("CHECK", "VEDIAMO IDAZIENDA" + user.value?.idAzienda.toString())
                 controllo= false }
 
@@ -86,28 +105,42 @@ class UserViewModel @Inject constructor(private val userRepository: UserReposito
 
     suspend fun onAcceptInvite(invite : Invito)
     {
-        _user.value?.idAzienda = invite.azienda
-        _user.value?.manager = invite.manager
-        _user.value?.ruolo = invite.nomeRuolo
+        // GESTIRE MEGLIO I CONTROLLI
+
+        _user.value.idAzienda = invite.azienda
+        _user.value.manager = invite.manager
+        _user.value.ruolo = invite.nomeRuolo
 
         fetchAzienda()
     }
 
     suspend  fun fetchAzienda(){
 
-        _azienda.value = aziendaRepository.getAziendaById(_user.value?.idAzienda.toString())
+        var loaded  = aziendaRepository.getAziendaById(_user.value.idAzienda)
+
+        if (loaded != null)
+        {
+            _azienda.value = loaded
+
+        }
+
+        else
+        {
+            // GESTIRE
+        }
     }
 
     fun clear() {
-        _user.value = null
-        _azienda.value = null
-        _uid.value = "nullo"
+        _user.value = User()
+        _azienda.value = Azienda()
+        _uid.value = ""
         _check.value = null
     }
 
     fun aggiornaAzienda(idAzienda : String)
     {
-        _user.value?.idAzienda = idAzienda
+        // GESTIRE MEGLIO
+        _user.value.idAzienda = idAzienda
     }
 
     fun change()

@@ -40,36 +40,32 @@ class AddAziendaViewModel  @Inject constructor(private val aziendaRepository: Az
     val customSector : StateFlow<String> = _customSector
 
 
-    private val _idAzienda = MutableStateFlow<String?>("")
-    val idAzienda : StateFlow<String?> = _idAzienda
+    private val _idAzienda = MutableStateFlow<String>("")
+    val idAzienda : StateFlow<String> = _idAzienda
 
 
     fun aggiungiAzienda(idUtente: String, userViewModel: UserViewModel) {
 
         viewModelScope.launch(Dispatchers.IO){
-            _idAzienda.value = aziendaRepository.creaAzienda(Azienda("", nomeAzienda.value))
+            var loaded  = aziendaRepository.creaAzienda(Azienda("", nomeAzienda.value))
 
-            var azienda = idAzienda.value
+            if (loaded!=null)
+            {
+                _idAzienda.value = loaded
             Log.d("AZIENDA_DEBUG", "VEDO SE CE L'ID AZIENDA"  + idAzienda.toString())
             Log.d("AZIENDA_DEBUG", "VEDO SE CE L'ID UTENTE"  + idUtente)
 
-            if (azienda != null) {
-                var check  = userRepository.aggiornaAzienda(azienda, idUtente, RuoliAzienda.Proprietario)
 
-                if (check)
-                {
-                    userViewModel.onAddAziendaRole(RuoliAzienda.Proprietario,azienda)
-                }
-                else
-                {
-                    error("Errore")
-                }
+                    var check =
+                        userRepository.aggiornaAzienda(_idAzienda.value, idUtente, RuoliAzienda.Proprietario)
 
-
-                Log.d("AZIENDA_DEBUG", "Campo aggiornato con successo")
-            } else {
-                Log.e("AZIENDA_DEBUG", "ID azienda è nullo")
+                    if (check) {
+                        userViewModel.onAddAziendaRole(RuoliAzienda.Proprietario, _idAzienda.value)
+                    } else {
+                        error("Errore")
+                    }
             }
+
 
         }
     }

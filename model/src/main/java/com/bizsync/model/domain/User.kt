@@ -9,10 +9,10 @@ data class User(
     var email : String,
     var nome : String,
     var cognome : String,
-    var photourl : String? = null,
-    var idAzienda : String?,
+    var photourl : String = "",
+    var idAzienda : String = "",
     var manager : Boolean = false,
-    var ruolo : String? = null
+    var ruolo : String = ""
 ){
-    constructor() : this("","","","","","",false,null)
+    constructor() : this("","","","","","",false,"")
 }

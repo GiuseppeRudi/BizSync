@@ -1,9 +1,6 @@
 package com.bizsync.ui.viewmodels
 
 import android.util.Log
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.repository.TurnoRepository
@@ -12,12 +9,11 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import java.nio.channels.Selector
 import java.time.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
-class DialogAddShiftViewModel @Inject constructor(private val turnoRepository: TurnoRepository) : ViewModel() {
+class TurnoDialogViewModel @Inject constructor(private val turnoRepository: TurnoRepository) : ViewModel() {
 
 
     private val _itemsList = MutableStateFlow<List<Turno>>(emptyList())

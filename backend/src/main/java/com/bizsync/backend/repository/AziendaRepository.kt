@@ -1,8 +1,8 @@
 package com.bizsync.backend.repository
 
 import android.util.Log
+import com.bizsync.backend.constantsFirestore.AziendeFirestore
 import com.bizsync.model.domain.Azienda
-import com.bizsync.model.domain.User
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
@@ -11,7 +11,7 @@ class AziendaRepository @Inject constructor(private val db : FirebaseFirestore) 
 
     suspend fun creaAzienda(azienda : Azienda) : String? {
          try {
-            val result = db.collection("aziende")
+            val result = db.collection(AziendeFirestore.COLLECTION)
                 .add(azienda)
                 .await()
 
@@ -29,7 +29,7 @@ class AziendaRepository @Inject constructor(private val db : FirebaseFirestore) 
 
     suspend fun getAziendaById(aziendaId: String): Azienda? {
         try {
-            val result = db.collection("aziende")
+            val result = db.collection(AziendeFirestore.COLLECTION)
                 .document(aziendaId)
                 .get()
                 .await()

@@ -8,7 +8,7 @@ data class Turno(
     var idDocumento: String = "",
 
     val nome: String = "",
-    val data: Timestamp = Timestamp.now()
+    val giorno: Timestamp = Timestamp.now()
     // Aggiungi altri campi della tua classe Turno qui
 ) {
     // Costruttore senza argomenti necessario per Firestore
