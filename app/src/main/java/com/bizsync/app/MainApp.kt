@@ -49,10 +49,11 @@ fun OnboardingFlow(onSuccess : () -> Unit)
     val user by userVM.user.collectAsState()
     val navController = rememberNavController()
 
-    if(user == null){
+    if(user.uid.isEmpty()){
         OnboardingNavHost(navController, onSuccess,OnboardingScreen.AddUtente.route)
     }
     else
+
     {
         OnboardingNavHost(navController, onSuccess,OnboardingScreen.ChooseAzienda.route)
 
