@@ -1,4 +1,4 @@
-package com.bizsync.backend
+package com.bizsync.backend.hilt
 
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Module

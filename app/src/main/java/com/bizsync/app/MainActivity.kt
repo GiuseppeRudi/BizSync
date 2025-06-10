@@ -18,9 +18,6 @@ import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
-import com.google.firebase.ai.FirebaseAI
-import com.google.firebase.ai.ai
-import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.appcheck.FirebaseAppCheck
 import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
 import com.google.firebase.auth.FirebaseAuth
@@ -52,15 +49,6 @@ class MainActivity : ComponentActivity() {
             .installAppCheckProviderFactory(
                 DebugAppCheckProviderFactory.getInstance()
             )
-
-
-
-
-// Initialize the Gemini Developer API backend service
-// Create a `GenerativeModel` instance with a model that supports your use case
-        val model = Firebase.ai(backend = GenerativeBackend.googleAI())
-            .generativeModel("gemini-2.0-flash")
-
 
 
         //PER FARE DI DEPLOY

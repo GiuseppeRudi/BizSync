@@ -1,4 +1,5 @@
 [versions]
+accompanistPlaceholderMaterial3 = "0.31.5-beta"
 agp = "8.10.1"
 hiltNavigationCompose = "1.2.0"
 kotlin = "2.0.21"
@@ -20,7 +21,9 @@ coilCompose = "2.3.0"
 lifecycleViewModel = "2.7.0"
 calendarCompose = "2.6.2"
 
+
 [libraries]
+accompanist-placeholder-material3-vversion = { module = "com.google.accompanist:accompanist-placeholder-material3", version.ref = "accompanistPlaceholderMaterial3" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }

@@ -1,57 +1,42 @@
 package com.bizsync.app.screens
 
-
-import android.text.Layout.Alignment
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Text
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Modifier
-import com.bizsync.app.navigation.ModelProvider
+import androidx.compose.runtime.collectAsState
+import com.bizsync.ui.components.ShiftCard
+import com.bizsync.ui.viewmodels.ChatScreenViewModel
 import androidx.compose.runtime.getValue
-
-import androidx.compose.runtime.setValue
-import kotlinx.coroutines.launch
 
 @Composable
 fun ChatScreen() {
-    val coroutineScope = rememberCoroutineScope()
 
-    var responseText by remember { mutableStateOf<String?>(null) }
-    var isLoading    by remember { mutableStateOf(false) }
+    val viewModel = ChatScreenViewModel()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val shifts by viewModel.shifts.collectAsState()
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        when {
-            isLoading -> {
-                CircularProgressIndicator()
+    LazyColumn {
+        if (isLoading) {
+            // Mostra 3 shimmer card placeholder
+            items(3) {
+                ShiftCard(loading = true)
             }
-            responseText != null -> {
-                Text(text = responseText!!)
-            }
-            else -> {
-                Button(onClick = {
-                    isLoading = true
-                    responseText = null
-
-                    // Qui lancio la coroutine, non un LaunchedEffect
-                    coroutineScope.launch {
-                        try {
-                            val result = ModelProvider.model
-                                .generateContent("Ciao, come stai?")
-                            responseText = result.text
-                        } catch (e: Exception) {
-                            responseText = "Errore: ${e.localizedMessage}"
-                        } finally {
-                            isLoading = false
-                        }
-                    }
-                }) {
-                    Text("Invia prompt di prova")
+        } else {
+            items(shifts) { shift ->
+                AnimatedVisibility(
+                    visible = true,
+                    enter = fadeIn() + slideInVertically(),
+                    exit = fadeOut()
+                ) {
+                    ShiftCard(
+                        loading = false,
+                        title = shift.title,
+                        time = shift.time
+                    )
                 }
             }
         }
