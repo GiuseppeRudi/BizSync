@@ -32,7 +32,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.bizsync.ui.viewmodels.CalendarViewModel
+import com.bizsync.ui.viewmodels.PianificaViewModel
 import com.kizitonwose.calendar.compose.WeekCalendar
 import com.kizitonwose.calendar.compose.weekcalendar.rememberWeekCalendarState
 import dagger.hilt.processor.internal.definecomponent.codegen._dagger_hilt_android_components_ViewModelComponent
@@ -43,7 +43,7 @@ import java.time.format.DateTimeFormatter
 // QUESTO CALENDAR LO VEDIAMO PIU TARDI
 
 @Composable
-fun Calendar(calendarviewmodel: CalendarViewModel) {
+fun Calendar(calendarviewmodel: PianificaViewModel) {
     val currentDate = remember { LocalDate.now() } // Giorno corrente
     val startDate = remember { currentDate.minusDays(500) }
     val endDate = remember { currentDate.plusDays(500) }
@@ -145,9 +145,3 @@ fun Day(
     }
 }
 
-@Preview
-@Composable
-private fun CalendarPreview() {
-    val calendarviewmodel : CalendarViewModel = viewModel()
-    Calendar(calendarviewmodel)
-}

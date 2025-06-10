@@ -54,8 +54,8 @@ class TurnoRepository @Inject constructor(private val db: FirebaseFirestore) {
         }
     }
 
-    suspend fun aggiungiTurno(turno : Turno) {
-         try {
+    suspend fun aggiungiTurno(turno : Turno) : Boolean {
+         return try {
             val result =
                 db.collection(TurniFirestore.COLLECTION)
                     .add(turno)
@@ -64,10 +64,12 @@ class TurnoRepository @Inject constructor(private val db: FirebaseFirestore) {
             val idGenerato = result.id
             Log.d("TURNI_DEBUG", "Turno aggiunto con id" + idGenerato.toString())
 
+             true
         }
         catch (e : Exception)
         {
             Log.e("TURNI_DEBUG", "Errore nell'aggiunta del turno ", e)
+            false
         }
     }
 

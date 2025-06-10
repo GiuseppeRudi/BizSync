@@ -1,38 +1,30 @@
 package com.bizsync.app.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.bizsync.app.navigation.LocalScaffoldViewModel
 import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.ui.components.AiBanner
-import com.bizsync.ui.components.ShiftCard
+import com.bizsync.ui.components.UniversalCard
 import com.bizsync.ui.viewmodels.OnBoardingPianificaViewModel
-import com.google.accompanist.placeholder.PlaceholderHighlight
-import com.google.accompanist.placeholder.placeholder
-import com.google.accompanist.placeholder.shimmer
+
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SetupTutorialScreen(
+fun SetupPianificaScreen(
     onSetupComplete: () -> Unit,
 ) {
 
@@ -129,7 +121,9 @@ fun AreeLavoroStep(viewModel: OnBoardingPianificaViewModel) {
     val azienda by userViewModel.azienda.collectAsState()
 
     LaunchedEffect(azienda) {
-        viewModel.generaAreeAi(azienda.Nome)
+        if (!checkAreeDefualt) {
+            viewModel.generaAreeAi(azienda.Nome)
+        }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -175,41 +169,21 @@ fun AreeLavoroStep(viewModel: OnBoardingPianificaViewModel) {
                     AiBanner(azienda.Nome, checkAreeDefualt)
                 }
 
-
                 if (!checkAreeDefualt) {
-                    items(10) { ShiftCard(loading = true) }
+                    items(10) {
+                        UniversalCard(loading = true)
+                    }
                 } else {
                     items(areeDefaultAttive) { area ->
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 2.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(12.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = area.nomeArea,
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-
-                                IconButton(
-                                    onClick = { viewModel.onRimuoviAreaById(area.id) }
-                                ) {
-                                    Icon(
-                                        Icons.Default.Delete,
-                                        contentDescription = "Rimuovi $area",
-                                        tint = MaterialTheme.colorScheme.error
-                                    )
-                                }
-                            }
-                        }
+                        UniversalCard(
+                            loading = false,
+                            title = area.nomeArea,
+                            showDelete = true,
+                            onDelete = { viewModel.onRimuoviAreaById(area.id) }
+                        )
                     }
                 }
+
 
                 item {
                     Spacer(modifier = Modifier.height(16.dp))
@@ -295,7 +269,9 @@ fun TurniFrequentiStep(viewModel: OnBoardingPianificaViewModel) {
     val azienda by userViewModel.azienda.collectAsState()
 
     LaunchedEffect(azienda) {
-        viewModel.generaTurniAi(azienda.Nome)
+        if (!checkTurniPronti) {  // Solo se i turni non sono ancora pronti
+            viewModel.generaTurniAi(azienda.Nome)
+        }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -334,46 +310,21 @@ fun TurniFrequentiStep(viewModel: OnBoardingPianificaViewModel) {
                 }
 
                 if (!checkTurniPronti) {
-                    items(6) { ShiftCard(loading = true) }
+                    items(6) {
+                        UniversalCard(loading = true)
+                    }
                 } else {
                     items(turni) { turno ->
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(12.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = turno.nome,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                    Text(
-                                        text = "${turno.oraInizio} - ${turno.oraFine}",
-                                        style = MaterialTheme.typography.bodySmall
-                                    )
-                                }
-
-                                IconButton(
-                                    onClick = { viewModel.onRimuoviTurnoById(turno.id) },
-                                    modifier = Modifier.size(24.dp)
-                                ) {
-                                    Icon(
-                                        Icons.Default.Delete,
-                                        contentDescription = "Rimuovi",
-                                        tint = MaterialTheme.colorScheme.error
-                                    )
-                                }
-                            }
-                        }
+                        UniversalCard(
+                            loading = false,
+                            title = turno.nome,
+                            subtitle = "${turno.oraInizio} - ${turno.oraFine}",
+                            showDelete = true,
+                            onDelete = { viewModel.onRimuoviTurnoById(turno.id) }
+                        )
                     }
                 }
+
 
                 item {
                     Spacer(modifier = Modifier.height(16.dp))
@@ -451,7 +402,7 @@ fun TurniFrequentiStep(viewModel: OnBoardingPianificaViewModel) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                OutlinedButton(onClick = { viewModel.setStep(2) }) {
+                OutlinedButton(onClick = { viewModel.setStep(1) }) {
                     Text("Indietro")
                 }
 

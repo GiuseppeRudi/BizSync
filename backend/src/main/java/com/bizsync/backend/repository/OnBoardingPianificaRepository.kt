@@ -1,6 +1,8 @@
 package com.bizsync.backend.repository
 
 import android.util.Log
+import com.bizsync.backend.prompts.AiPrompts
+import com.bizsync.backend.prompts.OnBoardingPianificaPrompts
 import com.bizsync.model.domain.AreaLavoro
 import com.bizsync.model.domain.TurnoFrequente
 import com.google.firebase.ai.GenerativeModel
@@ -13,30 +15,13 @@ class OnBoardingPianificaRepository @Inject constructor(private val json : Json 
 
     suspend fun setAreaAi(nomeAzienda: String): List<AreaLavoro> {
         return try {
-            val prompt = """
-            Sei un esperto di organizzazione aziendale. 
-            
-            COMPITO: Genera esattamente 10 aree di lavoro tipiche per un'azienda di tipo "$nomeAzienda".
-            
-            FORMATO RICHIESTO: Rispondi ESCLUSIVAMENTE con un array JSON valido, senza alcun testo aggiuntivo.
-            
-            ESEMPIO DI OUTPUT RICHIESTO:
-            [
-                {"nomeArea": "Reception"},
-                {"nomeArea": "Vendite"},
-            ]
-            
-            IMPORTANTE: Rispondi SOLO con il JSON, nient'altro.
-        """.trimIndent()
+            val prompt = OnBoardingPianificaPrompts.getAreaLavoroPrompt(nomeAzienda)
 
             val response = ai.generateContent(prompt).text ?: ""
             Log.d("TURNI_AI", "Risposta AI grezza: $response")
 
             // Pulisci la risposta da eventuali caratteri extra
-            val cleanResponse = response.trim()
-                .removePrefix("```json")
-                .removeSuffix("```")
-                .trim()
+            val cleanResponse = AiPrompts.cleanAiResponse(response)
 
             Log.d("TURNI_AI", "Risposta AI pulita: $cleanResponse")
 
@@ -77,30 +62,13 @@ class OnBoardingPianificaRepository @Inject constructor(private val json : Json 
 
     suspend fun setTurniAi(nomeAzienda: String): List<TurnoFrequente> {
         return try {
-            val prompt = """
-            Sei un esperto di organizzazione aziendale.
-            
-            COMPITO: Genera esattamente 6 turni frequenti tipici per un'azienda di tipo "$nomeAzienda".
-            
-            FORMATO RICHIESTO: Rispondi ESCLUSIVAMENTE con un array JSON valido, senza alcun testo aggiuntivo.
-            
-            ESEMPIO DI OUTPUT RICHIESTO:
-            [
-                {"nome": "Mattina", "oraInizio": "08:00", "oraFine": "12:00"},
-                {"nome": "Pomeriggio", "oraInizio": "13:00", "oraFine": "17:00"},
-            ]
-            
-            IMPORTANTE: Rispondi SOLO con il JSON, nient'altro.
-        """.trimIndent()
+            val prompt = OnBoardingPianificaPrompts.getTurniFrequentiPrompt(nomeAzienda)
 
             val response = ai.generateContent(prompt).text ?: ""
             Log.d("TURNI_AI", "Risposta AI grezza: $response")
 
             // Pulisci la risposta da eventuali caratteri extra
-            val cleanResponse = response.trim()
-                .removePrefix("```json")
-                .removeSuffix("```")
-                .trim()
+            val cleanResponse = AiPrompts.cleanAiResponse(response)
 
             Log.d("TURNI_AI", "Risposta AI pulita: $cleanResponse")
 

@@ -9,9 +9,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bizsync.model.domain.Turno
-import com.bizsync.ui.viewmodels.TurnoDialogViewModel
+import com.bizsync.ui.viewmodels.PianificaViewModel
+import com.bizsync.ui.viewmodels.TurnoViewModel
 import com.google.firebase.Timestamp
 import java.time.LocalDate
 import java.time.ZoneId
@@ -21,11 +23,12 @@ import java.util.Date
 fun TurnoDialog(
     showDialog: Boolean,
     giornoSelezionato: LocalDate?,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    pianificaVM: PianificaViewModel
 ) {
-    val turnoVM: TurnoDialogViewModel = viewModel()
-    val text by turnoVM.text.collectAsState()
+    val turnoVM: TurnoViewModel = hiltViewModel()
 
+    val text by turnoVM.text.collectAsState()
     var selectedArea by remember { mutableStateOf("Logistica") }
     var startHour by remember { mutableStateOf("") }
     var endHour by remember { mutableStateOf("") }
@@ -109,7 +112,7 @@ fun TurnoDialog(
                 onClick = {
                     if (text.isNotEmpty() && giornoSelezionato != null) {
                         val timestamp = localDateToTimestamp(giornoSelezionato)
-                        turnoVM.aggiungiturno(
+                        turnoVM.aggiungiturno(pianificaVM,
                             Turno(
                                 idDocumento = "",
                                 nome = text,
@@ -171,10 +174,3 @@ fun localDateToTimestamp(localDate: LocalDate): Timestamp {
     return Timestamp(date)
 }
 
-@Preview
-@Composable
-fun DialogAddShifPreview() {
-    var giornoSelezionato = LocalDate.now()
-    var showDialog by remember { mutableStateOf(true) }
-    TurnoDialog(showDialog = showDialog,giornoSelezionato, onDismiss = { showDialog = false })
-}

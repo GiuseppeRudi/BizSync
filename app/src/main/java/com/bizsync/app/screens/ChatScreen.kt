@@ -8,7 +8,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import com.bizsync.ui.components.ShiftCard
 import com.bizsync.ui.viewmodels.ChatScreenViewModel
 import androidx.compose.runtime.getValue
 
@@ -16,10 +15,9 @@ import androidx.compose.runtime.getValue
 fun ChatScreen() {
 
     val viewModel = ChatScreenViewModel()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val shifts by viewModel.shifts.collectAsState()
 
-    SetupTutorialScreen(onSetupComplete = { /* Gestisci l'evento di completamento della configurazione qui */ })
+
+    SetupPianificaScreen(onSetupComplete = { /* Gestisci l'evento di completamento della configurazione qui */ })
 
 //    LazyColumn {
 //        if (isLoading) {
