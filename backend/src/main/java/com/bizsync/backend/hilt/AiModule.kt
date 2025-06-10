@@ -1,4 +1,4 @@
-package com.bizsync.ui.hilt
+package com.bizsync.backend.hilt
 
 import com.google.firebase.Firebase
 import com.google.firebase.ai.GenerativeModel

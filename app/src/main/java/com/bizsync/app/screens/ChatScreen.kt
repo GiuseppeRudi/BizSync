@@ -19,26 +19,29 @@ fun ChatScreen() {
     val isLoading by viewModel.isLoading.collectAsState()
     val shifts by viewModel.shifts.collectAsState()
 
-    LazyColumn {
-        if (isLoading) {
-            // Mostra 3 shimmer card placeholder
-            items(3) {
-                ShiftCard(loading = true)
-            }
-        } else {
-            items(shifts) { shift ->
-                AnimatedVisibility(
-                    visible = true,
-                    enter = fadeIn() + slideInVertically(),
-                    exit = fadeOut()
-                ) {
-                    ShiftCard(
-                        loading = false,
-                        title = shift.title,
-                        time = shift.time
-                    )
-                }
-            }
-        }
-    }
+    SetupTutorialScreen(onSetupComplete = { /* Gestisci l'evento di completamento della configurazione qui */ })
+
+//    LazyColumn {
+//        if (isLoading) {
+//            // Mostra 3 shimmer card placeholder
+//            items(3) {
+//                ShiftCard(loading = true)
+//            }
+//        } else {
+//            items(shifts) { shift ->
+//                AnimatedVisibility(
+//                    visible = true,
+//                    enter = fadeIn() + slideInVertically(),
+//                    exit = fadeOut()
+//                ) {
+//                    ShiftCard(
+//                        loading = false,
+//                        title = shift.title,
+//                        time = shift.time
+//                    )
+//                }
+//            }
+//        }
+//    }
+
 }

@@ -2,7 +2,7 @@
 accompanistPlaceholderMaterial3 = "0.31.5-beta"
 agp = "8.10.1"
 hiltNavigationCompose = "1.2.0"
-kotlin = "2.0.21"
+kotlin = "2.1.20"
 coreKtx = "1.15.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
@@ -12,7 +12,7 @@ appcompat = "1.7.0"
 preference = "1.2.0"
 material = "1.4.0"
 navigationCompose  = "2.8.0"
-
+kotlinxSerializationJson = "1.6.3"
 firebaseUi  = "8.0.2"
 composeBom = "2024.09.00"
 firebaseBom = "33.15.0"
@@ -33,6 +33,9 @@ androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version
 androidx-preference = { group = "androidx.preference", name = "preference", version.ref = "preference" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-navigation-compose = { group = "androidx.navigation" ,  name = "navigation-compose",  version.ref = "navigationCompose"}
+
+# JSON SERIALIZATION
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version = "1.6.3" }
 
 # LIFECYCLE
 androidx-lifecycle-viewmodel = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycleViewModel" }
@@ -73,7 +76,7 @@ coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coi
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version = "2.1.20" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 android-library = { id = "com.android.library", version.ref = "agp" }
-
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

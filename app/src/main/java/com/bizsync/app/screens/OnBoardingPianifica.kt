@@ -1,7 +1,5 @@
 package com.bizsync.app.screens
 
-
-
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -18,28 +16,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.bizsync.app.navigation.LocalUserViewModel
+import com.bizsync.ui.components.ShiftCard
+import com.bizsync.ui.viewmodels.OnBoardingPianificaViewModel
+import com.google.accompanist.placeholder.PlaceholderHighlight
+import com.google.accompanist.placeholder.placeholder
+import com.google.accompanist.placeholder.shimmer
 
-data class AreaLavoro(
-    val id: String = "",
-    val nome: String = "",
-    val descrizione: String = ""
-)
-
-data class TurnoFrequente(
-    val id: String = "",
-    val nome: String = "",
-    val oraInizio: String = "",
-    val oraFine: String = "",
-    val descrizione: String = ""
-)
-
-
-@Preview
-@Composable
-fun setupPreview()
-{
-    SetupTutorialScreen(onSetupComplete = {})
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,113 +30,36 @@ fun SetupTutorialScreen(
     onSetupComplete: () -> Unit,
 ) {
 
-    val areeDefault = listOf(
-        "Reception",
-        "Cucina",
-        "Sala",
-        "Bar",
-        "Magazzino",
-        "Pulizie"
-    )
+    val userViewModel = LocalUserViewModel.current
+    val azienda by userViewModel.azienda.collectAsState()
+    val viewmodel : OnBoardingPianificaViewModel = hiltViewModel()
+    val currentStep by viewmodel.currentStep.collectAsState()
 
-    val turniDefault = listOf(
-        TurnoFrequente("", "Mattina", "08:00", "14:00", "Turno mattutino"),
-        TurnoFrequente("", "Pomeriggio", "14:00", "20:00", "Turno pomeridiano"),
-        TurnoFrequente("", "Sera", "20:00", "02:00", "Turno serale"),
-        TurnoFrequente("", "Notte", "22:00", "06:00", "Turno notturno")
-    )
-
-    var currentStep by remember { mutableIntStateOf(0) }
-    var areeSelezionate by remember { mutableStateOf(mutableSetOf<String>()) }
-    var areePersonalizzate by remember { mutableStateOf(mutableListOf<String>()) }
-    var turniFrequenti by remember { mutableStateOf(turniDefault.toMutableList()) }
-    var nuovaArea by remember { mutableStateOf("") }
-    var nuovoTurno by remember { mutableStateOf(TurnoFrequente()) }
+    LaunchedEffect(azienda) {
+        viewmodel.generaTurniAi(azienda.Nome)
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Progress indicator
         LinearProgressIndicator(
             progress = { (currentStep + 1) / 3f },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 24.dp)
         )
-
         when (currentStep) {
-            0 -> {
-                // Step 1: Benvenuto e spiegazione
-                WelcomeStep(onNext = { currentStep = 1 })
-            }
-            1 -> {
-                // Step 2: Configurazione Aree di Lavoro
-                AreeLavoroStep(
-                    areeDefault = areeDefault,
-                    areeSelezionate = areeSelezionate,
-                    areePersonalizzate = areePersonalizzate,
-                    nuovaArea = nuovaArea,
-                    onAreaToggle = { area ->
-                        if (areeSelezionate.contains(area)) {
-                            areeSelezionate.remove(area)
-                        } else {
-                            areeSelezionate.add(area)
-                        }
-                    },
-                    onNuovaAreaChange = { nuovaArea = it },
-                    onAggiungiArea = {
-                        if (nuovaArea.isNotBlank()) {
-                            areePersonalizzate.add(nuovaArea)
-                            nuovaArea = ""
-                        }
-                    },
-                    onRimuoviArea = { area ->
-                        areePersonalizzate.remove(area)
-                    },
-                    onNext = {
-                        if (areeSelezionate.isNotEmpty() || areePersonalizzate.isNotEmpty()) {
-                            currentStep = 2
-                        }
-                    },
-                    onBack = { currentStep = 0 }
-                )
-            }
-            2 -> {
-                // Step 3: Configurazione Turni Frequenti
-                TurniFrequentiStep(
-                    turniFrequenti = turniFrequenti,
-                    nuovoTurno = nuovoTurno,
-                    onTurnoChange = { nuovoTurno = it },
-                    onAggiungiTurno = {
-                        if (nuovoTurno.nome.isNotBlank() &&
-                            nuovoTurno.oraInizio.isNotBlank() &&
-                            nuovoTurno.oraFine.isNotBlank()) {
-                            turniFrequenti.add(nuovoTurno)
-                            nuovoTurno = TurnoFrequente()
-                        }
-                    },
-                    onRimuoviTurno = { turno ->
-                        turniFrequenti.remove(turno)
-                    },
-                    onComplete = {
-                        // Salva i dati e completa il setup
-                        // setupViewModel.salvaConfigurazioneIniziale(
-//                            aree = (areeSelezionate + areePersonalizzate).toList(),
-//                            turni = turniFrequenti
-//                        )
-                        onSetupComplete()
-                    },
-                    onBack = { currentStep = 1 }
-                )
-            }
+            0 -> { WelcomeStep(viewmodel) }
+            1 -> { AreeLavoroStep(viewmodel) }
+            2 -> { TurniFrequentiStep(viewmodel) }
         }
     }
 }
 
 @Composable
-fun WelcomeStep(onNext: () -> Unit) {
+fun WelcomeStep(viewModel: OnBoardingPianificaViewModel) {
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -196,7 +102,7 @@ fun WelcomeStep(onNext: () -> Unit) {
         Spacer(modifier = Modifier.height(48.dp))
 
         Button(
-            onClick = onNext,
+            onClick = {viewModel.setStep(1)},
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Inizia Configurazione")
@@ -205,18 +111,18 @@ fun WelcomeStep(onNext: () -> Unit) {
 }
 
 @Composable
-fun AreeLavoroStep(
-    areeDefault: List<String>,
-    areeSelezionate: MutableSet<String>,
-    areePersonalizzate: MutableList<String>,
-    nuovaArea: String,
-    onAreaToggle: (String) -> Unit,
-    onNuovaAreaChange: (String) -> Unit,
-    onAggiungiArea: () -> Unit,
-    onRimuoviArea: (String) -> Unit,
-    onNext: () -> Unit,
-    onBack: () -> Unit
-) {
+fun AreeLavoroStep(viewModel: OnBoardingPianificaViewModel) {
+
+    val areeDefaultAttive by viewModel.aree.collectAsState()
+    val nuovaArea by viewModel.nuovaArea.collectAsState()
+    val checkAreeDefualt by viewModel.listaPronta.collectAsState()
+
+    // Calcolo del numero totale di aree
+    val totalAree = areeDefaultAttive.size
+    val maxAree = 10
+    val canAddArea = totalAree < maxAree
+
+
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -227,9 +133,17 @@ fun AreeLavoroStep(
         )
 
         Text(
-            text = "Seleziona le aree predefinite o aggiungi le tue personalizzate",
+            text = "Rimuovi aree predefinite non necessarie o aggiungi le tue personalizzate (massimo $maxAree aree)",
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(vertical = 8.dp)
+        )
+
+        // Indicatore numero aree
+        Text(
+            text = "Aree attive: $totalAree/$maxAree",
+            style = MaterialTheme.typography.bodySmall,
+            color = if (totalAree >= maxAree) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(bottom = 8.dp)
         )
 
         LazyColumn(
@@ -245,15 +159,42 @@ fun AreeLavoroStep(
                 )
             }
 
-            items(areeDefault) { area ->
-                FilterChip(
-                    onClick = { onAreaToggle(area) },
-                    label = { Text(area) },
-                    selected = areeSelezionate.contains(area),
+            if (!checkAreeDefualt)
+            {
+                items(10){ item ->
+                    ShiftCard(loading = true)
+                }
+            }
+
+            items(areeDefaultAttive) { area ->
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 2.dp)
-                )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = area.nomeArea,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+
+                        IconButton(
+                            onClick = { viewModel.onRimuoviAreaById(area.id) }
+                        ) {
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = "Rimuovi $area",
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                }
             }
 
             item {
@@ -269,61 +210,55 @@ fun AreeLavoroStep(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     OutlinedTextField(
-                        value = nuovaArea,
-                        onValueChange = onNuovaAreaChange,
+                        value = nuovaArea.nomeArea,
+                        onValueChange = { viewModel.onNuovaAreaChangeName(it) },
                         label = { Text("Nome area") },
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    IconButton(onClick = onAggiungiArea) {
-                        Icon(Icons.Default.Add, contentDescription = "Aggiungi")
-                    }
-                }
-            }
-
-            if (areePersonalizzate.isNotEmpty()) {
-                item {
-                    Text(
-                        text = "Aree Personalizzate:",
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
-                }
-
-                items(areePersonalizzate) { area ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 2.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(area)
-                            IconButton(onClick = { onRimuoviArea(area) }) {
-                                Icon(Icons.Default.Delete, contentDescription = "Rimuovi")
+                        modifier = Modifier.weight(1f),
+                        enabled = totalAree < maxAree,
+                        supportingText = {
+                            if (totalAree >= maxAree) {
+                                Text(
+                                    "Limite massimo raggiunto. Rimuovi un'area per aggiungerne una nuova.",
+                                    color = MaterialTheme.colorScheme.error
+                                )
                             }
                         }
+                    )
+
+                    IconButton(
+                        onClick = {
+                            viewModel.aggiungiArea()
+                            viewModel.resetNuovaArea()
+                        },
+                        enabled = canAddArea
+                    ) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = "Aggiungi",
+                            tint = if (canAddArea) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                        )
                     }
                 }
             }
+
         }
 
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            OutlinedButton(onClick = onBack) {
+            OutlinedButton(onClick = { viewModel.setStep(0)}) {
                 Text("Indietro")
             }
 
             Button(
-                onClick = onNext,
-                enabled = areeSelezionate.isNotEmpty() || areePersonalizzate.isNotEmpty()
+                onClick = {
+                    // Qui puoi salvare le aree selezionate nel ViewModel
+                    // viewModel.salvaAreeSelezionate(areeDefaultAttive + areePersonalizzate)
+                    viewModel.setStep(2)
+                },
+                enabled = totalAree > 0
             ) {
                 Text("Continua")
             }
@@ -331,158 +266,9 @@ fun AreeLavoroStep(
     }
 }
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TurniFrequentiStep(
-    turniFrequenti: MutableList<TurnoFrequente>,
-    nuovoTurno: TurnoFrequente,
-    onTurnoChange: (TurnoFrequente) -> Unit,
-    onAggiungiTurno: () -> Unit,
-    onRimuoviTurno: (TurnoFrequente) -> Unit,
-    onComplete: () -> Unit,
-    onBack: () -> Unit
-) {
-    Column(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        Text(
-            text = "Configura i Turni Frequenti",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold
-        )
+fun TurniFrequentiStep(viewModel: OnBoardingPianificaViewModel) {
 
-        Text(
-            text = "I turni qui configurati saranno suggeriti durante la creazione",
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(vertical = 8.dp)
-        )
-
-        LazyColumn(
-            modifier = Modifier
-                .weight(1f)
-                .padding(vertical = 8.dp)
-        ) {
-            items(turniFrequenti) { turno ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = turno.nome,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Text(
-                                text = "${turno.oraInizio} - ${turno.oraFine}",
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                            if (turno.descrizione.isNotBlank()) {
-                                Text(
-                                    text = turno.descrizione,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-
-                        IconButton(onClick = { onRimuoviTurno(turno) }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Rimuovi")
-                        }
-                    }
-                }
-            }
-
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = "Aggiungi Nuovo Turno:",
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
-
-                Card(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = nuovoTurno.nome,
-                            onValueChange = { onTurnoChange(nuovoTurno.copy(nome = it)) },
-                            label = { Text("Nome turno") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            OutlinedTextField(
-                                value = nuovoTurno.oraInizio,
-                                onValueChange = { onTurnoChange(nuovoTurno.copy(oraInizio = it)) },
-                                label = { Text("Ora inizio (HH:MM)") },
-                                modifier = Modifier.weight(1f),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                            )
-
-                            OutlinedTextField(
-                                value = nuovoTurno.oraFine,
-                                onValueChange = { onTurnoChange(nuovoTurno.copy(oraFine = it)) },
-                                label = { Text("Ora fine (HH:MM)") },
-                                modifier = Modifier.weight(1f),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        OutlinedTextField(
-                            value = nuovoTurno.descrizione,
-                            onValueChange = { onTurnoChange(nuovoTurno.copy(descrizione = it)) },
-                            label = { Text("Descrizione (opzionale)") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Button(
-                            onClick = onAggiungiTurno,
-                            modifier = Modifier.fillMaxWidth(),
-                            enabled = nuovoTurno.nome.isNotBlank() &&
-                                    nuovoTurno.oraInizio.isNotBlank() &&
-                                    nuovoTurno.oraFine.isNotBlank()
-                        ) {
-                            Text("Aggiungi Turno")
-                        }
-                    }
-                }
-            }
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            OutlinedButton(onClick = onBack) {
-                Text("Indietro")
-            }
-
-            Button(
-                onClick = onComplete,
-                enabled = turniFrequenti.isNotEmpty()
-            ) {
-                Text("Completa Setup")
-            }
-        }
-    }
 }
