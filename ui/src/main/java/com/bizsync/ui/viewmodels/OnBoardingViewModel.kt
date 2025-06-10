@@ -32,30 +32,47 @@ class OnBoardingPianificaViewModel @Inject constructor(private val OnBoardingPia
     private val _nomeAzienda = MutableStateFlow<String>("")
     val nomeAzienda : StateFlow<String> = _nomeAzienda
 
-    private val _listaPronta = MutableStateFlow<Boolean>(false)
-    val listaPronta : StateFlow<Boolean> = _listaPronta
+    private val _areePronte = MutableStateFlow<Boolean>(false)
+    val areePronte : StateFlow<Boolean> = _areePronte
+
+    private val _turniPronti = MutableStateFlow<Boolean>(false)
+    val turniPronti : StateFlow<Boolean> = _turniPronti
 
     fun setStep(step: Int) {
         _currentStep.value = step
+    }
+
+    fun generaAreeAi(name : String){
+        _nomeAzienda.value = name
+
+        viewModelScope.launch {
+            val aree = OnBoardingPianificaRepository.setAreaAi(nomeAzienda.value)
+
+            if(aree.isNotEmpty())
+            {
+
+                _aree.value = aree
+                _areePronte.value = true
+            }
+        }
+
     }
 
     fun generaTurniAi(name : String){
         _nomeAzienda.value = name
 
         viewModelScope.launch {
-            val aree = OnBoardingPianificaRepository.setTurniAi(nomeAzienda.value)
+            val turni = OnBoardingPianificaRepository.setTurniAi(nomeAzienda.value)
 
-            if(aree.isNotEmpty())
+            if(turni.isNotEmpty())
             {
 
-                _aree.value = aree
-                _listaPronta.value = true
+                _turni.value = turni
+                _turniPronti.value = true
             }
         }
 
     }
-
-
 
     private val _turni = MutableStateFlow<List<TurnoFrequente>>(emptyList())
     val turni : StateFlow<List<TurnoFrequente>> = _turni
@@ -88,20 +105,26 @@ class OnBoardingPianificaViewModel @Inject constructor(private val OnBoardingPia
         _aree.value = _aree.value.filter { it.id != idDaRimuovere }
     }
 
-    val areeDefault = listOf(
-        "Reception",
-        "Cucina",
-        "Sala",
-        "Bar",
-        "Magazzino",
-        "Pulizie"
-    )
 
-    val turniDefault = listOf(
-        TurnoFrequente("", "Mattina", "08:00", "14:00", "Turno mattutino"),
-        TurnoFrequente("", "Pomeriggio", "14:00", "20:00", "Turno pomeridiano"),
-        TurnoFrequente("", "Sera", "20:00", "02:00", "Turno serale"),
-        TurnoFrequente("", "Notte", "22:00", "06:00", "Turno notturno")
-    )
+    fun onRimuoviTurnoById(idDaRimuovere: String) {
+        _turni.value = _turni.value.filter { it.id != idDaRimuovere }
+    }
 
+
+    fun onNewTurnoChangeFinishDate(finishDate: String) {
+        _nuovoTurno.value = _nuovoTurno.value.copy(oraFine = finishDate)
+    }
+
+    fun onNewTurnoChangeStartDate(startDate: String) {
+        _nuovoTurno.value = _nuovoTurno.value.copy(oraInizio = startDate)
+    }
+
+    fun onNewTurnoChangeName(name: String) {
+        _nuovoTurno.value = _nuovoTurno.value.copy(nome = name)
+    }
+
+    fun aggiungiTurno() {
+        _turni.value = _turni.value + _nuovoTurno.value
+        _nuovoTurno.value = TurnoFrequente()
+    }
 }

@@ -119,7 +119,7 @@ fun WelcomeStep(viewModel: OnBoardingPianificaViewModel) {
 fun AreeLavoroStep(viewModel: OnBoardingPianificaViewModel) {
     val areeDefaultAttive by viewModel.aree.collectAsState()
     val nuovaArea by viewModel.nuovaArea.collectAsState()
-    val checkAreeDefualt by viewModel.listaPronta.collectAsState()
+    val checkAreeDefualt by viewModel.areePronte.collectAsState()
 
     val totalAree = areeDefaultAttive.size
     val maxAree = 10
@@ -129,7 +129,7 @@ fun AreeLavoroStep(viewModel: OnBoardingPianificaViewModel) {
     val azienda by userViewModel.azienda.collectAsState()
 
     LaunchedEffect(azienda) {
-        viewModel.generaTurniAi(azienda.Nome)
+        viewModel.generaAreeAi(azienda.Nome)
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -279,150 +279,189 @@ fun AreeLavoroStep(viewModel: OnBoardingPianificaViewModel) {
 }
 
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TurniFrequentiStep(viewModel: OnBoardingPianificaViewModel) {
-//    Column(
-//        modifier = Modifier.fillMaxSize()
-//    ) {
-//        Text(
-//            text = "Configura i Turni Frequenti",
-//            style = MaterialTheme.typography.headlineSmall,
-//            fontWeight = FontWeight.Bold
-//        )
-//
-//        Text(
-//            text = "I turni qui configurati saranno suggeriti durante la creazione",
-//            style = MaterialTheme.typography.bodyMedium,
-//            modifier = Modifier.padding(vertical = 8.dp)
-//        )
-//
-//        LazyColumn(
-//            modifier = Modifier
-//                .weight(1f)
-//                .padding(vertical = 8.dp)
-//        ) {
-//            items(turniFrequenti) { turno ->
-//                Card(
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                        .padding(vertical = 4.dp)
-//                ) {
-//                    Row(
-//                        modifier = Modifier
-//                            .fillMaxWidth()
-//                            .padding(12.dp),
-//                        horizontalArrangement = Arrangement.SpaceBetween,
-//                        verticalAlignment = Alignment.CenterVertically
-//                    ) {
-//                        Column(modifier = Modifier.weight(1f)) {
-//                            Text(
-//                                text = turno.nome,
-//                                fontWeight = FontWeight.Medium
-//                            )
-//                            Text(
-//                                text = "${turno.oraInizio} - ${turno.oraFine}",
-//                                style = MaterialTheme.typography.bodySmall
-//                            )
-//                            if (turno.descrizione.isNotBlank()) {
-//                                Text(
-//                                    text = turno.descrizione,
-//                                    style = MaterialTheme.typography.bodySmall,
-//                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-//                                )
-//                            }
-//                        }
-//
-//                        IconButton(onClick = { onRimuoviTurno(turno) }) {
-//                            Icon(Icons.Default.Delete, contentDescription = "Rimuovi")
-//                        }
-//                    }
-//                }
-//            }
-//
-//            item {
-//                Spacer(modifier = Modifier.height(16.dp))
-//                Text(
-//                    text = "Aggiungi Nuovo Turno:",
-//                    fontWeight = FontWeight.Medium,
-//                    modifier = Modifier.padding(vertical = 8.dp)
-//                )
-//
-//                Card(
-//                    modifier = Modifier.fillMaxWidth()
-//                ) {
-//                    Column(
-//                        modifier = Modifier.padding(16.dp)
-//                    ) {
-//                        OutlinedTextField(
-//                            value = nuovoTurno.nome,
-//                            onValueChange = { onTurnoChange(nuovoTurno.copy(nome = it)) },
-//                            label = { Text("Nome turno") },
-//                            modifier = Modifier.fillMaxWidth()
-//                        )
-//
-//                        Spacer(modifier = Modifier.height(8.dp))
-//
-//                        Row(
-//                            modifier = Modifier.fillMaxWidth(),
-//                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-//                        ) {
-//                            OutlinedTextField(
-//                                value = nuovoTurno.oraInizio,
-//                                onValueChange = { onTurnoChange(nuovoTurno.copy(oraInizio = it)) },
-//                                label = { Text("Ora inizio (HH:MM)") },
-//                                modifier = Modifier.weight(1f),
-//                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-//                            )
-//
-//                            OutlinedTextField(
-//                                value = nuovoTurno.oraFine,
-//                                onValueChange = { onTurnoChange(nuovoTurno.copy(oraFine = it)) },
-//                                label = { Text("Ora fine (HH:MM)") },
-//                                modifier = Modifier.weight(1f),
-//                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-//                            )
-//                        }
-//
-//                        Spacer(modifier = Modifier.height(8.dp))
-//
-//                        OutlinedTextField(
-//                            value = nuovoTurno.descrizione,
-//                            onValueChange = { onTurnoChange(nuovoTurno.copy(descrizione = it)) },
-//                            label = { Text("Descrizione (opzionale)") },
-//                            modifier = Modifier.fillMaxWidth()
-//                        )
-//
-//                        Spacer(modifier = Modifier.height(12.dp))
-//
-//                        Button(
-//                            onClick = onAggiungiTurno,
-//                            modifier = Modifier.fillMaxWidth(),
-//                            enabled = nuovoTurno.nome.isNotBlank() &&
-//                                    nuovoTurno.oraInizio.isNotBlank() &&
-//                                    nuovoTurno.oraFine.isNotBlank()
-//                        ) {
-//                            Text("Aggiungi Turno")
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//
-//        Row(
-//            modifier = Modifier.fillMaxWidth(),
-//            horizontalArrangement = Arrangement.SpaceBetween
-//        ) {
-//            OutlinedButton(onClick = onBack) {
-//                Text("Indietro")
-//            }
-//
-//            Button(
-//                onClick = onComplete,
-//                enabled = turniFrequenti.isNotEmpty()
-//            ) {
-//                Text("Completa Setup")
-//            }
-//        }
-//    }
+    val turni by viewModel.turni.collectAsState()
+    val nuovoTurno by viewModel.nuovoTurno.collectAsState()
+    val checkTurniPronti by viewModel.turniPronti.collectAsState()
+
+    val totalTurni = turni.size
+    val maxTurni = 6
+    val canAddTurno = totalTurni < maxTurni
+
+    val userViewModel = LocalUserViewModel.current
+    val azienda by userViewModel.azienda.collectAsState()
+
+    LaunchedEffect(azienda) {
+        viewModel.generaTurniAi(azienda.Nome)
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = "Configura i Turni Frequenti",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+
+            Text(
+                text = "I turni qui configurati saranno suggeriti durante la creazione (massimo $maxTurni turni)",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+
+            Text(
+                text = "Turni attivi: $totalTurni/$maxTurni",
+                style = MaterialTheme.typography.bodySmall,
+                color = if (totalTurni >= maxTurni) MaterialTheme.colorScheme.error
+                else MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(vertical = 8.dp)
+            ) {
+                item {
+                    AiBanner(azienda.Nome, checkTurniPronti)
+                }
+
+                if (!checkTurniPronti) {
+                    items(6) { ShiftCard(loading = true) }
+                } else {
+                    items(turni) { turno ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = turno.nome,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Text(
+                                        text = "${turno.oraInizio} - ${turno.oraFine}",
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+
+                                IconButton(
+                                    onClick = { viewModel.onRimuoviTurnoById(turno.id) },
+                                    modifier = Modifier.size(24.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        contentDescription = "Rimuovi",
+                                        tint = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Aggiungi Nuovo Turno:",
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = nuovoTurno.nome,
+                                onValueChange = { viewModel.onNewTurnoChangeName(it) },
+                                label = { Text("Nome turno") },
+                                modifier = Modifier.fillMaxWidth(),
+                                enabled = canAddTurno,
+                                supportingText = {
+                                    if (totalTurni >= maxTurni) {
+                                        Text(
+                                            "Limite massimo raggiunto. Rimuovi un turno per aggiungerne uno nuovo.",
+                                            color = MaterialTheme.colorScheme.error
+                                        )
+                                    }
+                                }
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                OutlinedTextField(
+                                    value = nuovoTurno.oraInizio,
+                                    onValueChange = { viewModel.onNewTurnoChangeStartDate(it) },
+                                    label = { Text("Ora inizio (HH:MM)") },
+                                    modifier = Modifier.weight(1f),
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    enabled = canAddTurno
+                                )
+
+                                OutlinedTextField(
+                                    value = nuovoTurno.oraFine,
+                                    onValueChange = { viewModel.onNewTurnoChangeFinishDate(it) },
+                                    label = { Text("Ora fine (HH:MM)") },
+                                    modifier = Modifier.weight(1f),
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    enabled = canAddTurno
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Button(
+                                onClick = { viewModel.aggiungiTurno() },
+                                modifier = Modifier.fillMaxWidth(),
+                                enabled = canAddTurno &&
+                                        nuovoTurno.nome.isNotBlank() &&
+                                        nuovoTurno.oraInizio.isNotBlank() &&
+                                        nuovoTurno.oraFine.isNotBlank()
+                            ) {
+                                Text("Aggiungi Turno")
+                            }
+                        }
+                    }
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                OutlinedButton(onClick = { viewModel.setStep(2) }) {
+                    Text("Indietro")
+                }
+
+                Button(
+                    onClick = { /* Azione completamento */ },
+                    enabled = totalTurni > 0
+                ) {
+                    Text("Completa Setup")
+                }
+            }
+        }
+    }
 }
