@@ -63,7 +63,7 @@ class MakeInviteViewModel @Inject constructor(private val invitoRepository: Invi
             try {
                 if(azienda!=null)
                 {
-                    invitoRepository.caricaInvito(Invito("",azienda.Nome,_email.value,azienda.idAzienda,_manager.value,_ruolo.value,_stato.value))
+                    invitoRepository.caricaInvito(Invito("",azienda.nome,_email.value,azienda.idAzienda,_manager.value,_ruolo.value,_stato.value))
                     _resultMessage.value = "Invito inviato con successo!"
                 }
                 else

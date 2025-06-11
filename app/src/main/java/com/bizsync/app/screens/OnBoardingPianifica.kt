@@ -19,7 +19,7 @@ import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.ui.components.AiBanner
 import com.bizsync.ui.components.UniversalCard
 import com.bizsync.ui.viewmodels.OnBoardingPianificaViewModel
-
+import com.bizsync.ui.viewmodels.ScaffoldViewModel
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -34,6 +34,7 @@ fun SetupPianificaScreen(
     val scaffoldVM = LocalScaffoldViewModel.current
     LaunchedEffect(Unit) {
         scaffoldVM.onFullScreenChanged(false)
+
     }
 
     Column(
@@ -50,7 +51,7 @@ fun SetupPianificaScreen(
         when (currentStep) {
             0 -> { WelcomeStep(viewModel) }
             1 -> { AreeLavoroStep(viewModel) }
-            2 -> { TurniFrequentiStep(viewModel) }
+            2 -> { TurniFrequentiStep(viewModel,onSetupComplete,scaffoldVM) }
         }
     }
 }
@@ -122,7 +123,7 @@ fun AreeLavoroStep(viewModel: OnBoardingPianificaViewModel) {
 
     LaunchedEffect(azienda) {
         if (!checkAreeDefualt) {
-            viewModel.generaAreeAi(azienda.Nome)
+            viewModel.generaAreeAi(azienda.nome)
         }
     }
 
@@ -166,7 +167,7 @@ fun AreeLavoroStep(viewModel: OnBoardingPianificaViewModel) {
                 }
 
                 item {
-                    AiBanner(azienda.Nome, checkAreeDefualt)
+                    AiBanner(azienda.nome, checkAreeDefualt)
                 }
 
                 if (!checkAreeDefualt) {
@@ -256,10 +257,11 @@ fun AreeLavoroStep(viewModel: OnBoardingPianificaViewModel) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TurniFrequentiStep(viewModel: OnBoardingPianificaViewModel) {
+fun TurniFrequentiStep(viewModel: OnBoardingPianificaViewModel, onSetupComplete: () -> Unit,scaffoldVM: ScaffoldViewModel) {
     val turni by viewModel.turni.collectAsState()
     val nuovoTurno by viewModel.nuovoTurno.collectAsState()
     val checkTurniPronti by viewModel.turniPronti.collectAsState()
+    val aree by viewModel.aree.collectAsState()
 
     val totalTurni = turni.size
     val maxTurni = 6
@@ -267,10 +269,18 @@ fun TurniFrequentiStep(viewModel: OnBoardingPianificaViewModel) {
 
     val userViewModel = LocalUserViewModel.current
     val azienda by userViewModel.azienda.collectAsState()
+    val onDone by viewModel.onDone.collectAsState()
 
     LaunchedEffect(azienda) {
         if (!checkTurniPronti) {  // Solo se i turni non sono ancora pronti
-            viewModel.generaTurniAi(azienda.Nome)
+            viewModel.generaTurniAi(azienda.nome)
+        }
+    }
+
+    LaunchedEffect(onDone) {
+        if (onDone) {
+            scaffoldVM.onFullScreenChanged(true)
+            onSetupComplete()
         }
     }
 
@@ -306,7 +316,7 @@ fun TurniFrequentiStep(viewModel: OnBoardingPianificaViewModel) {
                     .padding(vertical = 8.dp)
             ) {
                 item {
-                    AiBanner(azienda.Nome, checkTurniPronti)
+                    AiBanner(azienda.nome, checkTurniPronti)
                 }
 
                 if (!checkTurniPronti) {
@@ -407,7 +417,10 @@ fun TurniFrequentiStep(viewModel: OnBoardingPianificaViewModel) {
                 }
 
                 Button(
-                    onClick = { /* Azione completamento */ },
+                    onClick = {
+                        viewModel.onComplete(azienda.idAzienda) // Async
+                        userViewModel.updateTurniAree(aree, turni) // Sincrono (veloce)
+                    },
                     enabled = totalTurni > 0
                 ) {
                     Text("Completa Setup")
@@ -415,4 +428,6 @@ fun TurniFrequentiStep(viewModel: OnBoardingPianificaViewModel) {
             }
         }
     }
+
+
 }

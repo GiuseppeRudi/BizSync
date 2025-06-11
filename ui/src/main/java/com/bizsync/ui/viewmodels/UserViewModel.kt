@@ -7,14 +7,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.repository.AziendaRepository
 import com.bizsync.backend.repository.UserRepository
+import com.bizsync.model.domain.AreaLavoro
 import com.bizsync.model.domain.Azienda
 import com.bizsync.model.domain.Invito
+import com.bizsync.model.domain.TurnoFrequente
 import com.bizsync.model.domain.User
 import com.bizsync.model.sealedClass.RuoliAzienda
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -112,6 +115,15 @@ class UserViewModel @Inject constructor(private val userRepository: UserReposito
         _user.value.ruolo = invite.nomeRuolo
 
         fetchAzienda()
+    }
+
+    fun updateTurniAree(aree: List<AreaLavoro>, turni: List<TurnoFrequente>) {
+        _azienda.update { currentAzienda ->
+            currentAzienda.copy(
+                areeLavoro = aree,
+                turniFrequenti = turni
+            )
+        }
     }
 
     suspend  fun fetchAzienda(){

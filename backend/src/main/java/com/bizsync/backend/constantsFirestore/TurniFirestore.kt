@@ -6,7 +6,7 @@ object TurniFirestore {
 
     object Fields{
 
-        const val DATA = "data"
+        const val DATA = "giorno"
         const val NOME = "nome"
     }
 }

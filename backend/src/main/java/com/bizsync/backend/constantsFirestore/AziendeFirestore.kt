@@ -6,5 +6,7 @@ object AziendeFirestore {
 
     object Fields {
         const val NOME = "nome"
+        const val AREE = "areeLavoro"
+        const val TURNI = "turniFrequenti"
     }
 }

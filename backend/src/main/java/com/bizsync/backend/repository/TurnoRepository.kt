@@ -29,7 +29,6 @@ class TurnoRepository @Inject constructor(private val db: FirebaseFirestore) {
                 .get()
                 .await()
 
-
             if (result.isEmpty) {
                 Log.d("TURNI_DEBUG", "Nessun dato trovato nella collezione 'turni'")
             } else {

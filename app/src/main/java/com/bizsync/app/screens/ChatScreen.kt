@@ -16,9 +16,6 @@ fun ChatScreen() {
 
     val viewModel = ChatScreenViewModel()
 
-
-    SetupPianificaScreen(onSetupComplete = { /* Gestisci l'evento di completamento della configurazione qui */ })
-
 //    LazyColumn {
 //        if (isLoading) {
 //            // Mostra 3 shimmer card placeholder

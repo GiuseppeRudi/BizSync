@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.repository.TurnoRepository
+import com.bizsync.model.domain.Azienda
 import com.bizsync.model.domain.Turno
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -20,6 +21,29 @@ class PianificaViewModel @Inject constructor(private val turnoRepository: TurnoR
 
     private val _itemsList = MutableStateFlow<List<Turno>>(emptyList())
     val itemsList : StateFlow<List<Turno>> = _itemsList
+
+    private val _onBoardingDone = MutableStateFlow<Boolean?>(null)
+    val onBoardingDone : StateFlow<Boolean?> = _onBoardingDone
+
+    private val _azienda = MutableStateFlow<Azienda>(Azienda())
+    val azienda : StateFlow<Azienda> = _azienda
+
+    fun checkOnBoardingStatus(azienda : Azienda)
+    {
+        if(azienda.areeLavoro.isNotEmpty() && azienda.turniFrequenti.isNotEmpty())
+        {
+            _onBoardingDone.value = true
+        }
+        else
+        {
+            _onBoardingDone.value = false
+        }
+    }
+
+    fun setOnBoardingDone(value : Boolean)
+    {
+        _onBoardingDone.value = value
+    }
 
 
     fun addTurno(turno: Turno) {

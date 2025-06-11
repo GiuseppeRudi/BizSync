@@ -2,6 +2,7 @@ package com.bizsync.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bizsync.backend.repository.AziendaRepository
 import com.bizsync.backend.repository.OnBoardingPianificaRepository
 import com.bizsync.model.domain.AreaLavoro
 import com.bizsync.model.domain.TurnoFrequente
@@ -13,7 +14,7 @@ import javax.inject.Inject
 
 
 @HiltViewModel
-class OnBoardingPianificaViewModel @Inject constructor(private val OnBoardingPianificaRepository: OnBoardingPianificaRepository) : ViewModel() {
+class OnBoardingPianificaViewModel @Inject constructor(private val aziendaRepository : AziendaRepository, private val OnBoardingPianificaRepository: OnBoardingPianificaRepository) : ViewModel() {
 
     private val _currentStep = MutableStateFlow(0)
     val currentStep : StateFlow<Int> = _currentStep
@@ -119,5 +120,26 @@ class OnBoardingPianificaViewModel @Inject constructor(private val OnBoardingPia
     fun aggiungiTurno() {
         _turni.value = _turni.value + _nuovoTurno.value
         _nuovoTurno.value = TurnoFrequente()
+    }
+
+    private val _onDone = MutableStateFlow<Boolean>(false)
+    val onDone : StateFlow<Boolean> = _onDone
+
+    fun onComplete(idAzienda : String)
+    {
+        viewModelScope.launch {
+            val check = aziendaRepository.addPianificaSetup(idAzienda, aree.value,turni.value)
+
+            if (check)
+            {
+                _onDone.value = true
+            }
+
+            else
+            {
+                // GESTISCO L'ERRORE
+            }
+        }
+
     }
 }

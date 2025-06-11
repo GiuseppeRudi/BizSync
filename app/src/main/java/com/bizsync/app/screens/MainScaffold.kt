@@ -39,7 +39,7 @@ fun AppScaffold(onLogout: () -> Unit) {
                     TopAppBar(
                         title = {
                             Text(
-                                azienda.Nome,
+                                azienda.nome,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )

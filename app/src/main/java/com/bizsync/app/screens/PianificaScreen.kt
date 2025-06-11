@@ -19,10 +19,12 @@ import androidx.compose.ui.unit.dp
 import com.bizsync.ui.components.Calendar
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.runtime.getValue
-import android.util.Log
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import com.bizsync.app.OnboardingFlow
 import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.ui.components.RoundedButton
 import com.bizsync.ui.components.TurnoDialog
@@ -34,30 +36,50 @@ fun PianificaScreen() {
 
 
 
-    //SetupPianificaScreen(onSetupComplete = { /* Gestisci l'evento di completamento della configurazione qui */ })
 
     val pianificaVM : PianificaViewModel = hiltViewModel()
 
     val userviewmodel = LocalUserViewModel.current
 
-    val showDialogShift by pianificaVM.showDialogShift.collectAsState()
-    val selectionData by pianificaVM.selectionData.collectAsState()
-    val itemsList by pianificaVM.itemsList.collectAsState()
 
-    Log.d("TURNI_DEBUG", "SONO ENTRATO")
-    Log.d("VERIFICA_GIORNO", "GIORNO" + selectionData.toString())
+    val azienda by userviewmodel.azienda.collectAsState()
 
 
+    val onBoardingDone by pianificaVM.onBoardingDone.collectAsState()
 
 
-
-    // VA RIVISTO
-    val giornoSelezionato = selectionData
-    if (giornoSelezionato!=null)
-    {
-        pianificaVM.caricaturni(giornoSelezionato)
+    LaunchedEffect(Unit) {
+        pianificaVM.checkOnBoardingStatus(azienda)
     }
 
+
+    when (onBoardingDone) {
+        null  -> CircularProgressIndicator()
+        false -> SetupPianificaScreen(onSetupComplete = { pianificaVM.setOnBoardingDone(true) })
+        true  ->  PianificaCore(pianificaVM)
+
+    }
+
+}
+
+
+
+@Composable
+fun PianificaCore(
+    pianificaVM : PianificaViewModel,
+)
+{
+
+    val selectionData by pianificaVM.selectionData.collectAsState()
+    val itemsList by pianificaVM.itemsList.collectAsState()
+    val showDialogShift by pianificaVM.showDialogShift.collectAsState()
+
+
+    LaunchedEffect(selectionData) {
+        selectionData?.let { giorno ->
+            pianificaVM.caricaturni(giorno)
+        }
+    }
 
 
     Column(
@@ -67,11 +89,10 @@ fun PianificaScreen() {
 
         Calendar(pianificaVM)
 
-        Spacer(modifier = Modifier.height(8.dp)) // Spazio tra calendario e lista
+        Spacer(modifier = Modifier.height(8.dp))
 
         Box(){
 
-            // La lista occupa tutto lo spazio disponibile al centro
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -92,21 +113,20 @@ fun PianificaScreen() {
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp)) // Spazio tra lista e bottone
+            Spacer(modifier = Modifier.height(8.dp))
 
 
             RoundedButton(
-                giornoSelezionato,
+                selectionData,
                 onShow = { pianificaVM.onShowDialogShiftChanged(true)},
                 modifier = Modifier
-                    .align(Alignment.BottomEnd) // Posiziona il bottone in basso a destra
-                    .padding(16.dp) // Aggiunge margine dai bordi
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
             )
         }
 
     }
-    TurnoDialog(showDialog = showDialogShift, giornoSelezionato, onDismiss = { pianificaVM.onShowDialogShiftChanged(false)} , pianificaVM)
+    TurnoDialog(showDialog = showDialogShift, selectionData, onDismiss = { pianificaVM.onShowDialogShiftChanged(false)} , pianificaVM)
 
 }
-
 

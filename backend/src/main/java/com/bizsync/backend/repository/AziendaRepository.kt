@@ -2,8 +2,11 @@ package com.bizsync.backend.repository
 
 import android.util.Log
 import com.bizsync.backend.constantsFirestore.AziendeFirestore
+import com.bizsync.model.domain.AreaLavoro
 import com.bizsync.model.domain.Azienda
+import com.bizsync.model.domain.TurnoFrequente
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
@@ -24,6 +27,24 @@ class AziendaRepository @Inject constructor(private val db : FirebaseFirestore) 
         catch (e: Exception) {
             return null
             Log.e("AZIENDA_DEBUG", "Errore nel salvare l'azienda", e)
+        }
+    }
+
+    suspend fun addPianificaSetup(idAzienda: String, aree: List<AreaLavoro>, turni: List<TurnoFrequente>): Boolean {
+        return try {
+            db.collection(AziendeFirestore.COLLECTION)
+                .document(idAzienda)
+                .set(
+                    mapOf(
+                        AziendeFirestore.Fields.AREE to aree,
+                        AziendeFirestore.Fields.TURNI to turni
+                    ),
+                    SetOptions.merge()
+                )
+                .await()
+            true
+        } catch (e: Exception) {
+            false
         }
     }
 

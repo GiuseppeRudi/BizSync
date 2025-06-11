@@ -6,8 +6,10 @@ data class Azienda(
 
     @get:Exclude
     var idAzienda: String = "",
-    var Nome : String = ""
+    var nome : String = "",
+    var areeLavoro : List<AreaLavoro> = emptyList(),
+    var turniFrequenti : List<TurnoFrequente> = emptyList()
 ) {
     // Costruttore senza argomenti necessario per Firestore
-    constructor() : this("","")
+    constructor() : this("","",emptyList(),emptyList())
 }
