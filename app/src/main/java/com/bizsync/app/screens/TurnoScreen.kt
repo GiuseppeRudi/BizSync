@@ -2,8 +2,6 @@ package com.bizsync.app.screens
 
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -49,6 +47,18 @@ fun TurnoScreen(
     val turnoVM: TurnoViewModel = hiltViewModel()
     val azienda by userVM.azienda.collectAsState()
     val text by turnoVM.text.collectAsState()
+
+    var membriSelezionatiIds by remember { mutableStateOf(listOf<String>()) }
+    var showMembriDialog by remember { mutableStateOf(false) }
+
+    // Assumendo che tu abbia accesso ai membri dell'azienda
+    val membriTeam = turnoVM.membriDiProva // o da dove li recuperi
+
+    // Membri selezionati completi
+    val membriSelezionati = remember(membriSelezionatiIds, membriTeam) {
+        membriTeam.filter { it.id in membriSelezionatiIds }
+    }
+
 
     var startHour by remember { mutableStateOf("") }
     var endHour by remember { mutableStateOf("") }
@@ -163,11 +173,20 @@ fun TurnoScreen(
 
                 Spacer(Modifier.height(8.dp))
 
-                OutlinedTextField(
-                    value = membri,
-                    onValueChange = { membri = it },
-                    label = { Text("Membri assegnati (es. Mario, Luca)") },
-                    modifier = Modifier.fillMaxWidth()
+
+                // Sostituisci il vecchio OutlinedTextField con:
+                MembriSelezionatiSummary(
+                    membriSelezionati = membriSelezionati,
+                    onClick = { showMembriDialog = true }
+                )
+
+                // Dialog per selezione membri
+                MembriSelectionDialog(
+                    showDialog = showMembriDialog,
+                    tuttiIMembri = membriTeam,
+                    membriSelezionati = membriSelezionatiIds,
+                    onDismiss = { showMembriDialog = false },
+                    onMembriUpdated = { nuoviIds -> membriSelezionatiIds = nuoviIds }
                 )
 
                 Spacer(Modifier.height(8.dp))
