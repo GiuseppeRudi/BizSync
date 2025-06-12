@@ -1,13 +1,11 @@
 package com.bizsync.ui.viewmodels
 
 import android.util.Log
-import androidx.compose.runtime.State
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bizsync.backend.repository.InvitoRepository
 import com.bizsync.backend.repository.UserRepository
-import com.bizsync.model.domain.Invito
+import com.bizsync.domain.model.Invito
 import com.bizsync.ui.components.DialogStatusType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

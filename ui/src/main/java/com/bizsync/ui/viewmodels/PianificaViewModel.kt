@@ -4,9 +4,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.repository.TurnoRepository
-import com.bizsync.model.domain.Azienda
-import com.bizsync.model.domain.Turno
-import com.google.firebase.firestore.FirebaseFirestore
+import com.bizsync.domain.model.Azienda
+import com.bizsync.domain.model.Turno
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

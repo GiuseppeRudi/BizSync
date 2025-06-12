@@ -4,8 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.repository.AziendaRepository
 import com.bizsync.backend.repository.OnBoardingPianificaRepository
-import com.bizsync.model.domain.AreaLavoro
-import com.bizsync.model.domain.TurnoFrequente
+import com.bizsync.domain.model.AreaLavoro
+import com.bizsync.domain.model.TurnoFrequente
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

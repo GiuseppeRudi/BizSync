@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.bizsync.model.sealedClass.OnboardingScreen
+import com.bizsync.domain.constants.sealedClass.OnboardingScreen
 import com.bizsync.app.screens.AddAzienda
 import com.bizsync.app.screens.AddUtente
 import com.bizsync.app.screens.ChooseAzienda

@@ -3,8 +3,8 @@ package com.bizsync.backend.repository
 import android.util.Log
 import com.bizsync.backend.prompts.AiPrompts
 import com.bizsync.backend.prompts.OnBoardingPianificaPrompts
-import com.bizsync.model.domain.AreaLavoro
-import com.bizsync.model.domain.TurnoFrequente
+import com.bizsync.domain.model.AreaLavoro
+import com.bizsync.domain.model.TurnoFrequente
 import com.google.firebase.ai.GenerativeModel
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.serialization.json.Json

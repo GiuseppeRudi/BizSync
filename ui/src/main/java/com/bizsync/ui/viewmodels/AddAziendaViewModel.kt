@@ -2,12 +2,10 @@ package com.bizsync.ui.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import android.util.Log
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
 import com.bizsync.backend.repository.AziendaRepository
 import com.bizsync.backend.repository.UserRepository
-import com.bizsync.model.domain.Azienda
-import com.bizsync.model.sealedClass.RuoliAzienda
+import com.bizsync.domain.model.Azienda
+import com.bizsync.domain.constants.sealedClass.RuoliAzienda
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow

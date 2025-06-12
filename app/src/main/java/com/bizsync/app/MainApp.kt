@@ -11,7 +11,7 @@ import com.bizsync.ui.viewmodels.SplashViewModel
 import com.google.firebase.auth.FirebaseAuth
 import androidx.navigation.compose.rememberNavController
 import com.bizsync.app.navigation.OnboardingNavHost
-import com.bizsync.model.sealedClass.OnboardingScreen
+import com.bizsync.domain.constants.sealedClass.OnboardingScreen
 import androidx.compose.runtime.getValue
 
 

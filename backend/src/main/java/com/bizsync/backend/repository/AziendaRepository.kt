@@ -1,10 +1,10 @@
 package com.bizsync.backend.repository
 
 import android.util.Log
-import com.bizsync.backend.constantsFirestore.AziendeFirestore
-import com.bizsync.model.domain.AreaLavoro
-import com.bizsync.model.domain.Azienda
-import com.bizsync.model.domain.TurnoFrequente
+import com.bizsync.backend.remote.AziendeFirestore
+import com.bizsync.domain.model.AreaLavoro
+import com.bizsync.domain.model.Azienda
+import com.bizsync.domain.model.TurnoFrequente
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await

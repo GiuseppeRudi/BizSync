@@ -1,14 +1,12 @@
 package com.bizsync.backend.repository
 
 import android.util.Log
-import com.bizsync.backend.constantsFirestore.UtentiFirestore
-import com.bizsync.model.domain.Azienda
-import com.bizsync.model.domain.Invito
-import com.bizsync.model.domain.User
-import com.bizsync.model.sealedClass.RuoliAzienda
+import com.bizsync.backend.remote.UtentiFirestore
+import com.bizsync.domain.model.Invito
+import com.bizsync.domain.model.User
+import com.bizsync.domain.constants.sealedClass.RuoliAzienda
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
-import java.time.temporal.UnsupportedTemporalTypeException
 import javax.inject.Inject
 
 

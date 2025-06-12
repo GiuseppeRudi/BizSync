@@ -1,8 +1,8 @@
 package com.bizsync.backend.repository
 
 import android.util.Log
-import com.bizsync.backend.constantsFirestore.TurniFirestore
-import com.bizsync.model.domain.Turno
+import com.bizsync.backend.remote.TurniFirestore
+import com.bizsync.domain.model.Turno
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await

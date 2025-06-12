@@ -9,7 +9,7 @@ import com.bizsync.app.screens.GestioneScreen
 import com.bizsync.app.screens.GraficiScreen
 import com.bizsync.app.screens.HomeScreen
 import com.bizsync.app.screens.PianificaScreen
-import com.bizsync.model.sealedClass.Screen
+import com.bizsync.domain.constants.sealedClass.Screen
 
 @Composable
 fun AppNavigator( modifier: Modifier) {

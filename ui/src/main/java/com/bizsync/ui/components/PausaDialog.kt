@@ -39,7 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.bizsync.model.domain.Pausa
+import com.bizsync.domain.model.Pausa
 import kotlin.text.ifEmpty
 
 @OptIn(ExperimentalMaterial3Api::class)

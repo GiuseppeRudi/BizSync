@@ -1,9 +1,9 @@
 package com.bizsync.backend.repository
 
 import android.util.Log
-import com.bizsync.backend.constantsFirestore.InvitiFirestore
-import com.bizsync.model.constants.StatusInvite
-import com.bizsync.model.domain.Invito
+import com.bizsync.backend.remote.InvitiFirestore
+import com.bizsync.domain.constants.StatusInvite
+import com.bizsync.domain.model.Invito
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject

@@ -1,7 +1,6 @@
 package com.bizsync.app.screens
 
 
-import android.net.http.UrlRequest
 import android.util.Log
 import androidx.compose.material3.Button
 import androidx.compose.runtime.Composable
@@ -25,7 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.bizsync.app.navigation.LocalUserViewModel
-import com.bizsync.model.domain.Invito
+import com.bizsync.domain.model.Invito
 import com.bizsync.ui.components.StatusDialog
 import com.bizsync.ui.viewmodels.InvitiViewModel
 
