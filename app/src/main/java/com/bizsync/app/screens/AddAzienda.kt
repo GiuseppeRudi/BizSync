@@ -29,10 +29,12 @@ fun AddAzienda(onTerminate : () -> Unit) {
     val addaziendaviewmodel :  AddAziendaViewModel = hiltViewModel()
     val userviewmodel = LocalUserViewModel.current
 
+    val userState by userviewmodel.uiState.collectAsState()
     val currentStep by addaziendaviewmodel.currentStep.collectAsState()
-    val nomeAzienda by addaziendaviewmodel.nomeAzienda.collectAsState()
-    val uid by userviewmodel.uid.collectAsState()
 
+    val nomeAzienda by addaziendaviewmodel.nomeAzienda.collectAsState()
+
+    val uid = userState.user.uid
 
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {

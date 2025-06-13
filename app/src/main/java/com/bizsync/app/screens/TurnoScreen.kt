@@ -61,7 +61,8 @@ fun TurnoScreen(
     scaffoldVM : ScaffoldViewModel
 ) {
     val turnoVM: TurnoViewModel = hiltViewModel()
-    val azienda by userVM.azienda.collectAsState()
+    val userState by userVM.uiState.collectAsState()
+    val azienda = userState.azienda
     val text by turnoVM.text.collectAsState()
     var note by remember { mutableStateOf(listOf<NotaTurno>()) }
 

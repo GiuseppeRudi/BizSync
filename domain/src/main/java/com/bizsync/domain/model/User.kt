@@ -1,18 +1,15 @@
 package com.bizsync.domain.model
 
-import com.google.firebase.firestore.Exclude
+
 
 data class User(
+    val uid: String,
+    val email: String,
+    val nome: String,
+    val cognome: String,
+    val photourl: String = "",
+    val idAzienda: String = "",
+    val manager: Boolean = false,
+    val ruolo: String = ""
+)
 
-    @get:Exclude
-    var uid: String,
-    var email : String,
-    var nome : String,
-    var cognome : String,
-    var photourl : String = "",
-    var idAzienda : String = "",
-    var manager : Boolean = false,
-    var ruolo : String = ""
-){
-    constructor() : this("","","","","","",false,"")
-}

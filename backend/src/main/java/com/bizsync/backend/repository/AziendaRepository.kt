@@ -1,6 +1,9 @@
 package com.bizsync.backend.repository
 
 import android.util.Log
+import com.bizsync.backend.dto.AziendaDto
+import com.bizsync.backend.mapper.toDomain
+import com.bizsync.backend.mapper.toDto
 import com.bizsync.backend.remote.AziendeFirestore
 import com.bizsync.domain.model.AreaLavoro
 import com.bizsync.domain.model.Azienda
@@ -14,8 +17,11 @@ class AziendaRepository @Inject constructor(private val db : FirebaseFirestore) 
 
     suspend fun creaAzienda(azienda : Azienda) : String? {
          try {
+
+            val aziendaDto = azienda.toDto()
+
             val result = db.collection(AziendeFirestore.COLLECTION)
-                .add(azienda)
+                .add(aziendaDto)
                 .await()
 
             val idGenerato = result.id
@@ -25,8 +31,8 @@ class AziendaRepository @Inject constructor(private val db : FirebaseFirestore) 
         }
 
         catch (e: Exception) {
-            return null
             Log.e("AZIENDA_DEBUG", "Errore nel salvare l'azienda", e)
+            return null
         }
     }
 
@@ -56,7 +62,9 @@ class AziendaRepository @Inject constructor(private val db : FirebaseFirestore) 
                 .await()
 
             Log.e("AZIENDA_DEBUG", "ho preso l'azienda" + result.toString())
-            return result.toObject(Azienda::class.java)?.copy(idAzienda = result.id )
+            val aziendaDto =  result.toObject(AziendaDto::class.java)?.copy(id = result.id )
+
+            return aziendaDto?.toDomain()
 
         }
 

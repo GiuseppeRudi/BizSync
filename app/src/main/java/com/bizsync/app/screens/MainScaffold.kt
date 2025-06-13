@@ -24,7 +24,9 @@ import com.bizsync.app.navigation.LocalUserViewModel
 fun AppScaffold(onLogout: () -> Unit) {
 
     val userVM = LocalUserViewModel.current
-    val azienda by userVM.azienda.collectAsState()
+    val userState by userVM.uiState.collectAsState()
+
+    val azienda = userState.azienda
     val scaffoldVM: ScaffoldViewModel = hiltViewModel()
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
 

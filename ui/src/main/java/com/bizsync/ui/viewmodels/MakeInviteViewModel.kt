@@ -7,6 +7,7 @@ import com.bizsync.backend.repository.InvitoRepository
 import com.bizsync.domain.model.Azienda
 import com.bizsync.domain.model.Invito
 import com.bizsync.ui.components.DialogStatusType
+import com.bizsync.ui.model.AziendaUi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -56,7 +57,7 @@ class MakeInviteViewModel @Inject constructor(private val invitoRepository: Invi
     private val _resultStatus = MutableStateFlow<DialogStatusType?>(null)
     val resultStatus : StateFlow<DialogStatusType?> = _resultStatus
 
-    fun inviaInvito(azienda : Azienda?) {
+    fun inviaInvito(azienda : AziendaUi?) {
         viewModelScope.launch {
             try {
                 if(azienda!=null)

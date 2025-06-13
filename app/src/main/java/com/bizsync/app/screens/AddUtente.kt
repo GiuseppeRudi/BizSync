@@ -30,12 +30,13 @@ fun AddUtente(
 
 
     val addutenteviewmodel :  AddUtenteViewModel = hiltViewModel()
-    val currentStep by addutenteviewmodel.currentStep.collectAsState()
-    val errore by addutenteviewmodel.erroreSalvataggio.collectAsState()
+    val uiState by addutenteviewmodel.uiState.collectAsState()
+
+    val currentStep = uiState.currentStep
+    val errore = uiState.error
 
     val userviewmodel = LocalUserViewModel.current
-
-    val isUserAdded by addutenteviewmodel.isUserAdded.collectAsState()
+    val isUserAdded = uiState.isUserAdded
 
     LaunchedEffect(isUserAdded) {
         if (isUserAdded) {
@@ -84,14 +85,15 @@ fun StepOne(addutenteviewmodel : AddUtenteViewModel) {
 
     Spacer(modifier = Modifier.padding(16.dp))
 
-    val currentuser =  FirebaseAuth.getInstance().currentUser
 
+    val currentuser =  FirebaseAuth.getInstance().currentUser
+    val uiState by addutenteviewmodel.uiState.collectAsState()
     addutenteviewmodel.onEmailChanged(currentuser?.email.toString())
     addutenteviewmodel.onUidChanged(currentuser?.uid.toString())
     addutenteviewmodel.onPhotoUrlChanged(currentuser?.photoUrl.toString())
 
-    val nome by addutenteviewmodel.nome.collectAsState()
-    val cognome by addutenteviewmodel.cognome.collectAsState()
+    val nome = uiState.userState.nome
+    val cognome = uiState.userState.cognome
 
     //val uri = addutenteviewmodel.photourl?.value.let { Uri.parse(it) }
     // ImageUi(uri)
@@ -113,12 +115,8 @@ fun StepOne(addutenteviewmodel : AddUtenteViewModel) {
 
     Spacer(modifier = Modifier.padding(16.dp))
 
-    Text("Schermata 1: Inserisci Cognome")
-
-    Spacer(modifier = Modifier.padding(16.dp))
-
     OutlinedTextField(
-        value = cognome,
+        value = cognome ,
         onValueChange = { addutenteviewmodel.onCognomeChanged(it) },
         modifier = Modifier.fillMaxWidth()
     )

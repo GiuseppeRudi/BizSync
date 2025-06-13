@@ -52,7 +52,7 @@ class InvitiViewModel @Inject constructor(private val invitoRepository: InvitoRe
         val errore1 = invitoRepository.updateInvito(invite)
 
         // aggiornare il valroe di user della sua azienda
-        val errore2 = userRepository.updateAcceptInvite(invite,userViewMdel.uid.value)
+        val errore2 = userRepository.updateAcceptInvite(invite,userViewMdel.uiState.value.user.uid)
 
         if (errore1 && errore2 == false )
         {
@@ -66,6 +66,7 @@ class InvitiViewModel @Inject constructor(private val invitoRepository: InvitoRe
         }
 
     }
+
     fun declineInvite(invite: Invito) = viewModelScope.launch {
         // repo.declineInvite(...)
         fetchInvites(_email.value)

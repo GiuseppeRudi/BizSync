@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.repository.TurnoRepository
 import com.bizsync.domain.model.Azienda
 import com.bizsync.domain.model.Turno
+import com.bizsync.ui.model.AziendaUi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,10 +25,10 @@ class PianificaViewModel @Inject constructor(private val turnoRepository: TurnoR
     private val _onBoardingDone = MutableStateFlow<Boolean?>(null)
     val onBoardingDone : StateFlow<Boolean?> = _onBoardingDone
 
-    private val _azienda = MutableStateFlow<Azienda>(Azienda())
-    val azienda : StateFlow<Azienda> = _azienda
+    private val _azienda = MutableStateFlow<AziendaUi>(AziendaUi())
+    val azienda : StateFlow<AziendaUi> = _azienda
 
-    fun checkOnBoardingStatus(azienda : Azienda)
+    fun checkOnBoardingStatus(azienda : AziendaUi)
     {
         if(azienda.areeLavoro.isNotEmpty() && azienda.turniFrequenti.isNotEmpty())
         {

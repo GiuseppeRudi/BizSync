@@ -6,6 +6,8 @@ import com.bizsync.backend.repository.AziendaRepository
 import com.bizsync.backend.repository.UserRepository
 import com.bizsync.domain.model.Azienda
 import com.bizsync.domain.constants.sealedClass.RuoliAzienda
+import com.bizsync.ui.mapper.toDomain
+import com.bizsync.ui.model.AziendaUi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,7 +47,8 @@ class AddAziendaViewModel  @Inject constructor(private val aziendaRepository: Az
     fun aggiungiAzienda(idUtente: String, userViewModel: UserViewModel) {
 
         viewModelScope.launch(Dispatchers.IO){
-            var loaded  = aziendaRepository.creaAzienda(Azienda("", nomeAzienda.value))
+
+            var loaded  = aziendaRepository.creaAzienda(AziendaUi("", nomeAzienda.value).toDomain())
 
             if (loaded!=null)
             {

@@ -33,21 +33,13 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.bizsync.ui.viewmodels.GestioneViewModel
 import com.bizsync.app.navigation.LocalUserViewModel
+import com.bizsync.ui.model.ManagementCard
 import com.bizsync.ui.viewmodels.UserViewModel
 
 // Enum per gestire le schermate
 enum class ManagementScreen {
     MAIN, EMPLOYEES
 }
-
-
-data class ManagementCard(
-    val title: String,
-    val description: String,
-    val icon: ImageVector,
-    val gradient: List<Color>,
-    val onClick: () -> Unit
-)
 
 
 
@@ -60,10 +52,11 @@ fun GestioneScreen() {
     val showInviteDialog by gestioneVM.showDialog.collectAsState()
     val userVM = LocalUserViewModel.current
 
-    val checkManager by userVM.user.collectAsState()
+    val userState by userVM.uiState.collectAsState()
+    val checkManager = userState.user.isManager
 
 
-    LaunchedEffect(checkManager.manager) {
+    LaunchedEffect(checkManager) {
         //gestioneVM.fetchManagementCards(checkManager.manager)
     }
 

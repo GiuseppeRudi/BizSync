@@ -19,7 +19,8 @@ import androidx.compose.runtime.getValue
 fun MainApp(onLogout : () -> Unit) {
     val splashVM: SplashViewModel = viewModel()
     val userVM = LocalUserViewModel.current
-    val check =  userVM.check.collectAsState(initial = null)
+    val userState by userVM.uiState.collectAsState()
+    val check =  userState.check
     val uid = FirebaseAuth.getInstance().currentUser?.uid
 
 
@@ -32,7 +33,7 @@ fun MainApp(onLogout : () -> Unit) {
     }
 
     //3) branching su null/false/true
-    when (check.value) {
+    when (check) {
         null  -> SplashScreen()
         false -> OnboardingFlow(onSuccess = { userVM.change() })
         true  -> AppScaffold(onLogout)
@@ -46,10 +47,11 @@ fun OnboardingFlow(onSuccess : () -> Unit)
 {
     var userVM = LocalUserViewModel.current
 
-    val user by userVM.user.collectAsState()
+    val userState = userVM.uiState.collectAsState()
+    val uid = userState.value.user.uid
     val navController = rememberNavController()
 
-    if(user.uid.isEmpty()){
+    if(uid.isEmpty()){
         OnboardingNavHost(navController, onSuccess,OnboardingScreen.AddUtente.route)
     }
     else

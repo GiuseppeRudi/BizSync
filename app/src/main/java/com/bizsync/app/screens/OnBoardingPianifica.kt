@@ -119,7 +119,8 @@ fun AreeLavoroStep(viewModel: OnBoardingPianificaViewModel) {
     val canAddArea = totalAree < maxAree
 
     val userViewModel = LocalUserViewModel.current
-    val azienda by userViewModel.azienda.collectAsState()
+    val userState by userViewModel.uiState.collectAsState()
+    val azienda  = userState.azienda
 
     LaunchedEffect(azienda) {
         if (!checkAreeDefualt) {
@@ -268,7 +269,8 @@ fun TurniFrequentiStep(viewModel: OnBoardingPianificaViewModel, onSetupComplete:
     val canAddTurno = totalTurni < maxTurni
 
     val userViewModel = LocalUserViewModel.current
-    val azienda by userViewModel.azienda.collectAsState()
+    val userState by userViewModel.uiState.collectAsState()
+    val azienda = userState.azienda
     val onDone by viewModel.onDone.collectAsState()
 
     LaunchedEffect(azienda) {

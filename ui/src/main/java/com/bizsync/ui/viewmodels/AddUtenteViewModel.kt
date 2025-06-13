@@ -4,103 +4,149 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.repository.UserRepository
-import com.bizsync.domain.model.User
+import com.bizsync.ui.mapper.toDomain
+import com.bizsync.ui.mapper.toUiState
+import com.bizsync.ui.model.AddUtenteState
+import com.bizsync.ui.model.UserUi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+
+
+
 @HiltViewModel
-class AddUtenteViewModel  @Inject constructor(private val userRepository: UserRepository): ViewModel() {
+class AddUtenteViewModel @Inject constructor(
+    private val userRepository: UserRepository
+) : ViewModel() {
 
-    private val _currentStep = MutableStateFlow<Int>(1)
-    val currentStep : StateFlow<Int> = _currentStep
-
-    private val _uid = MutableStateFlow("")
-    val uid : StateFlow<String> = _uid
-
-    private val _utente = MutableStateFlow<User>(User())
-    val utente : StateFlow<User> = _utente
-
-    private val _nome = MutableStateFlow("Ciccio")
-    val nome: StateFlow<String> = _nome
-
-    private val _email = MutableStateFlow("")
-    val email: StateFlow<String> = _email
-
-    private val _cognome = MutableStateFlow("Pasticcio")
-    val cognome: StateFlow<String> = _cognome
-
-    private val _photoUrl = MutableStateFlow<String>("")
-    val photoUrl: StateFlow<String> = _photoUrl
-
-    private val _isUserAdded = MutableStateFlow(false)
-    val isUserAdded : StateFlow<Boolean> = _isUserAdded
-
-    private val _erroreSalvataggio = MutableStateFlow<String?>(null)
-    val erroreSalvataggio: StateFlow<String?> = _erroreSalvataggio
-
-
-    fun setErrore(newValue: String?)
-    {
-        _erroreSalvataggio.value = newValue
-    }
-
+    // Stato principale consolidato
+    private val _uiState = MutableStateFlow(
+        AddUtenteState(
+            userState = UserUi()
+        )
+    )
+    val uiState: StateFlow<AddUtenteState> = _uiState
 
     fun addUserAndPropaga(userviewmodel: UserViewModel) {
+        if (!validateUser()) return
+
         viewModelScope.launch {
-            Log.d("CONTROLLO_USER_FINAL" ,uid.value)
-            val utenteCreato = User("",email.value,nome.value,cognome.value,photoUrl.value,"")
-            val success = userRepository.addUser(utenteCreato, uid.value)
+            updateState { it.copy(isLoading = true, error = null) }
 
-            if(success)
-            {
-                _utente.value = utenteCreato
-                userviewmodel.onUserChanged(utenteCreato)
-                userviewmodel.onUidChanged(utenteCreato.uid)
-                _isUserAdded.value = true
-            }
-            else
-            {
-                _erroreSalvataggio.value = "Errore durante il salvataggio dell'utente. Riprova."
-            }
+            Log.d("CONTROLLO_USER_FINAL", _uiState.value.uid)
 
+            try {
+                val utenteCreato = _uiState.value.userState.toDomain().copy(uid = "")
+                val success = userRepository.addUser(utenteCreato, _uiState.value.uid)
+
+                if (success) {
+                    val utenteConUid = utenteCreato.copy(uid = _uiState.value.uid)
+
+                    updateState {
+                        it.copy(
+                            userState = utenteConUid.toUiState(),
+                            isLoading = false,
+                            isUserAdded = true
+                        )
+                    }
+
+                } else {
+                    updateState {
+                        it.copy(
+                            isLoading = false,
+                            error = "Errore durante il salvataggio dell'utente. Riprova."
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                updateState {
+                    it.copy(
+                        isLoading = false,
+                        error = e.message ?: "Errore sconosciuto"
+                    )
+                }
+            }
         }
     }
 
-
-
-    fun onCurrentStepUp()
-    {
-        _currentStep.value = _currentStep.value + 1
-    }
-
-    fun onCurrentStepDown()
-    {
-        _currentStep.value = _currentStep.value - 1
-    }
-
-    fun onUidChanged(newValue : String)
-    {
-        _uid.value = newValue
-    }
-
+    // Metodi per aggiornare i campi utente
     fun onNomeChanged(newValue: String) {
-        _nome.value = newValue
+        updateUserState { it.copy(nome = newValue) }
+    }
+
+    // Metodi per aggiornare i campi utente
+    fun onCognomeChanged(newValue: String) {
+        updateUserState { it.copy(cognome = newValue) }
     }
 
     fun onEmailChanged(newValue: String) {
-        _email.value = newValue
-    }
-
-    fun onCognomeChanged(newValue: String) {
-        _cognome.value = newValue
+        updateUserState { it.copy(email = newValue) }
     }
 
     fun onPhotoUrlChanged(newValue: String) {
-        _photoUrl.value = newValue
+        updateUserState { it.copy(photourl = newValue) }
     }
 
+    // Metodi per la navigazione
+    fun onCurrentStepUp() {
+        updateState { it.copy(currentStep = it.currentStep + 1) }
+    }
 
+    fun onCurrentStepDown() {
+        updateState { it.copy(currentStep = it.currentStep - 1) }
+    }
+
+    fun onUidChanged(newValue: String) {
+        updateState { it.copy(uid = newValue) }
+    }
+
+    fun setErrore(newValue: String?) {
+        updateState { it.copy(error = newValue) }
+    }
+
+    // Utility methods
+    private fun updateState(update: (AddUtenteState) -> AddUtenteState) {
+        _uiState.value = update(_uiState.value)
+    }
+
+    private fun updateUserState(update: (UserUi) -> UserUi) {
+        updateState { it.copy(userState = update(it.userState)) }
+    }
+
+    private fun validateUser(): Boolean {
+        val userState = _uiState.value.userState
+
+        return when {
+            userState.nome.isBlank() -> {
+                setErrore("Il nome è obbligatorio")
+                false
+            }
+
+            userState.cognome.isBlank() -> {
+                setErrore("Il cognome è obbligatorio")
+                false
+            }
+
+            userState.email.isBlank() -> {
+                setErrore("L'email è obbligatoria")
+                false
+            }
+            !android.util.Patterns.EMAIL_ADDRESS.matcher(userState.email).matches() -> {
+                setErrore("Formato email non valido")
+                false
+            }
+            else -> {
+                setErrore(null)
+                true
+            }
+        }
+    }
+
+    fun resetState() {
+        _uiState.value = AddUtenteState()
+    }
 }
+

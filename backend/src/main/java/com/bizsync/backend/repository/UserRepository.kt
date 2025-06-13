@@ -1,6 +1,8 @@
 package com.bizsync.backend.repository
 
 import android.util.Log
+import com.bizsync.backend.dto.UserDto
+import com.bizsync.backend.mapper.toDomain
 import com.bizsync.backend.remote.UtentiFirestore
 import com.bizsync.domain.model.Invito
 import com.bizsync.domain.model.User
@@ -21,7 +23,9 @@ class UserRepository @Inject constructor(private val db : FirebaseFirestore) {
                 .await()
 
             Log.e("USER_DEBUG", "ho preso l'utente")
-            return result.toObject(User::class.java)?.copy(uid = result.id )
+            val userDto = result.toObject(UserDto::class.java)?.copy(uid = result.id )
+            Log.e("USER_DEBUG", "utente dto $userDto")
+            return userDto?.toDomain()
 
         }
 

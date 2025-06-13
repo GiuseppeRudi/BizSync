@@ -45,6 +45,8 @@ fun MakeInviteDialog(
 ) {
     val inviteVM: MakeInviteViewModel = hiltViewModel()
 
+    val userState by userVM.uiState.collectAsState()
+
     val email by inviteVM.email.collectAsState()
     val ruolo by inviteVM.ruolo.collectAsState()
     val manager by inviteVM.manager.collectAsState()
@@ -206,7 +208,7 @@ fun MakeInviteDialog(
 
                                 Button(
                                     onClick = {
-                                        inviteVM.inviaInvito(userVM.azienda.value)
+                                        inviteVM.inviaInvito(userState.azienda)
                                         onDismiss()
                                     },
                                     modifier = Modifier.weight(1f),

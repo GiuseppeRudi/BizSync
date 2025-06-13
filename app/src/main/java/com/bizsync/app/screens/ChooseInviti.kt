@@ -29,13 +29,6 @@ import com.bizsync.ui.components.StatusDialog
 import com.bizsync.ui.viewmodels.InvitiViewModel
 
 
-@Preview(showBackground = true, name = "Scaffold")
-@Composable
-private fun InvitiPreview() {
-
-    ChooseInvito(onTerminate = {})
-}
-
 
 @Composable
 fun ChooseInvito(onTerminate: () -> Unit) {
@@ -45,7 +38,8 @@ fun ChooseInvito(onTerminate: () -> Unit) {
     val erroreStatus by invitiVM.errorStatusInvite.collectAsState()
     val errorMessage by invitiVM.errorMessageStatusInvite.collectAsState()
     val userVM = LocalUserViewModel.current
-    val user by userVM.user.collectAsState()
+    val userState by userVM.uiState.collectAsState()
+    val user = userState.user
 
 
 

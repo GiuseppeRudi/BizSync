@@ -30,9 +30,8 @@ fun PianificaScreen() {
     val pianificaVM : PianificaViewModel = hiltViewModel()
 
     val userviewmodel = LocalUserViewModel.current
-
-
-    val azienda by userviewmodel.azienda.collectAsState()
+    val userState by userviewmodel.uiState.collectAsState()
+    val azienda = userState.azienda
 
 
     val onBoardingDone by pianificaVM.onBoardingDone.collectAsState()
