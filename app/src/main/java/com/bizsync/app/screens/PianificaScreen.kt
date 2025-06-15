@@ -34,8 +34,8 @@ fun PianificaScreen() {
     val azienda = userState.azienda
 
 
-    val onBoardingDone by pianificaVM.onBoardingDone.collectAsState()
-
+    val pianificaState by pianificaVM.uistate.collectAsState()
+    val onBoardingDone = pianificaState.onBoardingDone
 
     LaunchedEffect(Unit) {
         pianificaVM.checkOnBoardingStatus(azienda)
@@ -63,9 +63,10 @@ fun PianificaCore(
 
     val userVM = LocalUserViewModel.current
 
-    val selectionData by pianificaVM.selectionData.collectAsState()
-    val itemsList by pianificaVM.itemsList.collectAsState()
-    val showDialogShift by pianificaVM.showDialogShift.collectAsState()
+    val pianificaState by pianificaVM.uistate.collectAsState()
+    val selectionData = pianificaState.selectionData
+    val itemsList = pianificaState.itemsList
+    val showDialogShift = pianificaState.showDialogShift
 
 
     LaunchedEffect(selectionData) {

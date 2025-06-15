@@ -15,8 +15,6 @@ object UserUiMapper {
             idAzienda = user.idAzienda,
             isManager = user.manager,
             ruolo = user.ruolo,
-            isLoading = false,
-            error = null
         )
     }
 

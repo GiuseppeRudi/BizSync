@@ -18,16 +18,7 @@ import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun HomeScreen() {
-    val userviewmodel : UserViewModel = hiltViewModel()
     val navController = LocalNavController.current
-
-    val currentUser = FirebaseAuth.getInstance().currentUser
-
-    val errore = remember {mutableStateOf<String?>("errore")}
-
-    userviewmodel.onUidChanged(currentUser?.uid.toString())
-
-
     Button(onClick = { navController.navigate("pianifica")} ) { }
 
 

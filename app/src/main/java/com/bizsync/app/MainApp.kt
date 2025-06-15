@@ -1,5 +1,6 @@
 package com.bizsync.app
 
+import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -13,6 +14,7 @@ import androidx.navigation.compose.rememberNavController
 import com.bizsync.app.navigation.OnboardingNavHost
 import com.bizsync.domain.constants.sealedClass.OnboardingScreen
 import androidx.compose.runtime.getValue
+import com.bizsync.ui.components.StatusDialog
 
 
 @Composable
@@ -20,11 +22,15 @@ fun MainApp(onLogout : () -> Unit) {
     val splashVM: SplashViewModel = viewModel()
     val userVM = LocalUserViewModel.current
     val userState by userVM.uiState.collectAsState()
-    val check =  userState.check
+    val check =  userState.checkUser
     val uid = FirebaseAuth.getInstance().currentUser?.uid
 
 
-    //2) al lancio (o al cambio di uid) lo imposto dal repo
+    userState.errorMsg?.let { error ->
+        StatusDialog(message = error, statusType = com.bizsync.ui.components.DialogStatusType.ERROR, onDismiss = { userVM.clearError()})
+    }
+
+
     LaunchedEffect(uid) {
         if (uid != null) {
             userVM.checkUser(uid)
@@ -32,7 +38,6 @@ fun MainApp(onLogout : () -> Unit) {
         }
     }
 
-    //3) branching su null/false/true
     when (check) {
         null  -> SplashScreen()
         false -> OnboardingFlow(onSuccess = { userVM.change() })

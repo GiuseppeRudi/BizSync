@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.StateFlow
 
 class SplashViewModel : ViewModel() {
 
-
     private  val _isSplashVisible = MutableStateFlow(true)
     val isSplashVisible : StateFlow<Boolean> = _isSplashVisible
 
@@ -20,6 +19,5 @@ class SplashViewModel : ViewModel() {
     fun hideSplash(){
         _isSplashVisible.value = false
     }
-
 
 }

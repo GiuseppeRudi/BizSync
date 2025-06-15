@@ -8,7 +8,5 @@ data class UserUi(
     val photourl: String = "",
     val idAzienda: String = "",
     val isManager: Boolean = false,
-    val ruolo: String = "",
-    val isLoading: Boolean = false,
-    val error: String? = null
+    val ruolo: String = ""
 )

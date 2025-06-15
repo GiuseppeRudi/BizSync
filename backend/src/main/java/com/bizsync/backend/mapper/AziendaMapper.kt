@@ -6,15 +6,13 @@ import com.bizsync.domain.model.Azienda
 
 object AziendaMapper {
 
-    fun toDomain(dto: AziendaDto): Azienda? {
-        // Verifica presenza di campi obbligatori
-        if (dto.id == null || dto.nome == null) return null
+    fun toDomain(dto: AziendaDto): Azienda {
 
         return Azienda(
             idAzienda = dto.id,
             nome = dto.nome,
-            areeLavoro = dto.aree_lavoro ?: emptyList(),
-            turniFrequenti = dto.turni_frequenti ?: emptyList()
+            areeLavoro = dto.areeLavoro,
+            turniFrequenti = dto.turniFrequenti
         )
     }
 
@@ -22,8 +20,8 @@ object AziendaMapper {
         return AziendaDto(
             id = domain.idAzienda,
             nome = domain.nome,
-            aree_lavoro = domain.areeLavoro,
-            turni_frequenti = domain.turniFrequenti
+            areeLavoro = domain.areeLavoro,
+            turniFrequenti = domain.turniFrequenti
         )
     }
 }

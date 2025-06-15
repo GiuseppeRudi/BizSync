@@ -7,6 +7,7 @@ import com.bizsync.domain.model.TurnoFrequente
 
 
 data class AziendaUi(
+
     var idAzienda: String = "",
     var nome: String = "",
     var areeLavoro: List<AreaLavoro> = emptyList(),
@@ -21,4 +22,3 @@ data class AziendaUi(
     val numeroDipendenti: Int = 0,
     val descrizioneAzienda: String = ""
 )
-

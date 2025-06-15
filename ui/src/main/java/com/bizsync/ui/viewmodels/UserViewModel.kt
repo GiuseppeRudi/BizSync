@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.repository.AziendaRepository
 import com.bizsync.backend.repository.UserRepository
+import com.bizsync.domain.constants.sealedClass.Resource
+import com.bizsync.domain.constants.sealedClass.Resource.*
 import com.bizsync.domain.model.AreaLavoro
 import com.bizsync.domain.model.Azienda
 import com.bizsync.domain.model.Invito
@@ -24,157 +26,160 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 
-
-
 @HiltViewModel
 class UserViewModel @Inject constructor(private val userRepository: UserRepository, private val aziendaRepository: AziendaRepository) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(UserState(UserUi(), AziendaUi()))
-    val uiState : StateFlow<UserState> = _uiState
+    private val _uiState = MutableStateFlow(UserState())
+    val uiState: StateFlow<UserState> = _uiState
 
-//    private val _user = MutableStateFlow<UserUi>(UserUi())
-//    val user : StateFlow<UserUi> = _user
-//
-//    private val _azienda = MutableStateFlow<Azienda>(Azienda())
-//    val azienda : StateFlow<Azienda> = _azienda
-//
-//    fun onAziendaChanged(newValue : Azienda)
-//    {
-//        _azienda.update { newValue }
-//    }
 
-//    private val _uid = MutableStateFlow<String>("nullo")
-//    val uid : StateFlow<String> = _uid
+    fun onAddAziendaRole(ruolo: RuoliAzienda, azienda: String) {
+        _uiState.update {
+            it.copy(
+                user = _uiState.value.user.copy
+                    (
+                    idAzienda = azienda,
+                    ruolo = ruolo.route,
+                    isManager = ruolo.isPrivileged
+                )
 
-//    fun onUserChanged(newValue : User)
-//    {
-//        _user.value = newValue
-//    }
-//
-//    fun onUidChanged(newValue : String)
-//    {
-//        _uid.value = newValue
-//    }
+            )
+        }
 
-//    private var _check = MutableStateFlow<Boolean?>(null)
-//    var check : StateFlow<Boolean?> = _check
-//
-
-    fun onUidChanged(newUid: String){
-        _uiState.update { it.copy(user = _uiState.value.user.copy(uid = newUid)) }
     }
 
-    suspend fun getUser(userId: String)
-    {
-        Log.d("LOGINREPO_DEBUG", userId)
+    fun checkUser(userId: String) {
+        viewModelScope.launch(Dispatchers.IO) {
 
-        var loaded = userRepository.getUserById(userId)
+            val result = userRepository.getUserById(userId)
 
-        Log.d("LOGINREPO_DEBUG", loaded.toString())
+            Log.d("LOGINREPO_DEBUG", result.toString())
 
-        if(loaded!=null)
-             {
-                 _uiState.update { it.copy(user = loaded.toUiState()) }
-                 //_user.value = loaded
-//                 _uid.value= userId
-             }
 
-            else {
-                //MANDARE IN ERORRE
-             }
-
-            Log.d("LOGINREPO_DEBUG", _uiState.value.user.toString())
-    }
-
-    fun onAddAziendaRole(ruolo : RuoliAzienda, azienda: String)
-    {
-       // _user.value = _user.value.copy(idAzienda = azienda, ruolo = ruolo.route, manager = ruolo.isPrivileged)
-        _uiState.update { it.copy(user = _uiState.value.user.copy(idAzienda = azienda, ruolo = ruolo.route, isManager = ruolo.isPrivileged)) }
-    }
-
-    fun checkUser(userId : String)
-    {
-        viewModelScope.launch(Dispatchers.IO){
-            var check = userRepository.checkUser(userId)
-
-            Log.d("CHECK",  check.toString())
-            if(check)
-            {getUser(userId)}
-
-            if(_uiState.value.user.idAzienda.isNotEmpty() && check)
-            {
-                var loaded = aziendaRepository.getAziendaById(_uiState.value.user.idAzienda.toString())
-
-                if (loaded!=null)
-                {
-               //     _azienda.value = loaded
-                    _uiState.update{ it.copy(azienda = loaded.toUiState())}
+             when (result) {
+                is Success -> _uiState.update {
+                    it.copy(
+                        user = result.data.toUiState(),
+                        hasLoadedUser = true
+                    )
                 }
-                else
-                {
-                    //GESTIRE
+
+                is Error -> _uiState.update { it.copy(errorMsg = result.message) }
+                is Empty -> _uiState.update { it.copy(errorMsg = "Utente non trovato") }
+                else -> _uiState.update { it.copy(errorMsg = "Errore sconosciuto") }
+            }
+
+            val idAzienda = _uiState.value.user.idAzienda
+
+            if (idAzienda.isNotEmpty() && _uiState.value.hasLoadedUser) {
+
+                val loaded = aziendaRepository.getAziendaById(idAzienda)
+
+                when (loaded) {
+                    is Success -> {
+                        _uiState.update {
+                            it.copy(
+                                azienda = loaded.data.toUiState(),
+                                hasLoadedAgency = true
+                            )
+                        }
+                        _uiState.update { it.copy(checkUser = true) }
+                    }
+                    is Error -> {_uiState.update { it.copy(errorMsg = loaded.message) } }
+                    is Empty -> {  _uiState.update { it.copy(errorMsg = "Azienda non trovata") } }
+                    else -> {_uiState.update { it.copy(errorMsg = "Errore sconosciuto") }
                 }
             }
 
-            if(_uiState.value.user.idAzienda.isEmpty() && check)
-            {   Log.d("CHECK", "VEDIAMO IDAZIENDA" + _uiState.value.user.idAzienda.toString())
-                check= false }
+            if (idAzienda.isEmpty() && _uiState.value.hasLoadedUser) {
+                _uiState.update { it.copy(checkUser = false) }
+            }
 
-            _uiState.update { it.copy(check = check) }
         }
+       }
     }
 
-    suspend fun onAcceptInvite(invite : Invito)
-    {
-        // GESTIRE MEGLIO I CONTROLLI
-
-//        _user.value.idAzienda = invite.azienda
-//        _user.value.manager = invite.manager
-//        _user.value.ruolo = invite.nomeRuolo
-//
-        _uiState.update{ it.copy(user = _uiState.value.user.copy(idAzienda = invite.azienda, isManager = invite.manager, ruolo = invite.nomeRuolo))}
-
-        fetchAzienda()
-    }
-
-    fun updateTurniAree(aree: List<AreaLavoro>, turni: List<TurnoFrequente>) {
-
-        _uiState.update { it.copy(azienda =
-            _uiState.value.azienda.copy(areeLavoro = aree, turniFrequenti = turni))}
-    }
-
-    suspend  fun fetchAzienda(){
-
-        var loaded  = aziendaRepository.getAziendaById(_uiState.value.azienda.idAzienda)
-
-        if (loaded != null)
+        fun clearError()
         {
-           // _azienda.value = loaded
+            _uiState.update { it.copy(errorMsg = null) }}
 
-            _uiState.update { it.copy(azienda = loaded.toUiState()) }
+
+        fun onAcceptInvite(invite: Invito) {
+
+
+            if (_uiState.value.hasLoadedUser) {
+
+                val currentUser = _uiState.value.user
+
+                _uiState.update {
+                    it.copy(
+                        user =
+                            currentUser.copy(
+                                idAzienda = invite.azienda,
+                                isManager = invite.manager,
+                                ruolo = invite.nomeRuolo
+                            )
+                    )
+                }
+
+                viewModelScope.launch(Dispatchers.IO) {
+
+                    val idAzienda = _uiState.value.user.idAzienda
+
+                    val azienda = aziendaRepository.getAziendaById(idAzienda)
+
+                    when (azienda) {
+                        is Success -> {
+                            _uiState.update {
+                                it.copy(
+                                    azienda = azienda.data.toUiState(),
+                                    hasLoadedAgency = true
+                                )
+                            }
+                        }
+                        is Error -> { _uiState.update { it.copy(errorMsg = azienda.message) } }
+                        is Empty -> {_uiState.update { it.copy(errorMsg = "Azienda non trovata") } } // GESIRE IN QUALCHE MODO
+                        else -> { _uiState.update { it.copy(errorMsg = "Errore sconosciuto") }}
+                    }
+
+                }
+
+            }
+            else
+            {
+                _uiState.update { it.copy(errorMsg = "Utente non caricato") }
+            }
+
 
         }
 
-        else
-        {
-            // GESTIRE
+        fun updateTurniAree(aree: List<AreaLavoro>, turni: List<TurnoFrequente>) {
+
+            val currentAgency = _uiState.value.azienda
+            _uiState.update {
+                it.copy(
+                    azienda = currentAgency.copy(
+                        areeLavoro = aree,
+                        turniFrequenti = turni
+                    )
+                )
+            }
+
         }
-    }
 
-    fun clear() {
-        _uiState.value = UserState(UserUi(), AziendaUi())
-    }
 
-    fun aggiornaAzienda(idAzienda : String)
-    {
-        // GESTIRE MEGLIO
-        //_user.value.idAzienda = idAzienda
-        _uiState.update{ it.copy(user = _uiState.value.user.copy(idAzienda = idAzienda))}
-    }
+        fun clear() {
+            _uiState.value = UserState()
+        }
 
-    fun change()
-    {
-        _uiState.update { it.copy(check = true) }
-    }
+        fun aggiornaAzienda(idAzienda: String) {
+            val currentUser = _uiState.value.user
+            _uiState.update { it.copy(user = currentUser.copy(idAzienda = idAzienda)) }
+        }
+
+        fun change() {
+
+            _uiState.update { it.copy(checkUser = true) }
+        }
 
 }

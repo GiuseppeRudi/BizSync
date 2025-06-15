@@ -43,13 +43,14 @@ import java.time.format.DateTimeFormatter
 // QUESTO CALENDAR LO VEDIAMO PIU TARDI
 
 @Composable
-fun Calendar(calendarviewmodel: PianificaViewModel) {
+fun Calendar(pianificaVM: PianificaViewModel) {
     val currentDate = remember { LocalDate.now() } // Giorno corrente
     val startDate = remember { currentDate.minusDays(500) }
     val endDate = remember { currentDate.plusDays(500) }
 
-    val selectionData by calendarviewmodel.selectionData.collectAsState()
 
+    val pianificaState by pianificaVM.uistate.collectAsState()
+    val selectionData = pianificaState.selectionData
     Column(
         modifier = Modifier
             .background(Color.White),
@@ -70,11 +71,7 @@ fun Calendar(calendarviewmodel: PianificaViewModel) {
                         date = day.date,
                         isCurrentDay = day.date == currentDate,
                         selected = selectionData == day.date,
-                    ) {
-                        Log.d("VERIFICA_GIORNO", "Sono in Calendar $it")
-                        calendarviewmodel.onSelectionDataChanged(it)
-                        Log.d("VERIFICA_GIORNO", calendarviewmodel.selectionData.value.toString())
-                    }
+                    ) { pianificaVM.onSelectionDataChanged(it) }
                 },
             )
         }
@@ -95,10 +92,9 @@ fun Day(
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
 
-    // **Definizione del bordo**
     val borderColor = when {
-        selected -> Color(0xFFBB86FC) // Viola per il giorno selezionato
-        isCurrentDay -> Color(0xFF002DFF) // Azzurro per il giorno corrente
+        selected -> Color(0xFFBB86FC)
+        isCurrentDay -> Color(0xFF002DFF)
         else -> Color.Transparent
     }
 

@@ -14,11 +14,9 @@ class ScaffoldViewModel @Inject constructor() : ViewModel() {
     private val _fullScreen = MutableStateFlow<Boolean>(true)
     val fullScreen : StateFlow<Boolean> = _fullScreen
 
-
     fun onFullScreenChanged(newValue : Boolean)
     {
         _fullScreen.value = newValue
     }
-
 
 }

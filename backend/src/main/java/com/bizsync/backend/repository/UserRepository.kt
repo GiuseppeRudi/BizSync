@@ -4,6 +4,7 @@ import android.util.Log
 import com.bizsync.backend.dto.UserDto
 import com.bizsync.backend.mapper.toDomain
 import com.bizsync.backend.remote.UtentiFirestore
+import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.Invito
 import com.bizsync.domain.model.User
 import com.bizsync.domain.constants.sealedClass.RuoliAzienda
@@ -15,8 +16,8 @@ import javax.inject.Inject
 class UserRepository @Inject constructor(private val db : FirebaseFirestore) {
 
 
-    suspend fun getUserById(userId: String): User? {
-        try {
+    suspend fun getUserById(userId: String): Resource<User> {
+        return try {
             val result = db.collection(UtentiFirestore.COLLECTION)
                 .document(userId)
                 .get()
@@ -24,14 +25,18 @@ class UserRepository @Inject constructor(private val db : FirebaseFirestore) {
 
             Log.e("USER_DEBUG", "ho preso l'utente")
             val userDto = result.toObject(UserDto::class.java)?.copy(uid = result.id )
+
             Log.e("USER_DEBUG", "utente dto $userDto")
-            return userDto?.toDomain()
+
+            userDto?.toDomain()?.let { user ->
+                Resource.Success(user)
+            } ?: Resource.Empty
 
         }
 
         catch (e: Exception) {
             Log.e("USER_DEBUG", "Errore nel prendere l'utente", e)
-            return null
+            Resource.Error(e.message ?: "Errore sconosciuto")
         }
     }
 

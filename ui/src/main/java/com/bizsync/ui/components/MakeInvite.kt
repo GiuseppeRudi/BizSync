@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.ui.viewmodels.MakeInviteViewModel
 import com.bizsync.ui.viewmodels.UserViewModel
 
@@ -53,6 +54,8 @@ fun MakeInviteDialog(
     val resultMessage by inviteVM.resultMessage.collectAsState()
     val resultStatus by inviteVM.resultStatus.collectAsState()
 
+
+
     // Animation states
     val dialogScale by animateFloatAsState(
         targetValue = if (showDialog) 1f else 0.8f,
@@ -62,6 +65,9 @@ fun MakeInviteDialog(
         targetValue = if (showDialog) 1f else 0f,
         animationSpec = tween(300)
     )
+
+    val azienda = userState.azienda
+
 
     if (showDialog) {
         Dialog(
@@ -208,7 +214,7 @@ fun MakeInviteDialog(
 
                                 Button(
                                     onClick = {
-                                        inviteVM.inviaInvito(userState.azienda)
+                                        inviteVM.inviaInvito(azienda)
                                         onDismiss()
                                     },
                                     modifier = Modifier.weight(1f),

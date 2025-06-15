@@ -4,9 +4,11 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.repository.TurnoRepository
+import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.Azienda
 import com.bizsync.domain.model.Turno
 import com.bizsync.ui.model.AziendaUi
+import com.bizsync.ui.model.PianificaState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,68 +18,59 @@ import java.time.LocalDate
 import javax.inject.Inject
 
 
+
 @HiltViewModel
 class PianificaViewModel @Inject constructor(private val turnoRepository: TurnoRepository) : ViewModel() {
 
-    private val _itemsList = MutableStateFlow<List<Turno>>(emptyList())
-    val itemsList : StateFlow<List<Turno>> = _itemsList
 
-    private val _onBoardingDone = MutableStateFlow<Boolean?>(null)
-    val onBoardingDone : StateFlow<Boolean?> = _onBoardingDone
+    private val _uistate = MutableStateFlow(PianificaState())
+    val uistate : StateFlow<PianificaState> = _uistate
 
-    private val _azienda = MutableStateFlow<AziendaUi>(AziendaUi())
-    val azienda : StateFlow<AziendaUi> = _azienda
 
     fun checkOnBoardingStatus(azienda : AziendaUi)
     {
         if(azienda.areeLavoro.isNotEmpty() && azienda.turniFrequenti.isNotEmpty())
         {
-            _onBoardingDone.value = true
+            _uistate.update { it.copy(onBoardingDone = true) }
         }
         else
         {
-            _onBoardingDone.value = false
+            _uistate.update { it.copy(onBoardingDone = false) }
         }
     }
 
     fun setOnBoardingDone(value : Boolean)
     {
-        _onBoardingDone.value = value
+        _uistate.update { it.copy(onBoardingDone = value) }
     }
 
 
     fun addTurno(turno: Turno) {
-        _itemsList.update { currentList ->
-            currentList + turno
-        }
+        _uistate.update { it.copy(itemsList = _uistate.value.itemsList + turno) }
     }
 
     fun caricaturni(giornoSelezionato: LocalDate){
         viewModelScope.launch {
-            Log.d("TURNI_DEBUG", "SONO nel viewmodel")
-            Log.d("VERIFICA_GIORNO", "SONO nel viewmodel"  + giornoSelezionato.toString())
-            val turniCaricati = turnoRepository.caricaTurni(giornoSelezionato)
-            Log.d("TURNI_DEBUG", "TURNI CARICATIl"  + turniCaricati)
 
-            _itemsList.value = turniCaricati
+            val result = turnoRepository.caricaTurni(giornoSelezionato)
+
+            when(result){
+                is Resource.Success -> { _uistate.update { it.copy(itemsList = result.data) } }
+                is Resource.Error -> { _uistate.update { it.copy(errorMsg = result.message) } }
+                is Resource.Empty -> { _uistate.update { it.copy(errorMsg = "Nessun turno trovato") } }
+                else -> { _uistate.update { it.copy(errorMsg = "Errore nella ricerca dei turni") }}
+            }
 
         }
     }
 
-
-    private val _selectionData = MutableStateFlow<LocalDate?>(null)
-    val selectionData : StateFlow<LocalDate?> = _selectionData
-
-    private val _showDialogShift = MutableStateFlow(false)
-    val showDialogShift : StateFlow<Boolean> = _showDialogShift
-
     fun onSelectionDataChanged(newValue : LocalDate)
     {
-        _selectionData.value = newValue
+        _uistate.update { it.copy(selectionData = newValue) }
     }
 
     fun onShowDialogShiftChanged(newValue : Boolean)
     {
-        _showDialogShift.value = newValue
+        _uistate.update { it.copy(showDialogShift = newValue) }
     }
 }

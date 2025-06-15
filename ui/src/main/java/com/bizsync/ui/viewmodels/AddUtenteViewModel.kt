@@ -53,7 +53,8 @@ class AddUtenteViewModel @Inject constructor(
                         )
                     }
 
-                } else {
+                }
+                else {
                     updateState {
                         it.copy(
                             isLoading = false,

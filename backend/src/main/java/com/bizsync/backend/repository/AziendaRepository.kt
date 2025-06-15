@@ -5,6 +5,7 @@ import com.bizsync.backend.dto.AziendaDto
 import com.bizsync.backend.mapper.toDomain
 import com.bizsync.backend.mapper.toDto
 import com.bizsync.backend.remote.AziendeFirestore
+import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.AreaLavoro
 import com.bizsync.domain.model.Azienda
 import com.bizsync.domain.model.TurnoFrequente
@@ -54,23 +55,23 @@ class AziendaRepository @Inject constructor(private val db : FirebaseFirestore) 
         }
     }
 
-    suspend fun getAziendaById(aziendaId: String): Azienda? {
-        try {
+    suspend fun getAziendaById(aziendaId: String): Resource<Azienda> {
+        return try {
             val result = db.collection(AziendeFirestore.COLLECTION)
                 .document(aziendaId)
                 .get()
                 .await()
 
-            Log.e("AZIENDA_DEBUG", "ho preso l'azienda" + result.toString())
-            val aziendaDto =  result.toObject(AziendaDto::class.java)?.copy(id = result.id )
+            Log.e("AZIENDA_DEBUG", "ho preso l'azienda $result")
+            val aziendaDto = result.toObject(AziendaDto::class.java)?.copy(id = result.id)
 
-            return aziendaDto?.toDomain()
+            aziendaDto?.toDomain()?.let { azienda ->
+                Resource.Success(azienda)
+            } ?: Resource.Empty
 
-        }
-
-        catch (e: Exception) {
-            Log.e("AZINEDA_DEBUG", "Errore nel prendere l'azienda", e)
-            return null
+        } catch (e: Exception) {
+            Log.e("AZIENDA_DEBUG", "Errore nel prendere l'azienda", e)
+            Resource.Error(e.message ?: "Errore sconosciuto")
         }
     }
 

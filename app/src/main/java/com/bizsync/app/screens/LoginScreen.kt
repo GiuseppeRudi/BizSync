@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun LoginScreen(
-    onLogin: () -> Unit,       // “Continua come …”
+    onLogin: () -> Unit,
 ) {
     Box(
         modifier = Modifier
@@ -57,7 +57,6 @@ fun LoginScreen(
             )
 
 
-            // Bottone “Accedi con un altro account”
             Button(
                 onClick = onLogin,
                 shape = RoundedCornerShape(16.dp),
@@ -76,10 +75,4 @@ fun LoginScreen(
     }
 }
 
-@Preview
-@Composable
-private fun LoginPreview(){
-    LoginScreen(
-    onLogin = {}
-    )
-}
+

@@ -51,8 +51,10 @@ class InvitiViewModel @Inject constructor(private val invitoRepository: InvitoRe
         // cambiare il valore di invito lo stato
         val errore1 = invitoRepository.updateInvito(invite)
 
+        val uid = userViewMdel.uiState.value.user.uid
+
         // aggiornare il valroe di user della sua azienda
-        val errore2 = userRepository.updateAcceptInvite(invite,userViewMdel.uiState.value.user.uid)
+        val errore2 = userRepository.updateAcceptInvite(invite,uid)
 
         if (errore1 && errore2 == false )
         {

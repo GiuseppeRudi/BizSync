@@ -69,9 +69,9 @@ class MainActivity : ComponentActivity() {
             }
 
             if (!currentUserLogin.value) {
-                // Schermata di login con un solo bottone “Accedi”
                 LoginScreen(onLogin = { launchLoginFlow() })
-            } else {
+            }
+            else {
                 CompositionLocalProvider(
                     LocalNavController provides navController,
                     LocalUserViewModel provides userViewModel
