@@ -122,7 +122,7 @@ class UserRepository @Inject constructor(private val db : FirebaseFirestore) {
             db.collection(UtentiFirestore.COLLECTION)
                 .document(uid)
                 .update(
-                    UtentiFirestore.Fields.ID_AZIENDA, invite.azienda,
+                    UtentiFirestore.Fields.ID_AZIENDA, invite.idAzienda,
                     UtentiFirestore.Fields.MANAGER, invite.manager,
                     UtentiFirestore.Fields.RUOLO, invite.nomeRuolo
                 )

@@ -12,9 +12,6 @@ object AziendaUiMapper {
             nome = domain.nome,
             areeLavoro = domain.areeLavoro,
             turniFrequenti = domain.turniFrequenti,
-            isSelezionata = false,
-            isEspansa = false,
-            nomeErrore = null,
             numeroDipendenti = 0,
             descrizioneAzienda = ""
         )

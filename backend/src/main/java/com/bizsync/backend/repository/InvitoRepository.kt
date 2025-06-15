@@ -1,8 +1,10 @@
 package com.bizsync.backend.repository
 
 import android.util.Log
+import com.bizsync.backend.mapper.toDto
 import com.bizsync.backend.remote.InvitiFirestore
 import com.bizsync.domain.constants.StatusInvite
+import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.Invito
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
@@ -36,14 +38,18 @@ class InvitoRepository @Inject constructor(private val db : FirebaseFirestore)
     }
 
 
-    suspend fun caricaInvito(invite : Invito)  {
-
+    suspend fun caricaInvito(invite: Invito): Resource<Unit> {
+        return try {
             Log.d("INVITO_DEBUG", invite.toString())
             val result = db.collection(InvitiFirestore.COLLECTION)
-                .add(invite)
+                .add(invite.toDto())
                 .await()
-
-            Log.d("INVITI_DEBUG", "Inviti caricati (${result.id}):")
+            Log.d("INVITI_DEBUG", "Invito caricato con id: ${result.id}")
+            Resource.Success(Unit) // ritorno l'invito caricato con successo
+        } catch (e: Exception) {
+            Log.e("INVITI_DEBUG", "Errore nel caricamento invito", e)
+            Resource.Error("Errore durante il caricamento dell'invito: ${e.message}")
+        }
     }
 
 

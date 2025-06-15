@@ -13,10 +13,7 @@ data class AziendaUi(
     var areeLavoro: List<AreaLavoro> = emptyList(),
     var turniFrequenti: List<TurnoFrequente> = emptyList(),
 
-    // Aggiunte per la UI
-    var isSelezionata: Boolean = false,
-    var isEspansa: Boolean = false,
-    var nomeErrore: String? = null,
+
 
     // Informazioni derivate
     val numeroDipendenti: Int = 0,

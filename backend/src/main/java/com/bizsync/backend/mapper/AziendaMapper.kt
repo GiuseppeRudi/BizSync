@@ -27,5 +27,5 @@ object AziendaMapper {
 }
 
 // Estensioni
-fun AziendaDto.toDomain(): Azienda? = AziendaMapper.toDomain(this)
+fun AziendaDto.toDomain(): Azienda = AziendaMapper.toDomain(this)
 fun Azienda.toDto(): AziendaDto = AziendaMapper.toDto(this)

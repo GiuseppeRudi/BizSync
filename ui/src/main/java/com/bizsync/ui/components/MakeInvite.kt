@@ -46,13 +46,14 @@ fun MakeInviteDialog(
 ) {
     val inviteVM: MakeInviteViewModel = hiltViewModel()
 
+    val inviteState by inviteVM.uiState.collectAsState()
     val userState by userVM.uiState.collectAsState()
 
-    val email by inviteVM.email.collectAsState()
-    val ruolo by inviteVM.ruolo.collectAsState()
-    val manager by inviteVM.manager.collectAsState()
-    val resultMessage by inviteVM.resultMessage.collectAsState()
-    val resultStatus by inviteVM.resultStatus.collectAsState()
+    val email = inviteState.invite.email
+    val ruolo = inviteState.invite.nomeRuolo
+    val manager = inviteState.invite.manager
+    val resultMessage = inviteState.resultMessage
+    val resultStatus = inviteState.resultStatus
 
 
 
@@ -237,12 +238,15 @@ fun MakeInviteDialog(
         }
     }
 
-    // Status Dialog (mantenuto separato per la gestione dei risultati)
-    StatusDialog(
-        message = resultMessage,
-        statusType = resultStatus ?: DialogStatusType.SUCCESS,
-        onDismiss = { inviteVM.clearResult() }
-    )
+    if (resultStatus != null && resultMessage != null)
+    {
+        StatusDialog(
+            message = resultMessage,
+            statusType = resultStatus ,
+            onDismiss = { inviteVM.clearResult() }
+        )
+    }
+
 }
 
 @Composable

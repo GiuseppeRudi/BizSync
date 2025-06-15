@@ -4,85 +4,65 @@ package com.bizsync.ui.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.repository.InvitoRepository
-import com.bizsync.domain.model.Azienda
-import com.bizsync.domain.model.Invito
+import com.bizsync.domain.constants.StatusInvite
+import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.ui.components.DialogStatusType
 import com.bizsync.ui.model.AziendaUi
+import com.bizsync.ui.model.MakeInviteState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import toDomain
 import javax.inject.Inject
 
 
 @HiltViewModel
 class MakeInviteViewModel @Inject constructor(private val invitoRepository: InvitoRepository) : ViewModel() {
 
-    private val _email = MutableStateFlow<String>("")
-    val email : StateFlow<String> = _email
 
-    fun onEmailChanged(newValue : String)
-    {
-        _email.value = newValue
-    }
+    private val _uiState = MutableStateFlow(MakeInviteState())
+    val uiState: StateFlow<MakeInviteState> = _uiState
 
-    private val _stato = MutableStateFlow<String>("in pending")
-    val stato : StateFlow<String> = _stato
 
-    fun onEsitoChanged(newValue : String)
-    {
-        _stato.value = newValue
-    }
-
-    private val _manager = MutableStateFlow<Boolean>(false)
-    val manager : StateFlow<Boolean> = _manager
-
-    fun onManagerChanged(newValue: Boolean)
-    {
-        _manager.value = newValue
-    }
-
-    private val _ruolo = MutableStateFlow<String>("")
-    val ruolo : StateFlow<String> = _ruolo
-
-    fun onRuoloChanged(newValue : String)
-    {
-        _ruolo.value = newValue
+    fun onEmailChanged(newValue: String) {
+        _uiState.update { it.copy(invite = it.invite.copy(email = newValue)) }
     }
 
 
-    private val _resultMessage = MutableStateFlow<String?>(null)
-    val resultMessage : StateFlow<String?> = _resultMessage
+    fun onManagerChanged(newValue: Boolean) {
+        _uiState.update { it.copy(invite = it.invite.copy(manager = newValue)) }
+    }
 
-    private val _resultStatus = MutableStateFlow<DialogStatusType?>(null)
-    val resultStatus : StateFlow<DialogStatusType?> = _resultStatus
+    fun onRuoloChanged(newValue: String) {
+        _uiState.update { it.copy(invite = it.invite.copy(nomeRuolo = newValue)) }
+    }
 
-    fun inviaInvito(azienda : AziendaUi?) {
+
+    fun inviaInvito(azienda : AziendaUi) {
         viewModelScope.launch {
-            try {
-                if(azienda!=null)
-                {
-                    invitoRepository.caricaInvito(Invito("",azienda.nome,_email.value,azienda.idAzienda,_manager.value,_ruolo.value,_stato.value))
-                    _resultMessage.value = "Invito inviato con successo!"
-                }
-                else
-                {
-                    _resultStatus.value = DialogStatusType.ERROR
 
-                }
+                if(azienda.idAzienda.isNotEmpty() && azienda.nome.isNotEmpty())
+                {
+                    _uiState.update { it.copy(invite = _uiState.value.invite.copy(aziendaNome = azienda.nome,idAzienda = azienda.idAzienda, stato = StatusInvite.INPENDING)) }
+                    val result = invitoRepository.caricaInvito(_uiState.value.invite.toDomain())
 
-            } catch (e: Exception) {
-                _resultMessage.value = "Errore: ${e.message}"
-                _resultStatus.value = DialogStatusType.ERROR
-            }
+                    when (result)
+                    {
+                        is Resource.Success -> { _uiState.update { it.copy(resultStatus = DialogStatusType.SUCCESS) }}
+                        is Resource.Error -> { _uiState.update { it.copy(resultStatus = DialogStatusType.ERROR, resultMessage = result.message) } }
+                        else -> {_uiState.update { it.copy( resultMessage = " Unknown Error") }}
+                    }
+                }
+                else {
+                    _uiState.update { it.copy(resultStatus = DialogStatusType.ERROR, resultMessage = "Azienda non trovata") }
+                }
         }
     }
 
     fun clearResult() {
-        _resultMessage.value = null
-        _resultStatus.value = null
+        _uiState.update { MakeInviteState() }
     }
-
-
 
 }

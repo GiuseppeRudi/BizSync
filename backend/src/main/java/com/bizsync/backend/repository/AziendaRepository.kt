@@ -37,23 +37,37 @@ class AziendaRepository @Inject constructor(private val db : FirebaseFirestore) 
         }
     }
 
-    suspend fun addPianificaSetup(idAzienda: String, aree: List<AreaLavoro>, turni: List<TurnoFrequente>): Boolean {
+
+    suspend fun addPianificaSetup(
+        idAzienda: String,
+        aree: List<AreaLavoro>,
+        turni: List<TurnoFrequente>
+    ): Resource<Unit> {
         return try {
-            db.collection(AziendeFirestore.COLLECTION)
-                .document(idAzienda)
-                .set(
-                    mapOf(
-                        AziendeFirestore.Fields.AREE to aree,
-                        AziendeFirestore.Fields.TURNI to turni
-                    ),
-                    SetOptions.merge()
-                )
-                .await()
-            true
+            val success = aree.isNotEmpty() && turni.isNotEmpty()
+
+            if (success) {
+                db.collection(AziendeFirestore.COLLECTION)
+                    .document(idAzienda)
+                    .set(
+                        mapOf(
+                            AziendeFirestore.Fields.AREE to aree,
+                            AziendeFirestore.Fields.TURNI to turni
+                        ),
+                        SetOptions.merge()
+                    )
+                    .await()
+                Resource.Success(Unit)}
+            else {
+
+                Resource.Empty
+            }
+
         } catch (e: Exception) {
-            false
+            Resource.Error(message = "Errore durante l'aggiornamento del setup di pianificazione")
         }
     }
+
 
     suspend fun getAziendaById(aziendaId: String): Resource<Azienda> {
         return try {

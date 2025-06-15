@@ -4,11 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.repository.AziendaRepository
 import com.bizsync.backend.repository.OnBoardingPianificaRepository
+import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.AreaLavoro
 import com.bizsync.domain.model.TurnoFrequente
+import com.bizsync.ui.model.OnBoardingPianificaState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -16,130 +19,125 @@ import javax.inject.Inject
 @HiltViewModel
 class OnBoardingPianificaViewModel @Inject constructor(private val aziendaRepository : AziendaRepository, private val OnBoardingPianificaRepository: OnBoardingPianificaRepository) : ViewModel() {
 
-    private val _currentStep = MutableStateFlow(0)
-    val currentStep : StateFlow<Int> = _currentStep
 
-    private val _aree = MutableStateFlow<List<AreaLavoro>>(emptyList())
-    val aree : StateFlow<List<AreaLavoro>> = _aree
-
-
-    private val _nomeAzienda = MutableStateFlow<String>("")
-    val nomeAzienda : StateFlow<String> = _nomeAzienda
-
-    private val _areePronte = MutableStateFlow<Boolean>(false)
-    val areePronte : StateFlow<Boolean> = _areePronte
-
-    private val _turniPronti = MutableStateFlow<Boolean>(false)
-    val turniPronti : StateFlow<Boolean> = _turniPronti
+    private val _uiState = MutableStateFlow(OnBoardingPianificaState())
+    val uiState: StateFlow<OnBoardingPianificaState> = _uiState
 
     fun setStep(step: Int) {
-        _currentStep.value = step
+        _uiState.update { it.copy(currentStep = step) }
     }
 
-    fun generaAreeAi(name : String){
-        _nomeAzienda.value = name
-
-        viewModelScope.launch {
-            val aree = OnBoardingPianificaRepository.setAreaAi(nomeAzienda.value)
-
-            if(aree.isNotEmpty())
-            {
-
-                _aree.value = aree
-                _areePronte.value = true
-            }
-        }
-
+    fun onNuovaAreaChangeName(name: String) {
+        _uiState.update { it.copy(nuovaArea = it.nuovaArea.copy(nomeArea = name)) }
     }
-
-    fun generaTurniAi(name : String){
-        _nomeAzienda.value = name
-
-        viewModelScope.launch {
-            val turni = OnBoardingPianificaRepository.setTurniAi(nomeAzienda.value)
-
-            if(turni.isNotEmpty())
-            {
-
-                _turni.value = turni
-                _turniPronti.value = true
-            }
-        }
-
-    }
-
-    private val _turni = MutableStateFlow<List<TurnoFrequente>>(emptyList())
-    val turni : StateFlow<List<TurnoFrequente>> = _turni
-
-
-    private val _nuovoTurno = MutableStateFlow<TurnoFrequente>(TurnoFrequente())
-    val nuovoTurno : StateFlow<TurnoFrequente> = _nuovoTurno
-
-    private val _nuovaArea = MutableStateFlow<AreaLavoro>(AreaLavoro())
-    val nuovaArea : StateFlow<AreaLavoro> = _nuovaArea
-
-
-
-    fun onNuovaAreaChangeName(name : String)
-    {
-        _nuovaArea.value = _nuovaArea.value.copy(nomeArea = name, id = _nuovaArea.value.id)
-    }
-
 
     fun aggiungiArea() {
-        _aree.value = _aree.value + _nuovaArea.value
+        _uiState.update { it.copy(aree = it.aree + it.nuovaArea) }
     }
 
-    fun resetNuovaArea(){
-        _nuovaArea.value = AreaLavoro()
+    fun resetNuovaArea() {
+        _uiState.update { it.copy(nuovaArea = AreaLavoro()) }
+    }
+
+    fun reset(){
+        _uiState.update { OnBoardingPianificaState() }
+    }
+
+
+    fun generaAreeAi(nomeAzienda: String) {
+
+        viewModelScope.launch {
+            val aree = OnBoardingPianificaRepository.setAreaAi(nomeAzienda)
+            _uiState.update { it.copy(aree = aree, areePronte = true) }
+        }
+
+    }
+
+    fun generaTurniAi(nomeAzienda: String) {
+
+        viewModelScope.launch {
+            val turni = OnBoardingPianificaRepository.setTurniAi(nomeAzienda)
+
+            _uiState.update { it.copy(turni = turni, turniPronti = true) }
+        }
+
     }
 
 
     fun onRimuoviAreaById(idDaRimuovere: String) {
-        _aree.value = _aree.value.filter { it.id != idDaRimuovere }
+        _uiState.update { state ->
+            state.copy(
+                aree = state.aree.filter { it.id != idDaRimuovere }
+            )
+        }
     }
-
 
     fun onRimuoviTurnoById(idDaRimuovere: String) {
-        _turni.value = _turni.value.filter { it.id != idDaRimuovere }
+        _uiState.update { state ->
+            state.copy(
+                turni = state.turni.filter { it.id != idDaRimuovere }
+            )
+        }
     }
 
-
     fun onNewTurnoChangeFinishDate(finishDate: String) {
-        _nuovoTurno.value = _nuovoTurno.value.copy(oraFine = finishDate)
+        _uiState.update { state ->
+            state.copy(
+                nuovoTurno = state.nuovoTurno.copy(oraFine = finishDate)
+            )
+        }
     }
 
     fun onNewTurnoChangeStartDate(startDate: String) {
-        _nuovoTurno.value = _nuovoTurno.value.copy(oraInizio = startDate)
+        _uiState.update { state ->
+            state.copy(
+                nuovoTurno = state.nuovoTurno.copy(oraInizio = startDate)
+            )
+        }
     }
 
     fun onNewTurnoChangeName(name: String) {
-        _nuovoTurno.value = _nuovoTurno.value.copy(nome = name)
+        _uiState.update { state ->
+            state.copy(
+                nuovoTurno = state.nuovoTurno.copy(nome = name)
+            )
+        }
     }
 
     fun aggiungiTurno() {
-        _turni.value = _turni.value + _nuovoTurno.value
-        _nuovoTurno.value = TurnoFrequente()
+        _uiState.update { state ->
+            state.copy(
+                turni = state.turni + state.nuovoTurno,
+                nuovoTurno = TurnoFrequente() // resetta il form
+            )
+        }
     }
 
-    private val _onDone = MutableStateFlow<Boolean>(false)
-    val onDone : StateFlow<Boolean> = _onDone
+    fun clearError() {
+        _uiState.update { it.copy(errorMsg = null) }
+    }
 
-    fun onComplete(idAzienda : String)
-    {
+    fun onComplete(idAzienda: String) {
         viewModelScope.launch {
-            val check = aziendaRepository.addPianificaSetup(idAzienda, aree.value,turni.value)
+            val result = aziendaRepository.addPianificaSetup(
+                idAzienda,
+                _uiState.value.aree,
+                _uiState.value.turni,
+            )
 
-            if (check)
-            {
-                _onDone.value = true
-            }
+            when (result) {
+                is Resource.Success -> {
+                    _uiState.update { it.copy(onDone = true) }
+                }
 
-            else
-            {
-                // GESTISCO L'ERRORE
+                is Resource.Error -> {
+                    _uiState.update { it.copy(errorMsg = result.message) }
+                }
+
+                is Resource.Empty -> {
+                    _uiState.update { it.copy(errorMsg = "Nessun dato da salvare") }
+                }
             }
         }
-
     }
 }

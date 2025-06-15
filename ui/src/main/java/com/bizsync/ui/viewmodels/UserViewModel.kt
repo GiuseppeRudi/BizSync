@@ -115,7 +115,7 @@ class UserViewModel @Inject constructor(private val userRepository: UserReposito
                     it.copy(
                         user =
                             currentUser.copy(
-                                idAzienda = invite.azienda,
+                                idAzienda = invite.idAzienda,
                                 isManager = invite.manager,
                                 ruolo = invite.nomeRuolo
                             )

@@ -17,6 +17,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.bizsync.app.navigation.LocalScaffoldViewModel
 import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.ui.components.AiBanner
+import com.bizsync.ui.components.DialogStatusType
+import com.bizsync.ui.components.StatusDialog
 import com.bizsync.ui.components.UniversalCard
 import com.bizsync.ui.viewmodels.OnBoardingPianificaViewModel
 import com.bizsync.ui.viewmodels.ScaffoldViewModel
@@ -29,8 +31,8 @@ fun SetupPianificaScreen(
 ) {
 
     val viewModel : OnBoardingPianificaViewModel = hiltViewModel()
-    val currentStep by viewModel.currentStep.collectAsState()
-
+    val pianificaState by viewModel.uiState.collectAsState()
+    val currentStep = pianificaState.currentStep
     val scaffoldVM = LocalScaffoldViewModel.current
     LaunchedEffect(Unit) {
         scaffoldVM.onFullScreenChanged(false)
@@ -110,11 +112,12 @@ fun WelcomeStep(viewModel: OnBoardingPianificaViewModel) {
 
 @Composable
 fun AreeLavoroStep(viewModel: OnBoardingPianificaViewModel) {
-    val areeDefaultAttive by viewModel.aree.collectAsState()
-    val nuovaArea by viewModel.nuovaArea.collectAsState()
-    val checkAreeDefualt by viewModel.areePronte.collectAsState()
+    val pianificaState by viewModel.uiState.collectAsState()
+    val aree = pianificaState.aree
+    val nuovaArea = pianificaState.nuovaArea
+    val checkAreeDefualt = pianificaState.areePronte
 
-    val totalAree = areeDefaultAttive.size
+    val totalAree = aree.size
     val maxAree = 10
     val canAddArea = totalAree < maxAree
 
@@ -176,7 +179,7 @@ fun AreeLavoroStep(viewModel: OnBoardingPianificaViewModel) {
                         UniversalCard(loading = true)
                     }
                 } else {
-                    items(areeDefaultAttive) { area ->
+                    items(aree) { area ->
                         UniversalCard(
                             loading = false,
                             title = area.nomeArea,
@@ -259,11 +262,13 @@ fun AreeLavoroStep(viewModel: OnBoardingPianificaViewModel) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TurniFrequentiStep(viewModel: OnBoardingPianificaViewModel, onSetupComplete: () -> Unit,scaffoldVM: ScaffoldViewModel) {
-    val turni by viewModel.turni.collectAsState()
-    val nuovoTurno by viewModel.nuovoTurno.collectAsState()
-    val checkTurniPronti by viewModel.turniPronti.collectAsState()
-    val aree by viewModel.aree.collectAsState()
+    val pianificaState by viewModel.uiState.collectAsState()
+    val turni = pianificaState.turni
+    val nuovoTurno = pianificaState.nuovoTurno
+    val checkTurniPronti = pianificaState.turniPronti
+    val aree = pianificaState.aree
 
+    val errorMsg = pianificaState.errorMsg
     val totalTurni = turni.size
     val maxTurni = 6
     val canAddTurno = totalTurni < maxTurni
@@ -271,10 +276,10 @@ fun TurniFrequentiStep(viewModel: OnBoardingPianificaViewModel, onSetupComplete:
     val userViewModel = LocalUserViewModel.current
     val userState by userViewModel.uiState.collectAsState()
     val azienda = userState.azienda
-    val onDone by viewModel.onDone.collectAsState()
+    val onDone = pianificaState.onDone
 
     LaunchedEffect(azienda) {
-        if (!checkTurniPronti) {  // Solo se i turni non sono ancora pronti
+        if (!checkTurniPronti) {
             viewModel.generaTurniAi(azienda.nome)
         }
     }
@@ -282,9 +287,19 @@ fun TurniFrequentiStep(viewModel: OnBoardingPianificaViewModel, onSetupComplete:
     LaunchedEffect(onDone) {
         if (onDone) {
             scaffoldVM.onFullScreenChanged(true)
+            viewModel.reset()
             onSetupComplete()
         }
     }
+
+    if(errorMsg != null) {
+        StatusDialog(
+            message = errorMsg, onDismiss = { viewModel.clearError() },
+            statusType = DialogStatusType.ERROR
+        )
+    }
+
+    // vrificare se si puo metterre un status dialog anche per il successo
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -420,8 +435,8 @@ fun TurniFrequentiStep(viewModel: OnBoardingPianificaViewModel, onSetupComplete:
 
                 Button(
                     onClick = {
-                        viewModel.onComplete(azienda.idAzienda) // Async
-                        userViewModel.updateTurniAree(aree, turni) // Sincrono (veloce)
+                        viewModel.onComplete(azienda.idAzienda)
+                        userViewModel.updateTurniAree(aree, turni)
                     },
                     enabled = totalTurni > 0
                 ) {
@@ -433,3 +448,4 @@ fun TurniFrequentiStep(viewModel: OnBoardingPianificaViewModel, onSetupComplete:
 
 
 }
+
