@@ -26,8 +26,8 @@ import com.bizsync.ui.viewmodels.AddAziendaViewModel
 fun SettoreSelector(addaziendaviewmodel: AddAziendaViewModel)
 {
     val settori = listOf("Informatica", "Edilizia" , "Commercio" , "Sanità", "Turismo" , "Altro")
-    val selectedSettore by addaziendaviewmodel.sector.collectAsState()
-    val customSettore by addaziendaviewmodel.customSector.collectAsState()
+    val uiState by addaziendaviewmodel.uiState.collectAsState()
+    val selectedSettore = uiState.azienda.sector
     val isCustom = remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxWidth()){

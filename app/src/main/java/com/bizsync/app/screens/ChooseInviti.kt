@@ -33,25 +33,29 @@ import com.bizsync.ui.viewmodels.InvitiViewModel
 @Composable
 fun ChooseInvito(onTerminate: () -> Unit) {
     val invitiVM: InvitiViewModel = hiltViewModel()
-    val invites by invitiVM.invites.collectAsState()
-    val loading by invitiVM.isLoading.collectAsState()
-    val erroreStatus by invitiVM.errorStatusInvite.collectAsState()
-    val errorMessage by invitiVM.errorMessageStatusInvite.collectAsState()
+    val inviteState by invitiVM.uiState.collectAsState()
     val userVM = LocalUserViewModel.current
     val userState by userVM.uiState.collectAsState()
     val user = userState.user
+    val updateInvite = inviteState.updateInvte
+    val checkAcceptInvite = userState.checkAcceptInvite
 
-
-
-    LaunchedEffect(user) {
-        user.let {
-            Log.d("INVITI_DEBUG",  "EMAIL: " + user?.email.toString())
-
-            invitiVM.fetchInvites(user?.email.toString())   // ora che ho l'uid, chiamo la fetch vera
-        }
-
+    LaunchedEffect(Unit) {
+        invitiVM.fetchInvites(user.email.toString())
     }
 
+    if(checkAcceptInvite == true){
+        onTerminate()
+    }
+
+    val loading = inviteState.isLoading
+    val invites = inviteState.invites
+
+    val resultMsgInvire = inviteState.resultMsg
+    val statusMsgInvite = inviteState.statusMsg
+
+    val resultMsgUser = userState.resultMsg
+    val statusMsgUser = userState.statusMsg
 
     Box(modifier = Modifier.fillMaxSize()) {
         // Loading indicator
@@ -85,8 +89,8 @@ fun ChooseInvito(onTerminate: () -> Unit) {
                         val invite = invites[index]
                         InviteCard(
                             invite = invite,
-                            onAccept = { invitiVM.acceptInvite(invite, userVM)
-                                          onTerminate()},
+                            onAccept = { invitiVM.acceptInvite(invite);
+                                            if (updateInvite == true){ userVM.onAcceptInvite(invite) } },
                             onDetails = { invitiVM.showDetails(invite) },
                             onDecline = { invitiVM.declineInvite(invite) }
                         )
@@ -96,7 +100,9 @@ fun ChooseInvito(onTerminate: () -> Unit) {
         }
     }
 
-    StatusDialog(message = errorMessage, statusType = erroreStatus, onDismiss = { invitiVM.clearErrorMessage()} )
+    StatusDialog(message = resultMsgUser, statusType = statusMsgUser, onDismiss = { userVM.clearMessage()} )
+    StatusDialog(message = resultMsgInvire, statusType = statusMsgInvite, onDismiss = { invitiVM.clearMessage()} )
+
 }
 
 

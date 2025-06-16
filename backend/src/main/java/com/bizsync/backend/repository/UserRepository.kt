@@ -57,7 +57,7 @@ class UserRepository @Inject constructor(private val db : FirebaseFirestore) {
         }
     }
 
-    suspend fun aggiornaAzienda(idAzienda: String ,idUtente : String, ruolo : RuoliAzienda) : Boolean {
+    suspend fun aggiornaAzienda(idAzienda: String ,idUtente : String, ruolo : RuoliAzienda) : Resource<Unit> {
         Log.d("AZIENDA_DEBUG", "SONO NEL REPOSITORY E ID UTENTE " + idUtente.toString())
         Log.d("AZIENDA_DEBUG", "SONO NEL REPOSITORY E ID AZIENDA " + idAzienda.toString())
 
@@ -73,49 +73,17 @@ class UserRepository @Inject constructor(private val db : FirebaseFirestore) {
                 .update(updates)
                 .await()
 
-            true
+             Resource.Success(Unit)
         }
         catch (e: Exception) {
             Log.e("AZIENDA_DEBUG", "Errore nel aggiungere l'utente", e)
-            false
-        }
-    }
-
-    suspend fun checkUser(idUtente : String) : Boolean {
-        return try {
-            val result = db.collection(UtentiFirestore.COLLECTION)
-                .document(idUtente)
-                .get()
-                .await()
-
-             result.exists()
-        }
-        catch (e: Exception) {
-            Log.e("USER_DEBUG", "Errore nel aggiungere l'utente", e)
-            false
+            Resource.Error(e.message ?: "Errore sconosciuto")
         }
     }
 
 
 
-
-    suspend fun ottieniIdAzienda(idUtente: String): String? {
-        return try {
-            val document = db.collection(UtentiFirestore.COLLECTION)
-                .document(idUtente)
-                .get()
-                .await()
-
-            val idAzienda = document.getString(UtentiFirestore.Fields.ID_AZIENDA)
-            Log.d("USER_DEBUG", "ID Azienda: $idAzienda")
-            idAzienda
-        } catch (e: Exception) {
-            Log.e("USER_DEBUG", "Errore nell'ottenere l'idAzienda", e)
-            null
-        }
-    }
-
-    suspend fun updateAcceptInvite(invite : Invito, uid : String) : Boolean {
+    suspend fun updateAcceptInvite(invite: Invito, uid: String): Resource<Unit> {
         return try {
             Log.d("INVITO_DEBUG", invite.toString())
 
@@ -127,14 +95,15 @@ class UserRepository @Inject constructor(private val db : FirebaseFirestore) {
                     UtentiFirestore.Fields.RUOLO, invite.nomeRuolo
                 )
                 .await()
-            true
-        }
-        catch (e: Exception) {
-            Log.d("INVITO_DEBUG", e.toString())
 
-            false
+            Resource.Success(Unit)  // Successo senza dati specifici
+
+        } catch (e: Exception) {
+            Log.d("INVITO_DEBUG", e.toString())
+            Resource.Error("Errore nell'aggiornamento dell'utente: ${e.message}")
         }
     }
+
 
 
 

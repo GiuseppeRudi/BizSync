@@ -12,30 +12,29 @@ import javax.inject.Inject
 
 class InvitoRepository @Inject constructor(private val db : FirebaseFirestore)
 {
-    suspend fun loadInvito(email: String): List<Invito> {
+    suspend fun loadInvito(email: String): Resource<List<Invito>> {
         return try {
             val snapshot = db.collection(InvitiFirestore.COLLECTION)
-                .whereEqualTo(InvitiFirestore.Fields.EMAIL, email) // confronta esattamente con uid
+                .whereEqualTo(InvitiFirestore.Fields.EMAIL, email)
                 .get()
                 .await()
-
-            snapshot.documents.forEach { doc ->
-                Log.d("INVITI_DEBUG", "DocID=${doc.id}, data=${doc.data}")
-            }
 
             val list = snapshot.documents.mapNotNull { doc ->
                 doc.toObject(Invito::class.java)?.copy(id = doc.id)
             }
-            Log.d("INVITI_DEBUG", "Inviti caricati (${list.size}): $list")
 
-            list
+            if (list.isEmpty()) {
+                Resource.Empty
+            } else {
+                Resource.Success(list)
+            }
 
         } catch (e: Exception) {
-            e.printStackTrace()
-            Log.e("INVITI_DEBUG" , e.toString())
-            emptyList()
+            Log.e("INVITI_DEBUG", "Errore durante il caricamento inviti", e)
+            Resource.Error("Errore durante il caricamento degli inviti: ${e.localizedMessage}")
         }
     }
+
 
 
     suspend fun caricaInvito(invite: Invito): Resource<Unit> {
@@ -53,7 +52,7 @@ class InvitoRepository @Inject constructor(private val db : FirebaseFirestore)
     }
 
 
-    suspend fun updateInvito(invite : Invito) : Boolean {
+    suspend fun updateInvito(invite: Invito): Resource<Unit> {
         return try {
             Log.d("INVITO_DEBUG", invite.toString())
 
@@ -62,12 +61,11 @@ class InvitoRepository @Inject constructor(private val db : FirebaseFirestore)
                 .update(InvitiFirestore.Fields.STATO, StatusInvite.APPROVED)
                 .await()
 
-            true
-        }
-        catch (e: Exception) {
-            Log.d("INVITO_DEBUG", e.toString())
+            Resource.Success(Unit)  // Successo senza dati specifici
 
-            false
+        } catch (e: Exception) {
+            Log.d("INVITO_DEBUG", e.toString())
+            Resource.Error("Errore nell'aggiornamento dell'invito: ${e.message}")
         }
     }
 

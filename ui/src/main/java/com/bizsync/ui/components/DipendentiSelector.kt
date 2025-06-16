@@ -20,7 +20,8 @@ import com.bizsync.ui.viewmodels.AddAziendaViewModel
 fun DipendentiSelector(addaziendaviewmodel: AddAziendaViewModel)
 {
     val ranges = listOf("0 - 20", "21 - 40" , "41 - 60", "61 - 100" , " 100+ ")
-    val selectedRange by addaziendaviewmodel.numDipendentiRange.collectAsState()
+    val uiState by addaziendaviewmodel.uiState.collectAsState()
+    val selectedRange = uiState.azienda.numDipendentiRange
 
     Column(modifier = Modifier.fillMaxWidth())
     {

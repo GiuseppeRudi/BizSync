@@ -1,107 +1,75 @@
 package com.bizsync.ui.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import android.util.Log
 import com.bizsync.backend.repository.AziendaRepository
-import com.bizsync.backend.repository.UserRepository
-import com.bizsync.domain.model.Azienda
-import com.bizsync.domain.constants.sealedClass.RuoliAzienda
+import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.ui.mapper.toDomain
-import com.bizsync.ui.model.AziendaUi
+import com.bizsync.ui.model.AddAziendaState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 import kotlinx.coroutines.launch
 
 
 @HiltViewModel
-class AddAziendaViewModel  @Inject constructor(private val aziendaRepository: AziendaRepository, private val userRepository: UserRepository): ViewModel() {
+class AddAziendaViewModel  @Inject constructor(private val aziendaRepository: AziendaRepository): ViewModel() {
 
 
-    private val _currentStep = MutableStateFlow(1)
-    val currentStep : StateFlow<Int> = _currentStep
+    private val _uiState = MutableStateFlow(AddAziendaState())
+    val uiState: StateFlow<AddAziendaState> = _uiState
 
 
-    private val _nomeAzienda = MutableStateFlow("Ciccio Industry")
-    val nomeAzienda: StateFlow<String> = _nomeAzienda
 
 
-    private val _numDipendentiRange = MutableStateFlow("")
-    val numDipendentiRange: StateFlow<String> = _numDipendentiRange
-
-
-    private val _sector = MutableStateFlow("")
-    val sector: StateFlow<String> = _sector
-
-
-    private val _customSector  = MutableStateFlow("")
-    val customSector : StateFlow<String> = _customSector
-
-
-    private val _idAzienda = MutableStateFlow<String>("")
-    val idAzienda : StateFlow<String> = _idAzienda
-
-
-    fun aggiungiAzienda(idUtente: String, userViewModel: UserViewModel) {
+    fun aggiungiAzienda(idUtente: String) {
 
         viewModelScope.launch(Dispatchers.IO){
 
-            var loaded  = aziendaRepository.creaAzienda(AziendaUi("", nomeAzienda.value).toDomain())
-
-            if (loaded!=null)
-            {
-                _idAzienda.value = loaded
-            Log.d("AZIENDA_DEBUG", "VEDO SE CE L'ID AZIENDA"  + idAzienda.toString())
-            Log.d("AZIENDA_DEBUG", "VEDO SE CE L'ID UTENTE"  + idUtente)
+            val azienda = _uiState.value.azienda
+            val result  = aziendaRepository.creaAzienda(azienda.toDomain())
 
 
-                    var check =
-                        userRepository.aggiornaAzienda(_idAzienda.value, idUtente, RuoliAzienda.Proprietario)
-
-                    if (check) {
-                        userViewModel.onAddAziendaRole(RuoliAzienda.Proprietario, _idAzienda.value)
-                    } else {
-                        error("Errore")
-                    }
+            when (result){
+                is Resource.Success -> { _uiState.update { it.copy(azienda = it.azienda.copy(idAzienda = result.data), isAgencyAdded = true) }}
+                is Resource.Error -> { _uiState.update { it.copy(resultMsg = result.message) }}
+                else -> {_uiState.update { it.copy(resultMsg = "Errore nella creazione dell'azienda")}}
             }
 
 
         }
     }
-
-
-
-    fun onIdAzienda(newValue: String)
-    {
-        _idAzienda.value = newValue
+    fun clearMessage() {
+        _uiState.value = _uiState.value.copy(resultMsg = null)
     }
 
-    fun onCustomSectorChanged(newValue : String)
-    {
-        _customSector.value = newValue
-    }
 
     fun onSectorChanged(newValue: String) {
-        _sector.value = newValue
+        _uiState.value = _uiState.value.copy(
+            azienda = _uiState.value.azienda.copy(sector = newValue)
+        )
     }
 
     fun onNumDipendentiRangeChanged(newValue: String) {
-        _numDipendentiRange.value = newValue
+        _uiState.value = _uiState.value.copy(
+            azienda = _uiState.value.azienda.copy(numDipendentiRange = newValue)
+        )
     }
 
     fun onNomeAziendaChanged(newValue: String) {
-        _nomeAzienda.value = newValue
+        _uiState.value = _uiState.value.copy(
+            azienda = _uiState.value.azienda.copy(nome = newValue)
+        )
     }
 
-    fun onCurrentStepDown()
-    {
-        _currentStep.value = _currentStep.value - 1
+    fun onCurrentStepDown() {
+        _uiState.value = _uiState.value.copy(currentStep = _uiState.value.currentStep - 1)
     }
 
-    fun onCurrentStepUp()
-    {
-        _currentStep.value = _currentStep.value + 1
+    fun onCurrentStepUp() {
+        _uiState.value = _uiState.value.copy(currentStep = _uiState.value.currentStep + 1)
     }
+
 }

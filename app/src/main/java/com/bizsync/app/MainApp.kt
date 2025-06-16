@@ -1,6 +1,5 @@
 package com.bizsync.app
 
-import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -26,7 +25,7 @@ fun MainApp(onLogout : () -> Unit) {
     val uid = FirebaseAuth.getInstance().currentUser?.uid
 
 
-    userState.errorMsg?.let { error ->
+    userState.resultMsg?.let { error ->
         StatusDialog(message = error, statusType = com.bizsync.ui.components.DialogStatusType.ERROR, onDismiss = { userVM.clearError()})
     }
 

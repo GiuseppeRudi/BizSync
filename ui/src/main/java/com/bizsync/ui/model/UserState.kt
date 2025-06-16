@@ -1,5 +1,6 @@
 package com.bizsync.ui.model
 
+import com.bizsync.ui.components.DialogStatusType
 
 
 data class UserState(
@@ -7,7 +8,8 @@ data class UserState(
     val azienda : AziendaUi = AziendaUi(),
     val hasLoadedUser: Boolean = false,
     val hasLoadedAgency: Boolean = false,
-    val errorMsg : String? = null,
-    val successMsg : String? = null,
-    val checkUser : Boolean? = null
+    val resultMsg : String? = null,
+    val statusMsg : DialogStatusType = DialogStatusType.ERROR,
+    val checkUser : Boolean? = null,
+    val checkAcceptInvite : Boolean = false
 )

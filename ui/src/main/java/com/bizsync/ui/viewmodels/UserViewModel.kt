@@ -5,18 +5,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.repository.AziendaRepository
 import com.bizsync.backend.repository.UserRepository
-import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.constants.sealedClass.Resource.*
 import com.bizsync.domain.model.AreaLavoro
-import com.bizsync.domain.model.Azienda
 import com.bizsync.domain.model.Invito
 import com.bizsync.domain.model.TurnoFrequente
-import com.bizsync.domain.model.User
 import com.bizsync.domain.constants.sealedClass.RuoliAzienda
+import com.bizsync.ui.components.DialogStatusType
 import com.bizsync.ui.mapper.toUiState
-import com.bizsync.ui.model.AziendaUi
 import com.bizsync.ui.model.UserState
-import com.bizsync.ui.model.UserUi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,20 +29,40 @@ class UserViewModel @Inject constructor(private val userRepository: UserReposito
     val uiState: StateFlow<UserState> = _uiState
 
 
-    fun onAddAziendaRole(ruolo: RuoliAzienda, azienda: String) {
-        _uiState.update {
-            it.copy(
-                user = _uiState.value.user.copy
-                    (
-                    idAzienda = azienda,
-                    ruolo = ruolo.route,
-                    isManager = ruolo.isPrivileged
-                )
+    fun onAddAziendaRole(idAzienda: String) {
 
-            )
+        viewModelScope.launch {
+
+            val idUtente = _uiState.value.user.uid
+            val result = userRepository.aggiornaAzienda(idAzienda, idUtente, RuoliAzienda.Proprietario)
+
+            when (result) {
+                is Success -> {
+                    _uiState.update {
+                        it.copy(
+                            user = _uiState.value.user.copy
+                                (
+                                idAzienda = idAzienda,
+                                ruolo = RuoliAzienda.Proprietario.route,
+                                isManager = RuoliAzienda.Proprietario.isPrivileged
+                            ), hasLoadedAgency = true
+                        )
+                    }
+                }
+                is Error -> { _uiState.update { it.copy(resultMsg = result.message) } }
+                else -> { _uiState.update { it.copy(resultMsg = "Errore sconosciuto") }}
+            }
+
         }
 
+
     }
+
+
+    fun clearMessage() {
+        _uiState.update { it.copy(resultMsg = null, statusMsg = DialogStatusType.ERROR) }
+    }
+
 
     fun checkUser(userId: String) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -64,9 +80,9 @@ class UserViewModel @Inject constructor(private val userRepository: UserReposito
                     )
                 }
 
-                is Error -> _uiState.update { it.copy(errorMsg = result.message) }
-                is Empty -> _uiState.update { it.copy(errorMsg = "Utente non trovato") }
-                else -> _uiState.update { it.copy(errorMsg = "Errore sconosciuto") }
+                is Error -> _uiState.update { it.copy(resultMsg = result.message) }
+                is Empty -> _uiState.update { it.copy(resultMsg = "Utente non trovato") }
+                else -> _uiState.update { it.copy(resultMsg = "Errore sconosciuto") }
             }
 
             val idAzienda = _uiState.value.user.idAzienda
@@ -85,9 +101,9 @@ class UserViewModel @Inject constructor(private val userRepository: UserReposito
                         }
                         _uiState.update { it.copy(checkUser = true) }
                     }
-                    is Error -> {_uiState.update { it.copy(errorMsg = loaded.message) } }
-                    is Empty -> {  _uiState.update { it.copy(errorMsg = "Azienda non trovata") } }
-                    else -> {_uiState.update { it.copy(errorMsg = "Errore sconosciuto") }
+                    is Error -> {_uiState.update { it.copy(resultMsg = loaded.message) } }
+                    is Empty -> {  _uiState.update { it.copy(resultMsg = "Azienda non trovata") } }
+                    else -> {_uiState.update { it.copy(resultMsg = "Errore sconosciuto") }
                 }
             }
 
@@ -101,28 +117,33 @@ class UserViewModel @Inject constructor(private val userRepository: UserReposito
 
         fun clearError()
         {
-            _uiState.update { it.copy(errorMsg = null) }}
+            _uiState.update { it.copy(resultMsg = null) }}
 
 
         fun onAcceptInvite(invite: Invito) {
 
 
-            if (_uiState.value.hasLoadedUser) {
+            viewModelScope.launch {
 
-                val currentUser = _uiState.value.user
+                val uid = _uiState.value.user.uid
+                val result = userRepository.updateAcceptInvite(invite, uid)
 
-                _uiState.update {
-                    it.copy(
-                        user =
-                            currentUser.copy(
-                                idAzienda = invite.idAzienda,
-                                isManager = invite.manager,
-                                ruolo = invite.nomeRuolo
-                            )
-                    )
-                }
 
-                viewModelScope.launch(Dispatchers.IO) {
+                if (result is Success) {
+
+                    val currentUser = _uiState.value.user
+
+                    _uiState.update {
+                        it.copy(
+                            user =
+                                currentUser.copy(
+                                    idAzienda = invite.idAzienda,
+                                    isManager = invite.manager,
+                                    ruolo = invite.nomeRuolo
+                                )
+                        )
+                    }
+
 
                     val idAzienda = _uiState.value.user.idAzienda
 
@@ -133,24 +154,30 @@ class UserViewModel @Inject constructor(private val userRepository: UserReposito
                             _uiState.update {
                                 it.copy(
                                     azienda = azienda.data.toUiState(),
-                                    hasLoadedAgency = true
+                                    hasLoadedAgency = true, resultMsg = "Invito accettato con successo. Complimenti",
+                                    statusMsg = DialogStatusType.SUCCESS, checkAcceptInvite = true
                                 )
                             }
                         }
-                        is Error -> { _uiState.update { it.copy(errorMsg = azienda.message) } }
-                        is Empty -> {_uiState.update { it.copy(errorMsg = "Azienda non trovata") } } // GESIRE IN QUALCHE MODO
-                        else -> { _uiState.update { it.copy(errorMsg = "Errore sconosciuto") }}
+
+                        is Error -> {
+                            _uiState.update { it.copy(resultMsg = azienda.message) }
+                        }
+
+                        is Empty -> {
+                            _uiState.update { it.copy(resultMsg = "Azienda non trovata", statusMsg = DialogStatusType.ERROR) }
+                        }
+                        else -> {
+                            _uiState.update { it.copy(resultMsg = "Errore sconosciuto", statusMsg = DialogStatusType.ERROR) }
+                        }
                     }
 
+
+                } else {
+                    _uiState.update { it.copy(resultMsg = "Errore nell'accettare l'invito ", statusMsg = DialogStatusType.ERROR) }
                 }
 
             }
-            else
-            {
-                _uiState.update { it.copy(errorMsg = "Utente non caricato") }
-            }
-
-
         }
 
         fun updateTurniAree(aree: List<AreaLavoro>, turni: List<TurnoFrequente>) {

@@ -1,84 +1,79 @@
 package com.bizsync.ui.viewmodels
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.repository.InvitoRepository
 import com.bizsync.backend.repository.UserRepository
+import com.bizsync.domain.constants.sealedClass.Resource
+import com.bizsync.domain.constants.sealedClass.Resource.Success
 import com.bizsync.domain.model.Invito
 import com.bizsync.ui.components.DialogStatusType
+import com.bizsync.ui.model.InvitiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 
 @HiltViewModel
-class InvitiViewModel @Inject constructor(private val invitoRepository: InvitoRepository, private val userRepository: UserRepository) : ViewModel() {
+class InvitiViewModel @Inject constructor(private val invitoRepository: InvitoRepository) : ViewModel() {
 
 
+    private val _uiState = MutableStateFlow(InvitiState())
+    val uiState: StateFlow<InvitiState> = _uiState
 
-    private val _invites = MutableStateFlow<List<Invito>>(emptyList())
-    val invites: StateFlow<List<Invito>> = _invites
-
-    private val _isLoading = MutableStateFlow(true)
-    val isLoading: StateFlow<Boolean> = _isLoading
-
-    private val _email = MutableStateFlow("")
-    val email : StateFlow<String> = _email
-
-    private val _errorStatusInvite = MutableStateFlow<DialogStatusType>(DialogStatusType.ERROR)
-    val errorStatusInvite : StateFlow<DialogStatusType> = _errorStatusInvite
-
-    private val _errorMessageStatusInvite = MutableStateFlow<String?>(null)
-    val errorMessageStatusInvite : StateFlow<String?> = _errorMessageStatusInvite
 
 
     fun fetchInvites(email : String) = viewModelScope.launch {
-        _isLoading.value = true
-         _email.value = email
 
-        val list =  invitoRepository.loadInvito(email)
-        Log.d("INVITI_DEBUG" , "LISTA" + list.toString())
-        _invites.value = list
-        _isLoading.value = false
+        val result =  invitoRepository.loadInvito(email)
+
+        when(result){
+            is Success -> { onInvitesLoaded(result.data) }
+            is Resource.Error -> { onInviteMsg(DialogStatusType.ERROR, result.message) }
+            is Resource.Empty -> { onInviteMsg(DialogStatusType.ERROR, "Nessun invito trovato") }
+        }
+
     }
 
 
+    fun clearMessage() {
+        _uiState.update { it.copy(resultMsg = null, statusMsg = DialogStatusType.ERROR) }
+    }
 
-    fun acceptInvite(invite: Invito, userViewMdel : UserViewModel) = viewModelScope.launch {
-        // cambiare il valore di invito lo stato
-        val errore1 = invitoRepository.updateInvito(invite)
 
-        val uid = userViewMdel.uiState.value.user.uid
+    fun acceptInvite(invite: Invito) = viewModelScope.launch {
+        val result  = invitoRepository.updateInvito(invite)
 
-        // aggiornare il valroe di user della sua azienda
-        val errore2 = userRepository.updateAcceptInvite(invite,uid)
-
-        if (errore1 && errore2 == false )
-        {
-            userViewMdel.onAcceptInvite(invite)
-            _errorStatusInvite.value = DialogStatusType.SUCCESS
-            _errorMessageStatusInvite.value = "Invito accettato con successo. Complimenti"
-        }
-        else
-        {
-            _errorMessageStatusInvite.value = " Non è stato possbile accettare l'invito, riprovare"
+        when(result){
+            is Success -> {  _uiState.update { it.copy(updateInvte = true) }}
+            is Resource.Error -> { onInviteMsg(DialogStatusType.ERROR, result.message) }
+            else -> {onInviteMsg(DialogStatusType.ERROR, "Errore Sconosciuto")}
         }
 
     }
 
     fun declineInvite(invite: Invito) = viewModelScope.launch {
         // repo.declineInvite(...)
-        fetchInvites(_email.value)
+//        fetchInvites(// da implemenrtare)
     }
+
     fun showDetails(invite: Invito) {
         // potresti navigare o mostrare dialog
     }
 
-    fun clearErrorMessage(){
-        _errorMessageStatusInvite.value = null
-        _errorStatusInvite.value = DialogStatusType.ERROR
+
+
+    fun onInvitesLoaded(invites: List<Invito>) {
+        _uiState.value = _uiState.value.copy(invites = invites, isLoading = false)
     }
+
+    fun onInviteMsg(status: DialogStatusType, message: String?) {
+        _uiState.value = _uiState.value.copy(statusMsg = status, resultMsg = message)
+    }
+
+
+
 }

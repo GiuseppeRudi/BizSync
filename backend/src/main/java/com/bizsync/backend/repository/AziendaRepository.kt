@@ -16,9 +16,8 @@ import javax.inject.Inject
 
 class AziendaRepository @Inject constructor(private val db : FirebaseFirestore) {
 
-    suspend fun creaAzienda(azienda : Azienda) : String? {
-         try {
-
+    suspend fun creaAzienda(azienda: Azienda): Resource<String> {
+        return try {
             val aziendaDto = azienda.toDto()
 
             val result = db.collection(AziendeFirestore.COLLECTION)
@@ -26,16 +25,15 @@ class AziendaRepository @Inject constructor(private val db : FirebaseFirestore) 
                 .await()
 
             val idGenerato = result.id
-            Log.d("AZIENDA_DEBUG", "Azienda aggiunta con id" + idGenerato.toString())
+            Log.d("AZIENDA_DEBUG", "Azienda aggiunta con id $idGenerato")
 
-             return idGenerato.toString()
-        }
-
-        catch (e: Exception) {
+            Resource.Success(idGenerato)
+        } catch (e: Exception) {
             Log.e("AZIENDA_DEBUG", "Errore nel salvare l'azienda", e)
-            return null
+            Resource.Error(e.toString())
         }
     }
+
 
 
     suspend fun addPianificaSetup(

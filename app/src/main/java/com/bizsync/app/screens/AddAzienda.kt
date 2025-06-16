@@ -18,8 +18,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.bizsync.app.navigation.LocalUserViewModel
+import com.bizsync.ui.components.DialogStatusType
 import com.bizsync.ui.components.DipendentiSelector
 import com.bizsync.ui.components.SettoreSelector
+import com.bizsync.ui.components.StatusDialog
 import com.bizsync.ui.viewmodels.AddAziendaViewModel
 
 
@@ -30,13 +32,25 @@ fun AddAzienda(onTerminate : () -> Unit) {
     val userviewmodel = LocalUserViewModel.current
 
     val userState by userviewmodel.uiState.collectAsState()
-    val currentStep by addaziendaviewmodel.currentStep.collectAsState()
-
-    val nomeAzienda by addaziendaviewmodel.nomeAzienda.collectAsState()
-
+    val addAziendaState by addaziendaviewmodel.uiState.collectAsState()
+    val currentStep = addAziendaState.currentStep
     val uid = userState.user.uid
+    val isAgencyUpdateAddAzienda = addAziendaState.isAgencyAdded
+    val isAgencyAddedUser = userState.hasLoadedAgency
+
+    if(isAgencyUpdateAddAzienda)
+    {
+        userviewmodel.onAddAziendaRole( addAziendaState.azienda.idAzienda)
+    }
+    if(isAgencyAddedUser && isAgencyUpdateAddAzienda){
+        onTerminate()
+    }
 
 
+    if (addAziendaState.resultMsg != null  || userState.resultMsg!=null) {
+
+        StatusDialog(message = "caridcamento con successo ", DialogStatusType.SUCCESS, onDismiss = { addaziendaviewmodel.clearMessage() ; userviewmodel.clearMessage()})
+    }
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         when (currentStep) {
             1 -> StepOne(addaziendaviewmodel)
@@ -60,9 +74,7 @@ fun AddAzienda(onTerminate : () -> Unit) {
                     Text("Avanti")
                 }
             } else {
-                Button(onClick = { addaziendaviewmodel.aggiungiAzienda(uid , userviewmodel)
-                                    onTerminate()
-                                    })
+                Button(onClick = { addaziendaviewmodel.aggiungiAzienda(uid) })
                 {
                     Text("Conferma")
                 }
@@ -75,7 +87,9 @@ fun AddAzienda(onTerminate : () -> Unit) {
 @Composable
 fun StepOne(addaziendaviewmodel : AddAziendaViewModel) {
 
-    val nomeAzienda by addaziendaviewmodel.nomeAzienda.collectAsState()
+    val addAziendaState by addaziendaviewmodel.uiState.collectAsState()
+    val nomeAzienda = addAziendaState.azienda.nome
+
     Spacer(modifier = Modifier.padding(16.dp))
 
     Text("Schermata 1: Inserisci Nome Azienda")
