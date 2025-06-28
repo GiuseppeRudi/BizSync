@@ -15,9 +15,9 @@ import com.bizsync.domain.constants.sealedClass.Screen
 fun AppNavigator( modifier: Modifier) {
 
     val navController = LocalNavController.current
-    NavHost(navController = navController, startDestination = "home", modifier= modifier) {
+    NavHost(navController = navController, startDestination = Screen.Home.route, modifier= modifier) {
         composable(Screen.Home.route) { HomeScreen() }
-        composable(Screen.Pianifica.route) { PianificaScreen() }
+        composable(Screen.Turni.route) { PianificaScreen() }
         composable(Screen.Chat.route) { ChatScreen() }
         composable(Screen.Gestione.route) { GestioneScreen() }
         composable(Screen.Grafici.route) { GraficiScreen() }

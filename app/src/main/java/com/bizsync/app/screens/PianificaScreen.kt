@@ -26,11 +26,11 @@ import com.bizsync.ui.viewmodels.PianificaViewModel
 fun PianificaScreen() {
 
 
-
     val pianificaVM : PianificaViewModel = hiltViewModel()
-
     val userviewmodel = LocalUserViewModel.current
     val userState by userviewmodel.uiState.collectAsState()
+
+    val manager = userState.user.isManager
     val azienda = userState.azienda
 
 
@@ -38,14 +38,21 @@ fun PianificaScreen() {
     val onBoardingDone = pianificaState.onBoardingDone
 
     LaunchedEffect(Unit) {
-        pianificaVM.checkOnBoardingStatus(azienda)
+        if(manager)
+        {
+            pianificaVM.checkOnBoardingStatus(azienda)
+        }
+        else
+        {
+            pianificaVM.setOnBoardingDone(true)
+        }
     }
 
 
     when (onBoardingDone) {
         null  -> CircularProgressIndicator()
         false -> SetupPianificaScreen(onSetupComplete = { pianificaVM.setOnBoardingDone(true) })
-        true  ->  PianificaCore(pianificaVM)
+        true  ->  PianificaCore(pianificaVM, manager)
 
     }
 
@@ -56,12 +63,13 @@ fun PianificaScreen() {
 @Composable
 fun PianificaCore(
     pianificaVM : PianificaViewModel,
+    manager : Boolean
 )
 {
 
     val scaffoldVM = LocalScaffoldViewModel.current
-
     val userVM = LocalUserViewModel.current
+
 
     val pianificaState by pianificaVM.uistate.collectAsState()
     val selectionData = pianificaState.selectionData
@@ -110,13 +118,16 @@ fun PianificaCore(
             Spacer(modifier = Modifier.height(8.dp))
 
 
-            RoundedButton(
-                selectionData,
-                onShow = { pianificaVM.onShowDialogShiftChanged(true)},
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp)
-            )
+            if (manager) {
+                RoundedButton(
+                    selectionData,
+                    onShow = { pianificaVM.onShowDialogShiftChanged(true) },
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(16.dp)
+                )
+            }
+
         }
 
     }

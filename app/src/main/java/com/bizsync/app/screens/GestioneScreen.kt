@@ -1,214 +1,159 @@
 package com.bizsync.app.screens
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.bizsync.app.navigation.GestioneNavigator
 import com.bizsync.ui.viewmodels.GestioneViewModel
 import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.ui.model.ManagementCard
 import com.bizsync.ui.viewmodels.UserViewModel
+import com.bizsync.ui.theme.BizSyncColors
+import com.bizsync.ui.theme.BizSyncDimensions
 
-// Enum per gestire le schermate
-enum class ManagementScreen {
-    MAIN, EMPLOYEES
-}
-
-
-
-
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GestioneScreen() {
-    val gestioneVM: GestioneViewModel = hiltViewModel()
-    val showInviteDialog by gestioneVM.showDialog.collectAsState()
+    GestioneNavigator()
+}
+
+@Composable
+fun MainManagementScreen(
+    onNavigateToEmployees: () -> Unit,
+    onNavigateToProjects: () -> Unit,
+    onNavigateToFinance: () -> Unit,
+    onNavigateToInventory: () -> Unit,
+    onNavigateToCustomers: () -> Unit,
+    onNavigateToReports: () -> Unit,
+    onNavigateToSettings: () -> Unit,
+    onNavigateToSecurity: () -> Unit
+) {
     val userVM = LocalUserViewModel.current
 
     val userState by userVM.uiState.collectAsState()
-    val checkManager = userState.user.isManager
+    val manager = userState.user.isManager
 
 
-    LaunchedEffect(checkManager) {
-        //gestioneVM.fetchManagementCards(checkManager.manager)
-    }
-
-    // Stato per gestire la navigazione interna
-    var currentScreen by remember { mutableStateOf(ManagementScreen.MAIN) }
-
-    // Naviga tra le schermate con animazioni
-    AnimatedVisibility(
-        visible = currentScreen == ManagementScreen.MAIN,
-        enter = slideInHorizontally(initialOffsetX = { -it }) + fadeIn(),
-        exit = slideOutHorizontally(targetOffsetX = { -it }) + fadeOut()
-    ) {
-        MainManagementScreen(
-            gestioneVM = gestioneVM,
-            showInviteDialog = showInviteDialog,
-            userVM = userVM,
-            onNavigateToEmployees = { currentScreen = ManagementScreen.EMPLOYEES }
-        )
-    }
-
-    AnimatedVisibility(
-        visible = currentScreen == ManagementScreen.EMPLOYEES,
-        enter = slideInHorizontally(initialOffsetX = { it }) + fadeIn(),
-        exit = slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
-    ) {
-        EmployeeManagementScreen(
-            onBackClick = { currentScreen = ManagementScreen.MAIN }
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun MainManagementScreen(
-    gestioneVM: GestioneViewModel,
-    showInviteDialog: Boolean,
-    userVM: UserViewModel, // Sostituisci con il tipo corretto
-    onNavigateToEmployees: () -> Unit
-) {
-
-  //  val managementCards by gestioneVM.managementCards.collectAsState()
-
-    // Definizione delle card di gestione
     val managementCards = remember {
         listOf(
             ManagementCard(
                 title = "Dipendenti",
-                description = "Gestisci il personale e le risorse umane",
+                description = "Gestisci il personale",
                 icon = Icons.Default.People,
-                gradient = listOf(Color(0xFF667eea), Color(0xFF764ba2))
+                gradient = BizSyncColors.CardGradients[0]
             ) { onNavigateToEmployees() },
 
             ManagementCard(
                 title = "Progetti",
-                description = "Monitora e gestisci tutti i progetti attivi",
-                icon = Icons.Default.Assignment,
-                gradient = listOf(Color(0xFFf093fb), Color(0xFFf5576c))
-            ) { /* Navigate to Projects */ },
+                description = "Monitora progetti attivi",
+                icon = Icons.AutoMirrored.Filled.Assignment,
+                gradient = BizSyncColors.CardGradients[1]
+            ) { onNavigateToProjects() },
 
             ManagementCard(
                 title = "Finanze",
-                description = "Controlla budget, fatture e pagamenti",
+                description = "Controlla budget e fatture",
                 icon = Icons.Default.AccountBalance,
-                gradient = listOf(Color(0xFF4facfe), Color(0xFF00f2fe))
-            ) { /* Navigate to Finance */ },
+                gradient = BizSyncColors.CardGradients[2]
+            ) { onNavigateToFinance() },
 
             ManagementCard(
                 title = "Inventario",
-                description = "Gestisci magazzino e forniture",
+                description = "Gestisci magazzino",
                 icon = Icons.Default.Inventory,
-                gradient = listOf(Color(0xFF43e97b), Color(0xFF38f9d7))
-            ) { /* Navigate to Inventory */ },
+                gradient = BizSyncColors.CardGradients[3]
+            ) { onNavigateToInventory() },
 
             ManagementCard(
                 title = "Clienti",
-                description = "CRM e gestione relazioni clienti",
+                description = "CRM e relazioni clienti",
                 icon = Icons.Default.ContactPhone,
-                gradient = listOf(Color(0xFFfa709a), Color(0xFFfee140))
-            ) { /* Navigate to Customers */ },
+                gradient = BizSyncColors.CardGradients[4]
+            ) { onNavigateToCustomers() },
 
             ManagementCard(
                 title = "Reportistica",
-                description = "Analytics e report aziendali",
+                description = "Analytics e report",
                 icon = Icons.Default.Analytics,
-                gradient = listOf(Color(0xFFa8edea), Color(0xFFfed6e3))
-            ) { /* Navigate to Reports */ },
+                gradient = BizSyncColors.CardGradients[5]
+            ) { onNavigateToReports() },
 
             ManagementCard(
                 title = "Impostazioni",
-                description = "Configurazioni e preferenze sistema",
+                description = "Configurazioni sistema",
                 icon = Icons.Default.Settings,
-                gradient = listOf(Color(0xFFffecd2), Color(0xFFfcb69f))
-            ) { /* Navigate to Settings */ },
+                gradient = BizSyncColors.CardGradients[6]
+            ) { onNavigateToSettings() },
 
             ManagementCard(
                 title = "Sicurezza",
-                description = "Gestisci permessi e sicurezza dati",
+                description = "Gestisci permessi e sicurezza",
                 icon = Icons.Default.Security,
-                gradient = listOf(Color(0xFF8360c3), Color(0xFF2ebf91))
-            ) { /* Navigate to Security */ }
+                gradient = BizSyncColors.CardGradients[7]
+            ) { onNavigateToSecurity() }
         )
     }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFFF8F9FA),
-                        Color(0xFFE9ECEF)
-                    )
-                )
-            )
-            .padding(16.dp)
+            .background(BizSyncColors.Background)
+            .padding(BizSyncDimensions.SpacingMedium)
     ) {
+        // Header
+        Text(
+            text = "Gestione Aziendale",
+            style = MaterialTheme.typography.headlineMedium.copy(
+                fontWeight = FontWeight.Bold,
+                color = BizSyncColors.OnBackground
+            ),
+            modifier = Modifier.padding(bottom = BizSyncDimensions.SpacingLarge)
+        )
 
-        // Grid di card sfalsate
+        // Grid di card
         LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(24.dp),
+            verticalArrangement = Arrangement.spacedBy(BizSyncDimensions.SpacingMedium),
             modifier = Modifier.fillMaxSize()
         ) {
-            itemsIndexed(managementCards.chunked(2)) { rowIndex, cardPair ->
+            items(managementCards.chunked(2)) { cardPair ->
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(BizSyncDimensions.SpacingMedium),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    cardPair.forEachIndexed { cardIndex, card ->
-                        val isLeft = cardIndex == 0
-                        val offsetY = if (isLeft) 0.dp else 12.dp
-
+                    cardPair.forEach { card ->
                         ManagementCardItem(
                             card = card,
-                            modifier = Modifier
-                                .weight(1f)
-                                .offset(y = offsetY)
+                            modifier = Modifier.weight(1f)
                         )
                     }
 
-                    // Se c'è solo una card nella riga, aggiungi spazio vuoto
                     if (cardPair.size == 1) {
                         Spacer(modifier = Modifier.weight(1f))
                     }
                 }
             }
-
-            // Spazio extra per il FAB
-            item {
-                Spacer(modifier = Modifier.height(80.dp))
-            }
         }
-
     }
 }
 
@@ -217,32 +162,16 @@ fun ManagementCardItem(
     card: ManagementCard,
     modifier: Modifier = Modifier
 ) {
-    var isPressed by remember { mutableStateOf(false) }
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.95f else 1f,
-        animationSpec = tween(100),
-        label = "scale"
-    )
-
-    LaunchedEffect(isPressed) {
-        if (isPressed) {
-            kotlinx.coroutines.delay(100)
-            isPressed = false
-        }
-    }
-
     Card(
         modifier = modifier
-            .scale(scale)
-            .height(140.dp)
-            .clickable {
-                isPressed = true
-                card.onClick()
-            }
-            .clip(RoundedCornerShape(16.dp)),
+            .height(BizSyncDimensions.CardHeight)
+            .clickable { card.onClick() },
+        shape = RoundedCornerShape(BizSyncDimensions.CardRadius),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = 8.dp,
-            pressedElevation = 4.dp
+            defaultElevation = BizSyncDimensions.CardElevation
+        ),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.Transparent
         )
     ) {
         Box(
@@ -252,10 +181,10 @@ fun ManagementCardItem(
                     Brush.linearGradient(
                         colors = card.gradient,
                         start = androidx.compose.ui.geometry.Offset(0f, 0f),
-                        end = androidx.compose.ui.geometry.Offset(1000f, 1000f)
+                        end = androidx.compose.ui.geometry.Offset(300f, 300f)
                     )
                 )
-                .padding(16.dp)
+                .padding(BizSyncDimensions.CardPadding)
         ) {
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -265,26 +194,143 @@ fun ManagementCardItem(
                     imageVector = card.icon,
                     contentDescription = card.title,
                     tint = Color.White,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(BizSyncDimensions.IconLarge)
                 )
 
                 Column {
                     Text(
                         text = card.title,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
                     )
+
+                    Spacer(modifier = Modifier.height(BizSyncDimensions.SpacingXSmall))
 
                     Text(
                         text = card.description,
-                        fontSize = 12.sp,
-                        color = Color.White.copy(alpha = 0.9f),
-                        lineHeight = 14.sp
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = Color.White.copy(alpha = 0.9f)
+                        )
                     )
                 }
             }
         }
     }
-
 }
+
+
+@Composable
+fun ProjectsManagementScreen(onBackClick: () -> Unit) {
+    ManagementScreenTemplate(
+        title = "Gestione Progetti",
+        onBackClick = onBackClick,
+        content = "Sezione Progetti - Coming Soon"
+    )
+}
+
+@Composable
+fun FinanceManagementScreen(onBackClick: () -> Unit) {
+    ManagementScreenTemplate(
+        title = "Gestione Finanze",
+        onBackClick = onBackClick,
+        content = "Sezione Finanze - Coming Soon"
+    )
+}
+
+@Composable
+fun InventoryManagementScreen(onBackClick: () -> Unit) {
+    ManagementScreenTemplate(
+        title = "Gestione Inventario",
+        onBackClick = onBackClick,
+        content = "Sezione Inventario - Coming Soon"
+    )
+}
+
+@Composable
+fun CustomersManagementScreen(onBackClick: () -> Unit) {
+    ManagementScreenTemplate(
+        title = "Gestione Clienti",
+        onBackClick = onBackClick,
+        content = "Sezione Clienti - Coming Soon"
+    )
+}
+
+@Composable
+fun ReportsManagementScreen(onBackClick: () -> Unit) {
+    ManagementScreenTemplate(
+        title = "Reportistica",
+        onBackClick = onBackClick,
+        content = "Sezione Report - Coming Soon"
+    )
+}
+
+@Composable
+fun SettingsManagementScreen(onBackClick: () -> Unit) {
+    ManagementScreenTemplate(
+        title = "Impostazioni",
+        onBackClick = onBackClick,
+        content = "Sezione Impostazioni - Coming Soon"
+    )
+}
+
+@Composable
+fun SecurityManagementScreen(onBackClick: () -> Unit) {
+    ManagementScreenTemplate(
+        title = "Sicurezza",
+        onBackClick = onBackClick,
+        content = "Sezione Sicurezza - Coming Soon"
+    )
+}
+
+// Template riutilizzabile per le schermate
+@Composable
+private fun ManagementScreenTemplate(
+    title: String,
+    onBackClick: () -> Unit,
+    content: String
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(BizSyncColors.Background)
+            .padding(BizSyncDimensions.SpacingMedium)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBackClick) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Indietro",
+                    tint = BizSyncColors.OnBackground
+                )
+            }
+
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = BizSyncColors.OnBackground
+                ),
+                modifier = Modifier.padding(start = BizSyncDimensions.SpacingSmall)
+            )
+        }
+
+        // Content
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = content,
+                style = MaterialTheme.typography.bodyLarge,
+                color = BizSyncColors.OnSurfaceVariant
+            )
+        }
+    }
+}
+
+

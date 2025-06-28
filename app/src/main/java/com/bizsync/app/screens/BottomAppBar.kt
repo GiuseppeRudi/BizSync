@@ -12,29 +12,45 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.ui.Alignment
-import androidx.navigation.NavController
 import com.bizsync.app.navigation.LocalNavController
+import com.bizsync.ui.model.BottomNavItem
 
 @Composable
-fun BottomBar() {
-    BottomAppBar {
+fun BottomBar(
+    manager: Boolean
+) {
+    val navController = LocalNavController.current
 
-        var navController = LocalNavController.current
-        val buttons = listOf(
-            "home" to Icons.Filled.Home,
-            "pianifica" to Icons.Filled.DateRange,
-            "chat" to Icons.Filled.Call,
-            "gestione" to Icons.Filled.Build,
-            "grafici" to Icons.Filled.Info
+    // Lista dei pulsanti in base al ruolo
+    val buttons = if (manager) {
+        listOf(
+            BottomNavItem.Home,
+            BottomNavItem.Turni,
+            BottomNavItem.Chat,
+            BottomNavItem.Gestione,
+            BottomNavItem.Grafici
         )
+    } else {
+        listOf(
+            BottomNavItem.Home,
+            BottomNavItem.Turni,
+            BottomNavItem.Chat,
+            BottomNavItem.Gestione
+        )
+    }
 
+
+    BottomAppBar {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            buttons.forEach { (label, icon) ->
-                BottomBarButton(icon, label) {navController.navigate(label)
-                { popUpTo("home") {inclusive = false} }}
+            buttons.forEach { item ->
+                BottomBarButton(icon = item.icon, label = item.label) {
+                    navController.navigate(item.route) {
+                        popUpTo("home") { inclusive = false }
+                    }
+                }
             }
         }
     }
