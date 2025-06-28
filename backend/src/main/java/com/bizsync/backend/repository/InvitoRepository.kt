@@ -3,7 +3,7 @@ package com.bizsync.backend.repository
 import android.util.Log
 import com.bizsync.backend.mapper.toDto
 import com.bizsync.backend.remote.InvitiFirestore
-import com.bizsync.domain.constants.StatusInvite
+import com.bizsync.domain.constants.enumClass.StatusInvite
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.Invito
 import com.google.firebase.firestore.FirebaseFirestore

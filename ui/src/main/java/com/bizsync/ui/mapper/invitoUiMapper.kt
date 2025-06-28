@@ -1,4 +1,4 @@
-import com.bizsync.domain.constants.StatusInvite
+import com.bizsync.domain.constants.enumClass.StatusInvite
 import com.bizsync.domain.model.Invito
 import com.bizsync.ui.model.InvitoUi
 

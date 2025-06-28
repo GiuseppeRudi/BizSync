@@ -4,7 +4,7 @@ package com.bizsync.ui.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.repository.InvitoRepository
-import com.bizsync.domain.constants.StatusInvite
+import com.bizsync.domain.constants.enumClass.StatusInvite
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.ui.components.DialogStatusType
 import com.bizsync.ui.model.AziendaUi

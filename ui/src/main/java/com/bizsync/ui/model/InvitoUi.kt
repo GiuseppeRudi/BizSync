@@ -1,6 +1,6 @@
 package com.bizsync.ui.model
 
-import com.bizsync.domain.constants.StatusInvite
+import com.bizsync.domain.constants.enumClass.StatusInvite
 
 
 data class InvitoUi (

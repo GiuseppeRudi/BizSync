@@ -1,6 +1,6 @@
 package com.bizsync.backend.dto
 
-import com.bizsync.domain.constants.StatusInvite
+import com.bizsync.domain.constants.enumClass.StatusInvite
 import com.google.firebase.firestore.Exclude
 
 

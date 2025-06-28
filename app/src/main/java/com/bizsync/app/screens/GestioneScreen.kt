@@ -40,6 +40,7 @@ fun GestioneScreen() {
 
 @Composable
 fun MainManagementScreen(
+    // Manager navigation functions
     onNavigateToEmployees: () -> Unit,
     onNavigateToProjects: () -> Unit,
     onNavigateToFinance: () -> Unit,
@@ -47,15 +48,21 @@ fun MainManagementScreen(
     onNavigateToCustomers: () -> Unit,
     onNavigateToReports: () -> Unit,
     onNavigateToSettings: () -> Unit,
-    onNavigateToSecurity: () -> Unit
+    onNavigateToSecurity: () -> Unit,
+    // Employee navigation functions
+    onNavigateToShifts: () -> Unit = {},
+    onNavigateToAbsences: () -> Unit = {},
+    onNavigateToActivities: () -> Unit = {},
+    onNavigateToEmployeeSettings: () -> Unit = {},
+    onNavigateToEmployeeFinance: () -> Unit = {},
+    onNavigateToCompanyInfo: () -> Unit = {}
 ) {
     val userVM = LocalUserViewModel.current
-
     val userState by userVM.uiState.collectAsState()
-    val manager = userState.user.isManager
+    val isManager = userState.user.isManager
 
-
-    val managementCards = remember {
+    // Cards per Manager
+    val managerCards = remember {
         listOf(
             ManagementCard(
                 title = "Dipendenti",
@@ -115,15 +122,65 @@ fun MainManagementScreen(
         )
     }
 
+    // Cards per Dipendenti
+    val employeeCards = remember {
+        listOf(
+            ManagementCard(
+                title = "Turni",
+                description = "Visualizza i tuoi turni",
+                icon = Icons.Default.Schedule,
+                gradient = BizSyncColors.CardGradients[0]
+            ) { onNavigateToShifts() },
+
+            ManagementCard(
+                title = "Assenze",
+                description = "Richiedi permessi e ferie",
+                icon = Icons.Default.EventBusy,
+                gradient = BizSyncColors.CardGradients[1]
+            ) { onNavigateToAbsences() },
+
+            ManagementCard(
+                title = "Attività",
+                description = "Le tue attività giornaliere",
+                icon = Icons.Default.Task,
+                gradient = BizSyncColors.CardGradients[2]
+            ) { onNavigateToActivities() },
+
+            ManagementCard(
+                title = "Impostazioni",
+                description = "Profilo e preferenze",
+                icon = Icons.Default.Settings,
+                gradient = BizSyncColors.CardGradients[3]
+            ) { onNavigateToEmployeeSettings() },
+
+            ManagementCard(
+                title = "Finanze",
+                description = "Buste paga e rimborsi",
+                icon = Icons.Default.Payment,
+                gradient = BizSyncColors.CardGradients[4]
+            ) { onNavigateToEmployeeFinance() },
+
+            ManagementCard(
+                title = "Azienda",
+                description = "Informazioni aziendali",
+                icon = Icons.Default.Business,
+                gradient = BizSyncColors.CardGradients[5]
+            ) { onNavigateToCompanyInfo() }
+        )
+    }
+
+    // Seleziona le card in base al ruolo
+    val displayCards = if (isManager) managerCards else employeeCards
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(BizSyncColors.Background)
             .padding(BizSyncDimensions.SpacingMedium)
     ) {
-        // Header
+        // Header dinamico
         Text(
-            text = "Gestione Aziendale",
+            text = if (isManager) "Gestione Aziendale" else "Area Dipendente",
             style = MaterialTheme.typography.headlineMedium.copy(
                 fontWeight = FontWeight.Bold,
                 color = BizSyncColors.OnBackground
@@ -131,12 +188,24 @@ fun MainManagementScreen(
             modifier = Modifier.padding(bottom = BizSyncDimensions.SpacingLarge)
         )
 
+        // Sottotitolo con info ruolo
+        Text(
+            text = if (isManager)
+                "Amministra la tua azienda"
+            else
+                "Gestisci le tue attività lavorative",
+            style = MaterialTheme.typography.bodyMedium.copy(
+                color = BizSyncColors.OnSurfaceVariant
+            ),
+            modifier = Modifier.padding(bottom = BizSyncDimensions.SpacingMedium)
+        )
+
         // Grid di card
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(BizSyncDimensions.SpacingMedium),
             modifier = Modifier.fillMaxSize()
         ) {
-            items(managementCards.chunked(2)) { cardPair ->
+            items(displayCards.chunked(2)) { cardPair ->
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(BizSyncDimensions.SpacingMedium),
                     modifier = Modifier.fillMaxWidth()
@@ -220,7 +289,54 @@ fun ManagementCardItem(
     }
 }
 
+// Schermate per Dipendenti
+@Composable
+fun ShiftsManagementScreen(onBackClick: () -> Unit) {
+    ManagementScreenTemplate(
+        title = "Turni di Lavoro",
+        onBackClick = onBackClick,
+        content = "Visualizza e gestisci i tuoi turni - Coming Soon"
+    )
+}
 
+
+@Composable
+fun ActivitiesManagementScreen(onBackClick: () -> Unit) {
+    ManagementScreenTemplate(
+        title = "Le Tue Attività",
+        onBackClick = onBackClick,
+        content = "Gestisci le tue attività quotidiane - Coming Soon"
+    )
+}
+
+@Composable
+fun EmployeeSettingsScreen(onBackClick: () -> Unit) {
+    ManagementScreenTemplate(
+        title = "Impostazioni Profilo",
+        onBackClick = onBackClick,
+        content = "Modifica il tuo profilo e preferenze - Coming Soon"
+    )
+}
+
+@Composable
+fun EmployeeFinanceScreen(onBackClick: () -> Unit) {
+    ManagementScreenTemplate(
+        title = "Le Tue Finanze",
+        onBackClick = onBackClick,
+        content = "Buste paga e rimborsi - Coming Soon"
+    )
+}
+
+@Composable
+fun CompanyInfoScreen(onBackClick: () -> Unit) {
+    ManagementScreenTemplate(
+        title = "Informazioni Azienda",
+        onBackClick = onBackClick,
+        content = "Dettagli e contatti aziendali - Coming Soon"
+    )
+}
+
+// Schermate Manager esistenti
 @Composable
 fun ProjectsManagementScreen(onBackClick: () -> Unit) {
     ManagementScreenTemplate(
@@ -269,9 +385,9 @@ fun ReportsManagementScreen(onBackClick: () -> Unit) {
 @Composable
 fun SettingsManagementScreen(onBackClick: () -> Unit) {
     ManagementScreenTemplate(
-        title = "Impostazioni",
+        title = "Impostazioni Sistema",
         onBackClick = onBackClick,
-        content = "Sezione Impostazioni - Coming Soon"
+        content = "Configurazioni sistema - Coming Soon"
     )
 }
 
@@ -332,5 +448,3 @@ private fun ManagementScreenTemplate(
         }
     }
 }
-
-
