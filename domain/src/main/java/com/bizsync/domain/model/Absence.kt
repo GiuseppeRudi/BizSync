@@ -8,6 +8,9 @@ import java.time.LocalTime
 
 data class Absence(
     val id: String,
+    val idUser: String,
+    val submittedName: String,
+    val idAzienda : String,
     val type: AbsenceType,
     val startDate: LocalDate,
     val endDate: LocalDate,

@@ -16,7 +16,7 @@ class AbsenceRepository @Inject constructor(
     private val db: FirebaseFirestore
 ) {
 
-    suspend fun salvaAbsence(absence: Absence): Resource<Unit> {
+    suspend fun salvaAbsence(absence: Absence): Resource<String> {
         return try {
             val dto = absence.toDto()
 
@@ -24,17 +24,19 @@ class AbsenceRepository @Inject constructor(
                 .add(dto)
                 .await()
 
+            val id = result.id
             Log.e("ABSENCE_DEBUG", "Funziona")
-            Resource.Success(Unit)
+            Resource.Success(id)
         } catch (e: Exception) {
             Log.e("ABSENCE_DEBUG", "Errore durante il salvataggio dell'assenza", e)
             Resource.Error(e.message ?: "Errore sconosciuto")
         }
     }
 
-    suspend fun getAllAbsences(): Resource<List<Absence>> {
+    suspend fun getAllAbsences(idUser: String): Resource<List<Absence>> {
         return try {
             val snapshot = db.collection(AbsencesFirestore.COLLECTION)
+                .whereEqualTo(AbsencesFirestore.Fields.IDUSER, idUser)
                 .get()
                 .await()
 
@@ -44,9 +46,47 @@ class AbsenceRepository @Inject constructor(
 
             if (absences.isNotEmpty()) Resource.Success(absences)
             else Resource.Empty
+
         } catch (e: Exception) {
             Log.e("ABSENCE_DEBUG", "Errore durante il recupero delle assenze", e)
             Resource.Error(e.message ?: "Errore sconosciuto")
         }
     }
+
+    suspend fun getAllAbsencesByAzienda(idAzienda: String): Resource<List<Absence>> {
+        return try {
+            val snapshot = db.collection(AbsencesFirestore.COLLECTION)
+                .whereEqualTo(AbsencesFirestore.Fields.IDAZIENDA, idAzienda)
+                .get()
+                .await()
+
+            val absences = snapshot.documents.mapNotNull { doc ->
+                doc.toObject(AbsenceDto::class.java)?.copy(id = doc.id)?.toDomain()
+            }
+
+            if (absences.isNotEmpty()) Resource.Success(absences)
+            else Resource.Empty
+
+        } catch (e: Exception) {
+            Log.e("ABSENCE_DEBUG", "Errore durante il recupero delle assenze per azienda", e)
+            Resource.Error(e.message ?: "Errore sconosciuto")
+        }
+    }
+
+
+    suspend fun updateAbsence(absence: Absence): Resource<Unit> {
+        return try {
+            db.collection(AbsencesFirestore.COLLECTION)
+                .document(absence.id)
+                .set(absence.toDto())
+                .await()
+            Resource.Success(Unit)
+        } catch (e: Exception) {
+            Log.e("ABSENCE_DEBUG", "Errore aggiornamento assenza", e)
+            Resource.Error(e.message ?: "Errore sconosciuto")
+        }
+    }
+
+
 }
+

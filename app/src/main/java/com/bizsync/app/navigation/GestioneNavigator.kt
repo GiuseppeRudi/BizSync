@@ -32,8 +32,8 @@ fun GestioneNavigator(
                 onNavigateToFinance = {
                     navController.navigate(GestioneScreenRoute.Finance.route)
                 },
-                onNavigateToInventory = {
-                    navController.navigate(GestioneScreenRoute.Inventory.route)
+                onNavigateToRequest = {
+                    navController.navigate(GestioneScreenRoute.Request.route)
                 },
                 onNavigateToCustomers = {
                     navController.navigate(GestioneScreenRoute.Customers.route)
@@ -88,8 +88,8 @@ fun GestioneNavigator(
             )
         }
 
-        composable(GestioneScreenRoute.Inventory.route) {
-            InventoryManagementScreen(
+        composable(GestioneScreenRoute.Request.route) {
+            RequestManagementScreen(
                 onBackClick = { navController.popBackStack() }
             )
         }

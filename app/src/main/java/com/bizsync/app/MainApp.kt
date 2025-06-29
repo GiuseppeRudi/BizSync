@@ -5,7 +5,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bizsync.app.navigation.LocalUserViewModel
-import com.bizsync.app.screens.AppScaffold
 import com.bizsync.app.screens.SplashScreen
 import com.bizsync.ui.viewmodels.SplashViewModel
 import com.google.firebase.auth.FirebaseAuth
@@ -13,6 +12,7 @@ import androidx.navigation.compose.rememberNavController
 import com.bizsync.app.navigation.OnboardingNavHost
 import com.bizsync.domain.constants.sealedClass.OnboardingScreen
 import androidx.compose.runtime.getValue
+import com.bizsync.app.screensMore.AppScaffold
 import com.bizsync.ui.components.StatusDialog
 
 

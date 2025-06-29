@@ -9,8 +9,12 @@ import java.time.LocalTime
 
 data class AbsenceUi(
     val id: String = "",
+    val idUser: String = "",
+    val idAzienda : String = "",
+
     val typeUi: AbsenceTypeUi = AbsenceType.VACATION.toUiData(),
 
+    val submittedName: String = "",
     val startDate: LocalDate? = null,
     val endDate: LocalDate? = null,
 
@@ -20,10 +24,9 @@ data class AbsenceUi(
     val totalDays: String = "0 giorni",
     val reason: String = "",
     val statusUi: AbsenceStatusUi = AbsenceStatus.PENDING.toUiData(),
-    val approver: String? = null,
-    val submittedOn: String = "",
     val submittedDate: LocalDate?= null,
     val comments: String? = null,
+    val approver: String? = null,
     val approvedDate: LocalDate? = null
 ) {
     val formattedDateRange: String

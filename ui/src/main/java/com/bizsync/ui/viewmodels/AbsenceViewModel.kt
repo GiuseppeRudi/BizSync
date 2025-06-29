@@ -12,6 +12,7 @@ import com.bizsync.ui.model.AbsenceUi
 import com.bizsync.ui.state.AbsenceState
 import com.bizsync.ui.components.DialogStatusType
 import com.bizsync.ui.mapper.toDomain
+import com.bizsync.ui.mapper.toUi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,188 +30,33 @@ class AbsenceViewModel @Inject constructor(private val absenceRepository: Absenc
     private val _uiState = MutableStateFlow(AbsenceState())
     val uiState: StateFlow<AbsenceState> = _uiState
 
-    init {
-        loadSampleAbsences()
-    }
 
 
-    fun updateAddAbsenceStartDate(date: LocalDate?) {
-        _uiState.value = _uiState.value.copy(
-            addAbsence = _uiState.value.addAbsence.copy(startDate = date)
-        )
-    }
-
-    fun updateAddAbsenceEndDate(date: LocalDate?) {
-        _uiState.value = _uiState.value.copy(
-            addAbsence = _uiState.value.addAbsence.copy(endDate = date)
-        )
-    }
-
-
-    fun updateAddAbsenceStartTime(time: LocalTime?) {
-        _uiState.value = _uiState.value.copy(
-            addAbsence = _uiState.value.addAbsence.copy(startTime = time)
-        )
-    }
-
-    fun updateAddAbsenceEndTime(time: LocalTime?) {
-        _uiState.value = _uiState.value.copy(
-            addAbsence = _uiState.value.addAbsence.copy(endTime = time)
-        )
-    }
-
-    private fun loadSampleAbsences() {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(hasLoadedAbsences = false)
-            delay(500)
-
-            val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-            val samples = listOf(
-                AbsenceUi(
-                    id = "1",
-                    typeUi = AbsenceType.VACATION.toUiData(),
-                    startDate = LocalDate.parse("08/07/2025", formatter),
-                    endDate = LocalDate.parse("12/07/2025", formatter),
-                    totalDays = "5 giorni",
-                    reason = "Vacanze estive",
-                    statusUi = AbsenceStatus.PENDING.toUiData(),
-                    submittedOn = "28/06/2025"
-                ),
-                AbsenceUi(
-                    id = "2",
-                    typeUi = AbsenceType.SICK_LEAVE.toUiData(),
-                    startDate = LocalDate.parse("26/06/2025", formatter),
-                    endDate = LocalDate.parse("27/06/2025", formatter),
-                    totalDays = "2 giorni",
-                    reason = "Influenza",
-                    statusUi = AbsenceStatus.APPROVED.toUiData(),
-                    approver = "Manager",
-                    submittedOn = "25/06/2025"
-                )
-            )
-
-            _uiState.value = _uiState.value.copy(
-                absences = samples,
-                hasLoadedAbsences = true
-            )
-        }
-    }
-
-    // ======= Aggiornamento dei campi della richiesta di assenza =======
-
-    fun updateAddAbsenceType(typeUi: AbsenceTypeUi) {
-        _uiState.value = _uiState.value.copy(
-            addAbsence = _uiState.value.addAbsence.copy(typeUi = typeUi)
-        )
-    }
-
-    fun updateAddAbsenceDates(start: LocalDate?, end: LocalDate?) {
-        _uiState.value = _uiState.value.copy(
-            addAbsence = _uiState.value.addAbsence.copy(
-                startDate = start,
-                endDate = end
-            )
-        )
-    }
-
-    fun updateAddAbsenceTimes(start: LocalTime?, end: LocalTime?) {
-        _uiState.value = _uiState.value.copy(
-            addAbsence = _uiState.value.addAbsence.copy(
-                startTime = start,
-                endTime = end
-            )
-        )
-    }
-
-    fun updateAddAbsenceReason(reason: String) {
-        _uiState.value = _uiState.value.copy(
-            addAbsence = _uiState.value.addAbsence.copy(reason = reason)
-        )
-    }
-
-    fun updateAddAbsenceComments(comments: String) {
-        _uiState.value = _uiState.value.copy(
-            addAbsence = _uiState.value.addAbsence.copy(comments = comments)
-        )
-    }
-
-    fun updateAddAbsenceTotalDays(totalDays: String) {
-        _uiState.value = _uiState.value.copy(
-            addAbsence = _uiState.value.addAbsence.copy(totalDays = totalDays)
-        )
-    }
-
-    // ======= Calcolo giorni o ore =======
-
-    fun calculateTotalDays(
-        startDate: LocalDate?,
-        endDate: LocalDate?,
-        isFullDay: Boolean,
-        startTime: LocalTime? = null,
-        endTime: LocalTime? = null
-    ): String {
-        return try {
-            if (startDate == null || endDate == null) return "0 giorni"
-
-            val days = java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate) + 1
-            if (isFullDay) {
-                "$days giorni"
-            } else if (startTime != null && endTime != null) {
-                val duration = java.time.Duration.between(startTime, endTime).toHours()
-                val totalHours = duration * days
-                "$totalHours ore"
-            } else {
-                "$days giorni (parziale)"
-            }
-        } catch (e: Exception) {
-            "0 giorni"
-        }
-    }
-
-    // ======= Validazione e salvataggio =======
-
-    private fun validateAbsenceData(absence: AbsenceUi): String? {
-        return when {
-            absence.startDate == null || absence.endDate == null -> "Seleziona una data valida"
-            absence.reason.isEmpty() -> "Inserisci il motivo dell’assenza"
-            else -> null
-        }
-    }
-
-    fun setIsFullDay(value: Boolean) {
-        _uiState.value = _uiState.value.copy(isFullDay = value)
-    }
-
-    fun setShowStartDatePicker(show: Boolean) {
-        _uiState.value = _uiState.value.copy(showStartDatePicker = show)
-    }
-
-    fun setShowEndDatePicker(show: Boolean) {
-        _uiState.value = _uiState.value.copy(showEndDatePicker = show)
-    }
-
-
-    fun saveAbsence() {
+    fun saveAbsence(fullName : String,idAzienda: String, idUser: String) {
         viewModelScope.launch {
             // Aggiorna lo stato con la data di invio e status PENDING
             _uiState.update {
                 it.copy(addAbsence = it.addAbsence.copy(
                     statusUi = AbsenceStatus.PENDING.toUiData(),
-                    submittedDate = LocalDate.now()
+                    submittedDate = LocalDate.now(),
+                    idAzienda = idAzienda,
+                    idUser = idUser,
+                    submittedName = fullName
                 ))
             }
 
             val absence = _uiState.value.addAbsence
 
-
-
             // Chiamata repository e cattura risultato
             when (val result = absenceRepository.salvaAbsence(absence.toDomain())) {
                 is Resource.Success -> {
+
+                    val updatedAbsence = _uiState.value.addAbsence.copy(id = result.data)
+
                     // Aggiungi la nuova assenza alla lista, reset addAbsence e mostra messaggio successo
                     _uiState.update { currentState ->
                         currentState.copy(
-                            absences = currentState.absences + absence, // oppure aggiorna da repo se preferisci
+                            absences = currentState.absences + updatedAbsence, // oppure aggiorna da repo se preferisci
                             addAbsence = AbsenceUi(), // reset form
                             resultMsg = "Richiesta di assenza inviata con successo",
                             statusMsg = DialogStatusType.SUCCESS
@@ -239,28 +85,147 @@ class AbsenceViewModel @Inject constructor(private val absenceRepository: Absenc
         }
     }
 
+    fun fetchAllAbsences(idUser : String) {
+        viewModelScope.launch {
+            when (val result = absenceRepository.getAllAbsences(idUser)) {
+                is Resource.Success -> {
+                    _uiState.update {
+                        it.copy(
+                            absences = result.data.map { absence -> absence.toUi() },
+                            hasLoadedAbsences = true,
+                        )
+                    }
+                }
+                is Resource.Error -> {
+                    _uiState.update {
+                        it.copy(
+                            hasLoadedAbsences = true,
+                            resultMsg = result.message ?: "Errore nel caricamento delle assenze",
+                            statusMsg = DialogStatusType.ERROR
+                        )
+                    }
+                }
+                is Resource.Empty -> {
+                    _uiState.update {
+                        it.copy(
+                            absences = emptyList(),
+                            hasLoadedAbsences = true,
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+
+    // Funzione per mostrare/nascondere dialog
+    fun setShowNewRequestDialog(show: Boolean) {
+        _uiState.update { it.copy(showNewRequestDialog = show) }
+    }
+
+    // Funzione per cambiare tab selezionata
+    fun setSelectedTab(index: Int) {
+        _uiState.update { it.copy(selectedTab = index) }
+    }
+
+
+    fun updateAddAbsenceType(typeUi: AbsenceTypeUi) {
+        _uiState.value = _uiState.value.copy(
+            addAbsence = _uiState.value.addAbsence.copy(typeUi = typeUi)
+        )
+    }
+
+
+    fun updateAddAbsenceStartDate(date: LocalDate?) {
+        _uiState.value = _uiState.value.copy(
+            addAbsence = _uiState.value.addAbsence.copy(startDate = date)
+        )
+    }
+
+    fun updateAddAbsenceEndDate(date: LocalDate?) {
+        _uiState.value = _uiState.value.copy(
+            addAbsence = _uiState.value.addAbsence.copy(endDate = date)
+        )
+    }
+
+
+    fun updateAddAbsenceStartTime(time: LocalTime?) {
+        _uiState.value = _uiState.value.copy(
+            addAbsence = _uiState.value.addAbsence.copy(startTime = time)
+        )
+    }
+
+    fun updateAddAbsenceEndTime(time: LocalTime?) {
+        _uiState.value = _uiState.value.copy(
+            addAbsence = _uiState.value.addAbsence.copy(endTime = time)
+        )
+    }
+
+
+    fun updateAddAbsenceReason(reason: String) {
+        _uiState.value = _uiState.value.copy(
+            addAbsence = _uiState.value.addAbsence.copy(reason = reason)
+        )
+    }
+
+    fun updateAddAbsenceComments(comments: String) {
+        _uiState.value = _uiState.value.copy(
+            addAbsence = _uiState.value.addAbsence.copy(comments = comments)
+        )
+    }
+
+    fun updateAddAbsenceTotalDays(totalDays: String) {
+        _uiState.value = _uiState.value.copy(
+            addAbsence = _uiState.value.addAbsence.copy(totalDays = totalDays)
+        )
+    }
+
+
+    fun calculateTotalDays(
+        startDate: LocalDate?,
+        endDate: LocalDate?,
+        isFullDay: Boolean,
+        startTime: LocalTime? = null,
+        endTime: LocalTime? = null
+    ): String {
+        return try {
+            if (startDate == null || endDate == null) return "0 giorni"
+
+            val days = java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate) + 1
+            if (isFullDay) {
+                "$days giorni"
+            } else if (startTime != null && endTime != null) {
+                val duration = java.time.Duration.between(startTime, endTime).toHours()
+                val totalHours = duration * days
+                "$totalHours ore"
+            } else {
+                "$days giorni (parziale)"
+            }
+        } catch (e: Exception) {
+            "0 giorni"
+        }
+    }
+
+
+    fun setIsFullDay(value: Boolean) {
+        _uiState.value = _uiState.value.copy(isFullDay = value)
+    }
+
+    fun setShowStartDatePicker(show: Boolean) {
+        _uiState.value = _uiState.value.copy(showStartDatePicker = show)
+    }
+
+    fun setShowEndDatePicker(show: Boolean) {
+        _uiState.value = _uiState.value.copy(showEndDatePicker = show)
+    }
+
+
     fun resetAddAbsence() {
         _uiState.value = _uiState.value.copy(addAbsence = AbsenceUi())
     }
 
     fun clearResultMessage() {
         _uiState.value = _uiState.value.copy(resultMsg = null)
-    }
-
-    fun fetchAbsenceRequests() {
-        viewModelScope.launch {
-            try {
-                _uiState.value = _uiState.value.copy(hasLoadedAbsences = false)
-                delay(1000)
-                loadSampleAbsences()
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    resultMsg = "Errore nel caricamento: ${e.message}",
-                    statusMsg = DialogStatusType.ERROR,
-                    hasLoadedAbsences = true
-                )
-            }
-        }
     }
 
     // Funzioni legacy mantenute

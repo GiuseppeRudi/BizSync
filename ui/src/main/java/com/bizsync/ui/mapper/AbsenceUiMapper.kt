@@ -15,6 +15,10 @@ fun Absence.toUi(): AbsenceUi {
         id = id,
         typeUi = type.typeToUiData(),
 
+        submittedName = submittedName,
+        idUser = idUser,
+        idAzienda = idAzienda,
+
         startDate = startDate,
         endDate = endDate,
 
@@ -27,7 +31,6 @@ fun Absence.toUi(): AbsenceUi {
         statusUi = status.statusToUiData(),
         approver = approvedBy,
 
-        submittedOn = submittedDate.format(dateFormatter),
         submittedDate = submittedDate,
 
         approvedDate = approvedDate,
@@ -45,6 +48,8 @@ fun AbsenceUi.toDomain(): Absence {
 
     return Absence(
         id = id,
+        idUser = idUser,
+        idAzienda = idAzienda,
         type = typeUi.type,
         startDate = startDate,
         endDate = endDate,
@@ -55,7 +60,8 @@ fun AbsenceUi.toDomain(): Absence {
         submittedDate = submittedDate ?: LocalDate.now(),
         approvedBy = approver,
         approvedDate = approvedDate,
-        comments = comments
+        comments = comments,
+        submittedName = submittedName
     )
 }
 

@@ -9,12 +9,15 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
+import java.time.ZoneOffset
 
 
 fun Absence.toDto(): AbsenceDto {
     return AbsenceDto(
         id = id,
         type = type.name,
+        idUser = idUser,
+        idAzienda = idAzienda,
         startDateTime = startDate.atTime(startTime ?: LocalTime.MIDNIGHT).toTimestamp(),
         endDateTime = endDate.atTime(endTime ?: LocalTime.MIDNIGHT).toTimestamp(),
         reason = reason,
@@ -22,7 +25,9 @@ fun Absence.toDto(): AbsenceDto {
         submittedDate = submittedDate.atStartOfDay().toTimestamp(),
         approvedBy = approvedBy,
         approvedDate = approvedDate?.atStartOfDay()?.toTimestamp(),
-        comments = comments
+        comments = comments,
+        submittedName = submittedName
+
     )
 }
 
@@ -30,6 +35,8 @@ fun Absence.toDto(): AbsenceDto {
 fun AbsenceDto.toDomain(): Absence {
     return Absence(
         id = id,
+        idUser = idUser,
+        idAzienda = idAzienda,
         type = AbsenceType.valueOf(type),
         startDate = startDateTime!!.toLocalDate(),
         endDate = endDateTime!!.toLocalDate(),
@@ -40,17 +47,21 @@ fun AbsenceDto.toDomain(): Absence {
         submittedDate = submittedDate!!.toLocalDate(),
         approvedBy = approvedBy,
         approvedDate = approvedDate?.toLocalDate(),
-        comments = comments
+        comments = comments,
+        submittedName = submittedName
+
     )
 }
 
-fun Timestamp.toLocalDateTime(): LocalDateTime = toDate().toInstant()
-    .atZone(ZoneId.systemDefault())
-    .toLocalDateTime()
-
 fun LocalDateTime.toTimestamp(): Timestamp {
-    val instant = this.atZone(ZoneId.systemDefault()).toInstant()
+    val instant = this.atZone(ZoneOffset.UTC).toInstant() // Usa UTC invece di systemDefault
     return Timestamp(instant.epochSecond, instant.nano)
 }
-fun Timestamp.toLocalDate(): LocalDate = toLocalDateTime().toLocalDate()
-fun Timestamp.toLocalTime(): LocalTime = toLocalDateTime().toLocalTime()
+
+fun Timestamp.toLocalDate(): LocalDate = this.toDate().toInstant()
+    .atZone(ZoneOffset.UTC)
+    .toLocalDate()
+
+fun Timestamp.toLocalTime(): LocalTime = this.toDate().toInstant()
+    .atZone(ZoneOffset.UTC)
+    .toLocalTime()

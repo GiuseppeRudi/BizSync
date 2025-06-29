@@ -13,5 +13,8 @@ data class AbsenceState(
     // Nuove proprietà per la UI
     val isFullDay: Boolean = true,
     val showStartDatePicker: Boolean = false,
-    val showEndDatePicker: Boolean = false
+    val showEndDatePicker: Boolean = false,
+
+    val showNewRequestDialog: Boolean = false,
+    val selectedTab: Int = 0
 )

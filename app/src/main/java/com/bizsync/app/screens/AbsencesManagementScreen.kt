@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.bizsync.app.navigation.LocalScaffoldViewModel
+import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.domain.constants.enumClass.AbsenceStatus
 import com.bizsync.domain.constants.enumClass.AbsenceType
 import com.bizsync.domain.constants.sealedClass.Resource
@@ -30,6 +31,7 @@ import com.bizsync.ui.components.DialogStatusType
 import com.bizsync.ui.components.TimeButton
 import com.bizsync.ui.components.DatePickerDialog
 import com.bizsync.ui.components.DateButton
+import com.bizsync.ui.components.StatusDialog
 
 import com.bizsync.ui.components.TimeRangePicker
 import com.bizsync.ui.mapper.toUiData
@@ -37,6 +39,7 @@ import com.bizsync.ui.model.AbsenceStatusUi
 import com.bizsync.ui.model.AbsenceTypeUi
 import com.bizsync.ui.model.AbsenceUi
 import com.bizsync.ui.viewmodels.AbsenceViewModel
+import kotlinx.coroutines.flow.map
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -50,53 +53,106 @@ import java.time.format.DateTimeFormatter
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AbsencesManagementScreen(onBackClick: () -> Unit) {
-    var showNewRequestDialog by remember { mutableStateOf(true) }
-    var selectedTab by remember { mutableStateOf(0) }
-
-    val absenceVM : AbsenceViewModel = hiltViewModel()
-
+    val absenceVM: AbsenceViewModel = hiltViewModel()
     val absenceState by absenceVM.uiState.collectAsState()
+    val userVM = LocalUserViewModel.current
+    val userState by userVM.uiState.collectAsState()
 
-    val absenceRequests = absenceState.absences
+    LaunchedEffect(Unit) {
+        absenceVM.fetchAllAbsences(userState.user.uid)
+    }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF5F5F5))
-    ) {
-
-        // Tabs
-        TabRow(selectedTabIndex = selectedTab) {
-            Tab(
-                selected = selectedTab == 0,
-                onClick = { selectedTab = 0 },
-                text = { Text("Le Mie Richieste") }
-            )
-            Tab(
-                selected = selectedTab == 1,
-                onClick = { selectedTab = 1 },
-                text = { Text("Statistiche") }
-            )
-        }
-
-        when (selectedTab) {
-            0 -> RequestsListContent(absenceRequests)
-            1 -> StatisticsContent(absenceRequests)
+    if (!absenceState.hasLoadedAbsences) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
         }
     }
 
-    // Dialog per nuova richiesta
-    if (showNewRequestDialog) {
-        NewAbsenceRequestScreen(
-            absenceVM,
-            onDismiss = { showNewRequestDialog = false },
-            onSubmit = { showNewRequestDialog = false }
-        )
+    else{
+        Box(modifier = Modifier.fillMaxSize()) {               // ← qui
+            when (absenceState.selectedTab) {
+                0 -> RequestsListContent(absenceVM)
+                1 -> StatisticsContent(absenceState.absences)
+                2 -> NewAbsenceRequestScreen(                      // adesso riceve fillMaxSize
+                    userVM,
+                    absenceVM,
+                    onDismiss = { absenceVM.setSelectedTab(0) },
+                    onSubmit  = { absenceVM.setSelectedTab(0) }
+                )
+            }
+        }
+
     }
+
+
+
+
+//        Box(
+//            modifier = Modifier.fillMaxSize()
+//        ) {
+//            Column(
+//                modifier = Modifier
+//                    .fillMaxSize()
+//                    .background(Color(0xFFF5F5F5))
+//                    .padding(bottom = 80.dp) // spazio per il FAB
+//            ) {
+//                TabRow(selectedTabIndex = absenceState.selectedTab) {
+//                    Tab(
+//                        selected = absenceState.selectedTab == 0,
+//                        onClick = { absenceVM.setSelectedTab(0) },
+//                        text = { Text("Le Mie Richieste") }
+//                    )
+//                    Tab(
+//                        selected = absenceState.selectedTab == 1,
+//                        onClick = { absenceVM.setSelectedTab(1) },
+//                        text = { Text("Statistiche") }
+//                    )
+//                }
+
+
 }
 
+
+
+
+//        }
+
+//}
+
+
+
 @Composable
-private fun RequestsListContent(requests: List<AbsenceUi>) {
+private fun RequestsListContent(absenceVM : AbsenceViewModel) {
+
+    val uiState by absenceVM.uiState.collectAsState()
+    val requests = uiState.absences
+
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        // Tutto il contenuto della schermata, ad esempio:
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = 80.dp) // spazio per il FAB se serve
+        ) {
+            // ... contenuti vari
+        }
+
+        // FAB in basso a destra
+        FloatingActionButton(
+            onClick = { absenceVM.setSelectedTab(2) },
+            modifier = Modifier
+                .align(Alignment.BottomEnd) // <<< ECCO QUI
+                .padding(16.dp)
+        ) {
+            Icon(imageVector = Icons.Default.Add, contentDescription = "Nuova richiesta")
+        }
+    }
+
     if (requests.isEmpty()) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -307,362 +363,6 @@ private fun StatisticRow(label: String, value: String, color: Color) {
             fontWeight = FontWeight.Medium,
             color = color
         )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun NewAbsenceRequestScreen(
-    absenceVM: AbsenceViewModel,
-    onDismiss: () -> Unit,
-    onSubmit: () -> Unit
-) {
-    val scaffoldVM = LocalScaffoldViewModel.current
-    val uiState by absenceVM.uiState.collectAsState()
-    val addAbsence = uiState.addAbsence
-
-    var isFullDay = uiState.isFullDay
-    var showStartDatePicker = uiState.showStartDatePicker
-    var showEndDatePicker = uiState.showEndDatePicker
-
-    val status = uiState.statusMsg
-
-    LaunchedEffect(status) {
-        if (status is Resource.Success<*>) {
-            onSubmit()
-        }
-    }
-
-
-    LaunchedEffect(Unit) {
-        scaffoldVM.onFullScreenChanged(false)
-
-    }
-
-
-    LaunchedEffect(addAbsence.startDate, addAbsence.endDate, addAbsence.startTime, addAbsence.endTime, isFullDay) {
-        val startDate = addAbsence.startDate
-        val endDate = addAbsence.endDate
-        val startTime = addAbsence.startTime
-        val endTime = addAbsence.endTime
-
-        if (startDate != null && endDate != null) {
-            val totalDays = absenceVM.calculateTotalDays(startDate, endDate, isFullDay, startTime, endTime)
-            absenceVM.updateAddAbsenceTotalDays(totalDays)
-        } else {
-            absenceVM.updateAddAbsenceTotalDays("0 giorni")
-        }
-    }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Nuova Richiesta Assenza") },
-                navigationIcon = {
-                    IconButton(onClick = {
-                        absenceVM.resetAddAbsence()
-                        onDismiss()
-                    }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Indietro")
-                    }
-                },
-                actions = {
-                    TextButton(
-                        onClick = {
-                            absenceVM.saveAbsence()
-
-                        },
-                        enabled = (addAbsence.startDate != null && addAbsence.endDate != null) &&
-                                addAbsence.reason.isNotEmpty() &&
-                                (isFullDay || (addAbsence.startTime != null && addAbsence.endTime != null))
-                    ) {
-                        Text("INVIA", fontWeight = FontWeight.Medium)
-                    }
-                }
-            )
-        }
-    ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp),
-            contentPadding = PaddingValues(vertical = 16.dp)
-        ) {
-            // Absence Type Selector
-            item {
-                ModernAbsenceTypeSelector(
-                    selectedType = addAbsence.typeUi,
-                    onTypeSelected = { selectedType ->
-                        selectedType?.let { absenceVM.updateAddAbsenceType(it) }
-                    }
-                )
-            }
-
-            // Date Selection Section
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Text(
-                            text = "Periodo di assenza",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Medium
-                        )
-
-                        // Date buttons
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            // Start Date
-                            // Bottone per la data di inizio
-                            DateButton(
-                                label = "Data inizio",
-                                selectedDate = addAbsence.startDate,
-                                modifier = Modifier.weight(1f),
-                                onClick = {
-                                    absenceVM.setShowStartDatePicker(true)
-
-                                }
-                            )
-
-                            DateButton(
-                                label = "Data fine",
-                                selectedDate = addAbsence.endDate,
-                                modifier = Modifier.weight(1f),
-                                onClick = {
-
-                                    absenceVM.setShowEndDatePicker(true)
-                                }
-                            )
-
-                        }
-
-                        // Full day toggle
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = "Giornata intera",
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                            Switch(
-                                checked = isFullDay,
-                                onCheckedChange = { newValue ->
-                                    isFullDay = newValue
-                                    if (newValue) {
-                                        absenceVM.updateAddAbsenceStartTime(null)
-                                        absenceVM.updateAddAbsenceEndTime(null)
-                                    }
-                                }
-                            )
-                        }
-
-                        // Time selection (if not full day)
-                        if (!isFullDay) {
-                            TimeRangePicker(
-                                startTime = addAbsence.startTime?.format(DateTimeFormatter.ofPattern("HH:mm")) ?: "",
-                                endTime = addAbsence.endTime?.format(DateTimeFormatter.ofPattern("HH:mm")) ?: "",
-                                onStartTimeSelected = { timeString ->
-                                    val localTime = try {
-                                        LocalTime.parse(timeString, DateTimeFormatter.ofPattern("HH:mm"))
-                                    } catch (e: Exception) {
-                                        null
-                                    }
-                                    absenceVM.updateAddAbsenceStartTime(localTime)
-                                },
-                                onEndTimeSelected = { timeString ->
-                                    val localTime = try {
-                                        LocalTime.parse(timeString, DateTimeFormatter.ofPattern("HH:mm"))
-                                    } catch (e: Exception) {
-                                        null
-                                    }
-                                    absenceVM.updateAddAbsenceEndTime(localTime)
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-
-                        // Total days display
-                        if (addAbsence.totalDays != "0 giorni") {
-                            Card(
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                                )
-                            ) {
-                                Text(
-                                    text = "Totale: ${addAbsence.totalDays}",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.padding(12.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Reason and Comments
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Text(
-                            text = "Dettagli richiesta",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Medium
-                        )
-
-                        OutlinedTextField(
-                            value = addAbsence.reason,
-                            onValueChange = { absenceVM.updateAddAbsenceReason(it) },
-                            label = { Text("Motivo *") },
-                            modifier = Modifier.fillMaxWidth(),
-                            maxLines = 3,
-                            shape = RoundedCornerShape(12.dp)
-                        )
-
-                        OutlinedTextField(
-                            value = addAbsence.comments ?: "",
-                            onValueChange = { absenceVM.updateAddAbsenceComments(it) },
-                            label = { Text("Note aggiuntive") },
-                            modifier = Modifier.fillMaxWidth(),
-                            maxLines = 4,
-                            shape = RoundedCornerShape(12.dp)
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    if (showStartDatePicker) {
-        DatePickerDialog(
-            onDateSelected = { selectedDateMillis ->
-                selectedDateMillis?.let { millis ->
-                    val selectedDate = Instant.ofEpochMilli(millis)
-                        .atZone(ZoneId.systemDefault())
-                        .toLocalDate()
-
-                    absenceVM.updateAddAbsenceStartDate(selectedDate)
-
-                    // Se l’endDate è prima dello startDate, la aggiorno
-                    if (addAbsence.endDate != null && addAbsence.endDate!!.isBefore(selectedDate)) {
-                        absenceVM.updateAddAbsenceEndDate(selectedDate)
-                    }
-                }
-                absenceVM.setShowStartDatePicker(false)
-            },
-            onDismiss = {
-                absenceVM.setShowStartDatePicker(false)
-            },
-            initialDate = addAbsence.startDate
-        )
-    }
-
-    if (showEndDatePicker) {
-        DatePickerDialog(
-            onDateSelected = { selectedDateMillis ->
-                selectedDateMillis?.let { millis ->
-                    val selectedDate = Instant.ofEpochMilli(millis)
-                        .atZone(ZoneId.systemDefault())
-                        .toLocalDate()
-
-                    // Aggiorno endDate solo se è dopo lo startDate
-                    if (addAbsence.startDate == null || !selectedDate.isBefore(addAbsence.startDate)) {
-                        absenceVM.updateAddAbsenceEndDate(selectedDate)
-                    }
-                }
-                absenceVM.setShowEndDatePicker(false)
-                             },
-            onDismiss = {
-                absenceVM.setShowEndDatePicker(false)
-            },
-            initialDate = addAbsence.endDate ?: addAbsence.startDate
-        )
-    }
-
-
-
-    // Handle result messages
-    uiState.resultMsg?.let { message ->
-        LaunchedEffect(message) {
-            kotlinx.coroutines.delay(2000)
-            absenceVM.clearResultMessage()
-
-            if (uiState.statusMsg == DialogStatusType.SUCCESS) {
-                onDismiss()
-            }
-        }
-    }
-}
-
-
-
-@Composable
-private fun ModernAbsenceTypeSelector(
-    selectedType: AbsenceTypeUi?,
-    onTypeSelected: (AbsenceTypeUi) -> Unit
-) {
-    val absenceTypes = remember {
-        AbsenceType.entries.map { it.toUiData() }
-    }
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = "Tipo di assenza",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(absenceTypes) { type ->
-                    FilterChip(
-                        onClick = { onTypeSelected(type) },
-                        label = { Text(type.displayName) },
-                        selected = selectedType?.type == type.type,
-                        leadingIcon = {
-                            Icon(
-                                imageVector = if (selectedType?.type == type.type) Icons.Default.Check else type.icon,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp),
-                                tint = if (selectedType?.type == type.type) type.color else Color.Gray
-                            )
-                        }
-                    )
-                }
-            }
-        }
     }
 }
 

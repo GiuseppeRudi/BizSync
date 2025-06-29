@@ -1,10 +1,5 @@
 package com.bizsync.app.screens
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -18,18 +13,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.bizsync.app.navigation.GestioneNavigator
-import com.bizsync.ui.viewmodels.GestioneViewModel
 import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.ui.model.ManagementCard
-import com.bizsync.ui.viewmodels.UserViewModel
 import com.bizsync.ui.theme.BizSyncColors
 import com.bizsync.ui.theme.BizSyncDimensions
 
@@ -44,7 +33,7 @@ fun MainManagementScreen(
     onNavigateToEmployees: () -> Unit,
     onNavigateToProjects: () -> Unit,
     onNavigateToFinance: () -> Unit,
-    onNavigateToInventory: () -> Unit,
+    onNavigateToRequest: () -> Unit,
     onNavigateToCustomers: () -> Unit,
     onNavigateToReports: () -> Unit,
     onNavigateToSettings: () -> Unit,
@@ -86,11 +75,11 @@ fun MainManagementScreen(
             ) { onNavigateToFinance() },
 
             ManagementCard(
-                title = "Inventario",
-                description = "Gestisci magazzino",
+                title = "Richieste",
+                description = "Gestione permessi e ferie",
                 icon = Icons.Default.Inventory,
                 gradient = BizSyncColors.CardGradients[3]
-            ) { onNavigateToInventory() },
+            ) { onNavigateToRequest() },
 
             ManagementCard(
                 title = "Clienti",
@@ -355,14 +344,7 @@ fun FinanceManagementScreen(onBackClick: () -> Unit) {
     )
 }
 
-@Composable
-fun InventoryManagementScreen(onBackClick: () -> Unit) {
-    ManagementScreenTemplate(
-        title = "Gestione Inventario",
-        onBackClick = onBackClick,
-        content = "Sezione Inventario - Coming Soon"
-    )
-}
+
 
 @Composable
 fun CustomersManagementScreen(onBackClick: () -> Unit) {
