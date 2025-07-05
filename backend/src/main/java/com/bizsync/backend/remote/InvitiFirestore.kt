@@ -4,8 +4,9 @@ object InvitiFirestore {
     const val COLLECTION = "inviti"
 
     object Fields{
-        const val AZIENDA = "azienda"
+        const val ID_AZIENDA = "idAzienda"
         const val NOME_AZIENDA = "aziendaNome"
+        const val ACCEPTED_DATE = "acceptedDate"
         const val EMAIL = "email"
         const val MANAGER = "managere"
         const val NOME_RUOLO = "nomeRuolo"

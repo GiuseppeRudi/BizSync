@@ -1,7 +1,6 @@
 package com.bizsync.app.screens
 
 
-import android.util.Log
 import androidx.compose.material3.Button
 import androidx.compose.runtime.Composable
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -21,11 +20,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.domain.model.Invito
 import com.bizsync.ui.components.StatusDialog
+import com.bizsync.ui.model.InvitoUi
 import com.bizsync.ui.viewmodels.InvitiViewModel
 
 
@@ -37,7 +36,7 @@ fun ChooseInvito(onTerminate: () -> Unit) {
     val userVM = LocalUserViewModel.current
     val userState by userVM.uiState.collectAsState()
     val user = userState.user
-    val updateInvite = inviteState.updateInvte
+    val updateInvite = inviteState.updateInvite
     val checkAcceptInvite = userState.checkAcceptInvite
 
     LaunchedEffect(Unit) {
@@ -58,7 +57,6 @@ fun ChooseInvito(onTerminate: () -> Unit) {
     val statusMsgUser = userState.statusMsg
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // Loading indicator
         AnimatedVisibility(
             visible = loading,
             enter = fadeIn(),
@@ -111,7 +109,7 @@ fun ChooseInvito(onTerminate: () -> Unit) {
 
 @Composable
 private fun InviteCard(
-    invite: Invito,
+    invite: InvitoUi,
     onAccept: () -> Unit,
     onDetails: () -> Unit,
     onDecline: () -> Unit
@@ -129,7 +127,7 @@ private fun InviteCard(
             Text(text = "Azienda: ${invite.aziendaNome}", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(4.dp))
             Text(text = "Manageriale : ${invite.manager}", style = MaterialTheme.typography.bodyMedium)
-            Text(text = "Ruolo: ${invite.nomeRuolo}", style = MaterialTheme.typography.bodyMedium)
+            Text(text = "Ruolo: ${invite.posizioneLavorativa}", style = MaterialTheme.typography.bodyMedium)
 
             // Extra content
             AnimatedVisibility(visible = expanded.value) {

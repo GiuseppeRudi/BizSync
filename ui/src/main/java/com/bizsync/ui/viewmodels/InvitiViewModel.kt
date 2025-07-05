@@ -3,17 +3,21 @@ package com.bizsync.ui.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.repository.InvitoRepository
-import com.bizsync.backend.repository.UserRepository
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.constants.sealedClass.Resource.Success
 import com.bizsync.domain.model.Invito
+import com.bizsync.domain.utils.toDomain
+import com.bizsync.domain.utils.toUiStateList
 import com.bizsync.ui.components.DialogStatusType
 import com.bizsync.ui.model.InvitiState
+import com.bizsync.ui.model.InvitoUi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 
@@ -28,10 +32,10 @@ class InvitiViewModel @Inject constructor(private val invitoRepository: InvitoRe
 
     fun fetchInvites(email : String) = viewModelScope.launch {
 
-        val result =  invitoRepository.loadInvito(email)
+        val result =  invitoRepository.getInvitesByEmail(email)
 
         when(result){
-            is Success -> { onInvitesLoaded(result.data) }
+            is Success -> { onInvitesLoaded(result.data.toUiStateList()) }
             is Resource.Error -> { onInviteMsg(DialogStatusType.ERROR, result.message) }
             is Resource.Empty -> { onInviteMsg(DialogStatusType.ERROR, "Nessun invito trovato") }
         }
@@ -44,29 +48,31 @@ class InvitiViewModel @Inject constructor(private val invitoRepository: InvitoRe
     }
 
 
-    fun acceptInvite(invite: Invito) = viewModelScope.launch {
-        val result  = invitoRepository.updateInvito(invite)
+    fun acceptInvite(invite: InvitoUi) = viewModelScope.launch {
+        val newInvite = invite.copy(acceptedDate = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
+
+        val result  = invitoRepository.updateInvito(newInvite.toDomain())
 
         when(result){
-            is Success -> {  _uiState.update { it.copy(updateInvte = true) }}
+            is Success -> {  _uiState.update { it.copy(updateInvite = true) }}
             is Resource.Error -> { onInviteMsg(DialogStatusType.ERROR, result.message) }
             else -> {onInviteMsg(DialogStatusType.ERROR, "Errore Sconosciuto")}
         }
 
     }
 
-    fun declineInvite(invite: Invito) = viewModelScope.launch {
+    fun declineInvite(invite: InvitoUi) = viewModelScope.launch {
         // repo.declineInvite(...)
 //        fetchInvites(// da implemenrtare)
     }
 
-    fun showDetails(invite: Invito) {
+    fun showDetails(invite: InvitoUi) {
         // potresti navigare o mostrare dialog
     }
 
 
 
-    fun onInvitesLoaded(invites: List<Invito>) {
+    fun onInvitesLoaded(invites: List<InvitoUi>) {
         _uiState.value = _uiState.value.copy(invites = invites, isLoading = false)
     }
 

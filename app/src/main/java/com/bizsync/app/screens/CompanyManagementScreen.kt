@@ -73,35 +73,34 @@ fun CompanyCore(companyVm: CompanyViewModel, azienda: AziendaUi) {
     val companyState by companyVm.uiState.collectAsState()
 
     val azienda = userState.azienda
-
     val selectedOperation = companyState.selectedOperation
 
-    // Stato per l'operazione selezionata
+    // Schermata di gestione specifica
+    when (selectedOperation) {
+        CompanyOperation.DIPARTIMENTI -> {
+            DipartimentiManagementScreen(companyVm, azienda.areeLavoro, azienda.idAzienda)
+        }
 
+        CompanyOperation.GESTIONE_INVITI  -> {
+            InviteManagementScreen(companyVm)
+        }
 
-        // Schermata di gestione specifica
-        when (selectedOperation) {
-            CompanyOperation.DIPARTIMENTI -> {
-                DipartimentiManagementScreen(companyVm, azienda.areeLavoro, azienda.idAzienda)
-            }
-            CompanyOperation.TURNI_FREQUENTI -> {
-                TurniFrequentiManagementScreen(
-                    currentTurni = azienda.turniFrequenti,
-                    onBackClick = { companyVm.setSelectedOperation(null) },
-                    onSaveChanges = { nuoviTurni ->
-                        companyVm.setSelectedOperation(null)
-                    },
-                    isLoading = companyState.isLoading
-                )
-            }
-
-            null -> OperationSelectorScreen(
-                onOperationSelected = { operation ->
-                    companyVm.setSelectedOperation(operation)
-                }
+        CompanyOperation.TURNI_FREQUENTI -> {
+            TurniFrequentiManagementScreen(
+                currentTurni = azienda.turniFrequenti,
+                onBackClick = { companyVm.setSelectedOperation(null) },
+                onSaveChanges = { nuoviTurni ->
+                    companyVm.setSelectedOperation(null)
+                },
+                isLoading = companyState.isLoading
             )
+        }
 
+        null -> OperationSelectorScreen(
+            onOperationSelected = { operation ->
+                companyVm.setSelectedOperation(operation)
+            }
+        )
     }
-
 }
 

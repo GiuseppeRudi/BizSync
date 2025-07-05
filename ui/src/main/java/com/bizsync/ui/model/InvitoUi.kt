@@ -19,5 +19,8 @@ data class InvitoUi (
 
     val ccnlInfo : Ccnlnfo = Ccnlnfo(),
 
-    val stato: StatusInvite = StatusInvite.INPENDING
+    val sentDate: String = "",
+    val acceptedDate: String = "",
+
+    val stato: StatusInvite = StatusInvite.PENDING
 )

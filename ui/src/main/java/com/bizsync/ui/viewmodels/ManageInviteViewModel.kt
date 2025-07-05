@@ -4,32 +4,83 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.repository.ContractRepository
 import com.bizsync.backend.repository.InvitoRepository
+import com.bizsync.domain.constants.enumClass.InviteView
 import com.bizsync.domain.constants.enumClass.StatusInvite
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.Ccnlnfo
+import com.bizsync.domain.utils.toDomain
+import com.bizsync.domain.utils.toUiStateList
 import com.bizsync.ui.components.DialogStatusType
 import com.bizsync.ui.model.AziendaUi
-import com.bizsync.ui.model.MakeInviteState
+import com.bizsync.ui.model.ManageInviteState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import toDomain
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 @HiltViewModel
-class MakeInviteViewModel @Inject constructor(
-    private val invitoRepository: InvitoRepository,
+class ManageInviteViewModel @Inject constructor(
+    private val inviteRepository: InvitoRepository,
     private val contractRepository: ContractRepository
     ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(MakeInviteState())
-    val uiState: StateFlow<MakeInviteState> = _uiState
+    private val _uiState = MutableStateFlow(ManageInviteState())
+    val uiState: StateFlow<ManageInviteState> = _uiState
 
     fun setCurrentStep(step: Int) {
         _uiState.update { state ->
             state.copy(currentStep = step)
+        }
+    }
+
+
+    fun loadInvites(idAzienda: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+
+            when (val result = inviteRepository.getInvitesByAzienda(idAzienda)) {
+                is Resource.Success -> {
+                    _uiState.update {
+                        it.copy(
+                            invites = result.data.toUiStateList(),
+                            isLoading = false
+                        )
+                    }
+                }
+                is Resource.Empty -> {
+                    _uiState.update {
+                        it.copy(
+                            invites = emptyList(),
+                            isLoading = false,
+                            resultMessage = "Nessun invito trovato per l'azienda.",
+                            resultStatus = DialogStatusType.SUCCESS
+                        )
+                    }
+                }
+                is Resource.Error -> {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            resultMessage = result.message ?: "Errore sconosciuto",
+                            resultStatus = DialogStatusType.ERROR
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+
+    fun setCurrentView(view: InviteView) {
+        _uiState.update { it.copy(currentView = view) }
+
+        // Reset dello step quando si torna alla selezione
+        if (view == InviteView.SELECTION) {
+            _uiState.update { it.copy(currentStep = 1) }
         }
     }
 
@@ -85,7 +136,7 @@ class MakeInviteViewModel @Inject constructor(
             val currentInvite = _uiState.value.invite
 
 
-            _uiState.update { it.copy(isLoadingCcnl = true, resultMessage = null) }
+            _uiState.update { it.copy(isLoading = true, resultMessage = null) }
 
             val result = contractRepository.generateCcnlInfo(
                 posizioneLavorativa = currentInvite.posizioneLavorativa,
@@ -98,7 +149,7 @@ class MakeInviteViewModel @Inject constructor(
             _uiState.update {
                 it.copy(
                     ccnlnfo = result,
-                    isLoadingCcnl = false,
+                    isLoading = false,
                     resultMessage = null
                 )
             }
@@ -158,13 +209,14 @@ class MakeInviteViewModel @Inject constructor(
                         invite = _uiState.value.invite.copy(
                             aziendaNome = azienda.nome,
                             idAzienda = azienda.idAzienda,
-                            stato = StatusInvite.INPENDING,
-                            ccnlInfo = ccnlInfo  // 👈 Inseriamo l'oggetto CCNL
+                            stato = StatusInvite.PENDING,
+                            ccnlInfo = ccnlInfo,
+                            sentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
                         )
                     )
                 }
 
-                val result = invitoRepository.caricaInvito(_uiState.value.invite.toDomain())
+                val result = inviteRepository.caricaInvito(_uiState.value.invite.toDomain())
 
                 when (result) {
                     is Resource.Success -> {
@@ -195,6 +247,6 @@ class MakeInviteViewModel @Inject constructor(
 
 
     fun clearResult() {
-        _uiState.update { MakeInviteState() }
+        _uiState.update { ManageInviteState() }
     }
 }

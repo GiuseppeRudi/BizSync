@@ -1,6 +1,8 @@
 package com.bizsync.backend.repository
 
 import android.util.Log
+import com.bizsync.backend.dto.InvitoDto
+import com.bizsync.backend.mapper.toDomainList
 import com.bizsync.backend.mapper.toDto
 import com.bizsync.backend.remote.InvitiFirestore
 import com.bizsync.domain.constants.enumClass.StatusInvite
@@ -12,7 +14,7 @@ import javax.inject.Inject
 
 class InvitoRepository @Inject constructor(private val db : FirebaseFirestore)
 {
-    suspend fun loadInvito(email: String): Resource<List<Invito>> {
+    suspend fun getInvitesByEmail(email: String): Resource<List<Invito>> {
         return try {
             val snapshot = db.collection(InvitiFirestore.COLLECTION)
                 .whereEqualTo(InvitiFirestore.Fields.EMAIL, email)
@@ -36,6 +38,32 @@ class InvitoRepository @Inject constructor(private val db : FirebaseFirestore)
     }
 
 
+    suspend fun getInvitesByAzienda(idAzienda: String): Resource<List<Invito>> {
+        return try {
+
+            Log.d("INVITI_DEBUG", "SONOQUA" + idAzienda)
+
+            val snapshot = db.collection(InvitiFirestore.COLLECTION)
+                .whereEqualTo(InvitiFirestore.Fields.ID_AZIENDA, idAzienda)
+                .get()
+                .await()
+
+            val list = snapshot.documents.mapNotNull { doc ->
+                doc.toObject(InvitoDto::class.java)?.copy(id = doc.id)
+            }
+
+            if (list.isEmpty()) {
+                Resource.Empty
+            } else {
+                Resource.Success(list.toDomainList())
+            }
+
+        } catch (e: Exception) {
+            Log.e("INVITI_DEBUG", "Errore durante il caricamento inviti per azienda", e)
+            Resource.Error("Errore durante il caricamento: ${e.localizedMessage}")
+        }
+    }
+
 
     suspend fun caricaInvito(invite: Invito): Resource<Unit> {
         return try {
@@ -54,11 +82,16 @@ class InvitoRepository @Inject constructor(private val db : FirebaseFirestore)
 
     suspend fun updateInvito(invite: Invito): Resource<Unit> {
         return try {
-            Log.d("INVITO_DEBUG", invite.toString())
+
+
+            val inviteDto = invite.toDto()
 
             db.collection(InvitiFirestore.COLLECTION)
-                .document(invite.id)
-                .update(InvitiFirestore.Fields.STATO, StatusInvite.APPROVED)
+                .document(inviteDto.id)
+                .update(
+                    InvitiFirestore.Fields.STATO, inviteDto.stato,
+                    InvitiFirestore.Fields.ACCEPTED_DATE, inviteDto.acceptedDate
+                )
                 .await()
 
             Resource.Success(Unit)  // Successo senza dati specifici
@@ -68,6 +101,7 @@ class InvitoRepository @Inject constructor(private val db : FirebaseFirestore)
             Resource.Error("Errore nell'aggiornamento dell'invito: ${e.message}")
         }
     }
+
 
 
 

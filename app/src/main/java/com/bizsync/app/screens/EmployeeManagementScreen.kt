@@ -157,7 +157,6 @@ fun EmployeeManagementScreen(
         )
     }
 
-    var addMakeInvite: Boolean by remember { mutableStateOf(false) }
 
     val departments = remember {
         listOf("Tutti") + sampleEmployees.map { it.department }.distinct()
@@ -200,32 +199,8 @@ fun EmployeeManagementScreen(
                         tint = Color(0xFF2C3E50)
                     )
                 }
-            },
-            actions = {
-                IconButton(
-                    onClick = { addMakeInvite = true }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.PersonAdd,
-                        contentDescription = "Aggiungi dipendente",
-                        tint = Color(0xFF3498DB)
-                    )
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color.Transparent
-            )
+            }
         )
-
-        if (addMakeInvite)
-        {
-            // Dialog per inviti
-            MakeInviteScreen(
-                onNavigateBack = { addMakeInvite = false },
-                userVm
-            )
-
-        }
 
         // Stats cards
         LazyRow(

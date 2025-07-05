@@ -1,23 +1,46 @@
 package com.bizsync.app.screens
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Work
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.bizsync.ui.model.AziendaUi
-import com.bizsync.ui.viewmodels.MakeInviteViewModel
-import com.bizsync.ui.viewmodels.UserViewModel
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bizsync.domain.model.Ccnlnfo
 import com.bizsync.ui.components.ContractTypeSection
@@ -25,89 +48,69 @@ import com.bizsync.ui.components.DepartmentSelectionCard
 import com.bizsync.ui.components.EmailField
 import com.bizsync.ui.components.ManagerRoleSection
 import com.bizsync.ui.components.SettoreAziendaleCard
-import com.bizsync.ui.components.StatusDialog
 import com.bizsync.ui.components.StepProgressIndicator
 import com.bizsync.ui.components.WeeklyHoursSection
+import com.bizsync.ui.model.AziendaUi
+import com.bizsync.ui.viewmodels.ManageInviteViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
-fun MakeInviteScreen(
-    onNavigateBack: () -> Unit,
-    userVM: UserViewModel
+fun CreateInviteContent(
+    inviteVM: ManageInviteViewModel,
+    azienda: AziendaUi,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val inviteVM: MakeInviteViewModel = hiltViewModel()
     val inviteState by inviteVM.uiState.collectAsState()
-    val userState by userVM.uiState.collectAsState()
-
     val totalSteps = 2
     val currentStep = inviteState.currentStep
-    val azienda = userState.azienda
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "Nuovo Invito",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Indietro")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+    Column(modifier = modifier.fillMaxSize()) {
+        // Header con bottone indietro
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Indietro")
+            }
+            Text(
+                text = "Nuovo Invito",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
             )
         }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-        ) {
-            // Progress indicator
-            StepProgressIndicator(
-                currentStep = currentStep,
-                totalSteps = totalSteps,
-                modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)
-            )
 
-            when (currentStep) {
-                1 -> {
-                    FirstStepContent(
-                        inviteVM = inviteVM,
-                        azienda = azienda,
-                        onNextStep = { inviteVM.setCurrentStep(2) },
-                        modifier = Modifier.padding(horizontal = 24.dp)
-                    )
-                }
-                2 -> {
-                    SecondStepContent(
-                        inviteVM = inviteVM,
-                        onPreviousStep = { inviteVM.setCurrentStep(1) },
-                        onComplete = {
-                            inviteVM.inviaInvito(azienda)
-                            onNavigateBack()
-                        },
-                        modifier = Modifier.padding(horizontal = 24.dp)
-                    )
-                }
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Progress indicator
+        StepProgressIndicator(
+            currentStep = currentStep,
+            totalSteps = totalSteps,
+            modifier = Modifier.padding(vertical = 16.dp)
+        )
+
+        when (currentStep) {
+            1 -> {
+                FirstStepContent(
+                    inviteVM = inviteVM,
+                    azienda = azienda,
+                    onNextStep = { inviteVM.setCurrentStep(2) },
+                    modifier = Modifier
+                )
+            }
+            2 -> {
+                SecondStepContent(
+                    inviteVM = inviteVM,
+                    onPreviousStep = { inviteVM.setCurrentStep(1) },
+                    onComplete = {
+                        inviteVM.inviaInvito(azienda)
+                        onBack()
+                    },
+                    modifier = Modifier
+                )
             }
         }
-    }
-
-    // Status dialog per risultato
-    if (inviteState.resultMessage != null) {
-        StatusDialog(
-            message = inviteState.resultMessage,
-            statusType = inviteState.resultStatus,
-            onDismiss = { inviteVM.clearResult() }
-        )
     }
 }
 
@@ -115,7 +118,7 @@ fun MakeInviteScreen(
 
 @Composable
 fun FirstStepContent(
-    inviteVM: MakeInviteViewModel,
+    inviteVM: ManageInviteViewModel,
     azienda : AziendaUi,
     onNextStep: () -> Unit,
     modifier: Modifier = Modifier
@@ -232,7 +235,7 @@ fun FirstStepContent(
     }
 }@Composable
 fun SecondStepContent(
-    inviteVM: MakeInviteViewModel,
+    inviteVM: ManageInviteViewModel,
     onPreviousStep: () -> Unit,
     onComplete: () -> Unit,
     modifier: Modifier = Modifier
@@ -310,11 +313,11 @@ fun SecondStepContent(
 
                     Button(
                         onClick = { inviteVM.generateContractInfo() },
-                        enabled = !uiState.isLoadingCcnl && inviteVM.isCurrentStepValid(),
+                        enabled = !uiState.isLoading && inviteVM.isCurrentStepValid(),
                         modifier = Modifier.height(36.dp),
                         shape = RoundedCornerShape(8.dp)
                     ) {
-                        if (uiState.isLoadingCcnl) {
+                        if (uiState.isLoading) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(16.dp),
                                 strokeWidth = 2.dp,
@@ -353,7 +356,7 @@ fun SecondStepContent(
         }
 
         // CCNL Info Form
-        if (uiState.isLoadingCcnl) {
+        if (uiState.isLoading) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp)
@@ -480,7 +483,7 @@ fun SecondStepContent(
                 onClick = onComplete,
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(12.dp),
-                enabled = !uiState.isLoadingCcnl
+                enabled = !uiState.isLoading
             ) {
                 Icon(
                     Icons.Default.Send,

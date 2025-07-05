@@ -10,8 +10,10 @@ import com.bizsync.domain.model.AreaLavoro
 import com.bizsync.domain.model.Invito
 import com.bizsync.domain.model.TurnoFrequente
 import com.bizsync.domain.constants.sealedClass.RuoliAzienda
+import com.bizsync.domain.utils.toDomain
 import com.bizsync.ui.components.DialogStatusType
 import com.bizsync.ui.mapper.toUiState
+import com.bizsync.ui.model.InvitoUi
 import com.bizsync.ui.model.UserState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -120,13 +122,13 @@ class UserViewModel @Inject constructor(private val userRepository: UserReposito
             _uiState.update { it.copy(resultMsg = null) }}
 
 
-        fun onAcceptInvite(invite: Invito) {
+        fun onAcceptInvite(invite: InvitoUi) {
 
 
             viewModelScope.launch {
 
                 val uid = _uiState.value.user.uid
-                val result = userRepository.updateAcceptInvite(invite, uid)
+                val result = userRepository.updateAcceptInvite(invite.toDomain(), uid)
 
 
                 if (result is Success) {
@@ -139,7 +141,7 @@ class UserViewModel @Inject constructor(private val userRepository: UserReposito
                                 currentUser.copy(
                                     idAzienda = invite.idAzienda,
                                     isManager = invite.manager,
-                                    ruolo = invite.nomeRuolo
+                                    ruolo = invite.posizioneLavorativa
                                 )
                         )
                     }
