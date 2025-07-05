@@ -55,7 +55,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bizsync.app.navigation.LocalUserViewModel
-import com.bizsync.ui.components.MakeInviteDialog
 
 
 // Data class per rappresentare un dipendente
@@ -158,6 +157,8 @@ fun EmployeeManagementScreen(
         )
     }
 
+    var addMakeInvite: Boolean by remember { mutableStateOf(false) }
+
     val departments = remember {
         listOf("Tutti") + sampleEmployees.map { it.department }.distinct()
     }
@@ -202,7 +203,7 @@ fun EmployeeManagementScreen(
             },
             actions = {
                 IconButton(
-                    onClick = { showAddEmployeeDialog = true }
+                    onClick = { addMakeInvite = true }
                 ) {
                     Icon(
                         imageVector = Icons.Default.PersonAdd,
@@ -216,13 +217,15 @@ fun EmployeeManagementScreen(
             )
         )
 
+        if (addMakeInvite)
+        {
+            // Dialog per inviti
+            MakeInviteScreen(
+                onNavigateBack = { addMakeInvite = false },
+                userVm
+            )
 
-        // Dialog per inviti
-        MakeInviteDialog(
-            showAddEmployeeDialog,
-            onDismiss = { showAddEmployeeDialog = false },
-            userVm
-        )
+        }
 
         // Stats cards
         LazyRow(

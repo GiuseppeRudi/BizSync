@@ -16,8 +16,9 @@ object InvitoUiMapper {
             email = invito.email,
             idAzienda = invito.idAzienda,
             manager = invito.manager,
-            nomeRuolo = invito.nomeRuolo,
-            stato = statoEnum
+            posizioneLavorativa = invito.nomeRuolo,
+            stato = statoEnum,
+            ccnlInfo = invito.ccnlInfo
         )
     }
 
@@ -28,8 +29,9 @@ object InvitoUiMapper {
             email = invitoUi.email,
             idAzienda = invitoUi.idAzienda,
             manager = invitoUi.manager,
-            nomeRuolo = invitoUi.nomeRuolo,
-            stato = invitoUi.stato.name
+            nomeRuolo = invitoUi.posizioneLavorativa,
+            stato = invitoUi.stato.name,
+            ccnlInfo = invitoUi.ccnlInfo
         )
     }
 

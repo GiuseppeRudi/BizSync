@@ -10,5 +10,7 @@ data class AziendaDto(
     val id: String = "",
     val nome: String = "",
     val areeLavoro: List<AreaLavoro> = emptyList(),
-    val turniFrequenti: List<TurnoFrequente> = emptyList()
+    val turniFrequenti: List<TurnoFrequente> = emptyList(),
+    val numDipendentiRange : String = "",
+    val sector : String = ""
 )

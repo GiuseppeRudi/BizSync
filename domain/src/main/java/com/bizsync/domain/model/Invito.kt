@@ -7,5 +7,6 @@ data class Invito (
     val idAzienda: String,
     val manager : Boolean,
     val nomeRuolo : String,
-    val stato : String
+    val stato : String,
+    val ccnlInfo: Ccnlnfo
 )

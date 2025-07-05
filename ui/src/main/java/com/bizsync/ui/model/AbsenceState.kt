@@ -14,7 +14,6 @@ data class AbsenceState(
     val isFullDay: Boolean = true,
     val showStartDatePicker: Boolean = false,
     val showEndDatePicker: Boolean = false,
-
     val showNewRequestDialog: Boolean = false,
     val selectedTab: Int = 0
 )

@@ -47,16 +47,16 @@ class OnBoardingPianificaRepository @Inject constructor(private val json : Json 
     private fun getFallbackArea(): List<AreaLavoro> {
         Log.d("TURNI_AI", "Usando turni di fallback ")
         return listOf(
-            AreaLavoro("Reception"),
-            AreaLavoro("Amministrazione"),
-            AreaLavoro("Servizio Clienti"),
-            AreaLavoro("Magazzino"),
-            AreaLavoro("Vendite"),
-            AreaLavoro("Marketing"),
-            AreaLavoro("Risorse Umane"),
-            AreaLavoro("IT Support"),
-            AreaLavoro("Contabilità"),
-            AreaLavoro("Supervisione")
+            AreaLavoro(nomeArea = "Reception"),
+            AreaLavoro(nomeArea ="Amministrazione"),
+            AreaLavoro(nomeArea ="Servizio Clienti"),
+            AreaLavoro(nomeArea ="Magazzino"),
+            AreaLavoro(nomeArea ="Vendite"),
+            AreaLavoro(nomeArea ="Marketing"),
+            AreaLavoro(nomeArea ="Risorse Umane"),
+            AreaLavoro(nomeArea ="IT Support"),
+            AreaLavoro(nomeArea ="Contabilità"),
+            AreaLavoro(nomeArea ="Supervisione")
         )
     }
 

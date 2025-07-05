@@ -67,6 +67,30 @@ class AziendaRepository @Inject constructor(private val db : FirebaseFirestore) 
     }
 
 
+    suspend fun updateAreeLavoro(idAzienda: String, aree: List<AreaLavoro>): Resource<Unit> {
+        return try {
+            val success = aree.isNotEmpty()
+
+            if (success) {
+                db.collection(AziendeFirestore.COLLECTION)
+                    .document(idAzienda)
+                    .set(
+                        mapOf(
+                            AziendeFirestore.Fields.AREE to aree
+                        ),
+                        SetOptions.merge()
+                    )
+                    .await()
+                Resource.Success(Unit)
+            } else {
+                Resource.Empty
+            }
+        } catch (e: Exception) {
+            Resource.Error(message = "Errore durante l'aggiornamento delle aree di lavoro")
+        }
+    }
+
+
     suspend fun getAziendaById(aziendaId: String): Resource<Azienda> {
         return try {
             val result = db.collection(AziendeFirestore.COLLECTION)

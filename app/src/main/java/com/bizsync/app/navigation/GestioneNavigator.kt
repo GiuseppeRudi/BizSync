@@ -35,8 +35,8 @@ fun GestioneNavigator(
                 onNavigateToRequest = {
                     navController.navigate(GestioneScreenRoute.Request.route)
                 },
-                onNavigateToCustomers = {
-                    navController.navigate(GestioneScreenRoute.Customers.route)
+                onNavigateToManageCompany = {
+                    navController.navigate(GestioneScreenRoute.Company.route)
                 },
                 onNavigateToReports = {
                     navController.navigate(GestioneScreenRoute.Reports.route)
@@ -94,8 +94,8 @@ fun GestioneNavigator(
             )
         }
 
-        composable(GestioneScreenRoute.Customers.route) {
-            CustomersManagementScreen(
+        composable(GestioneScreenRoute.Company.route) {
+            CompanyManagementScreen(
                 onBackClick = { navController.popBackStack() }
             )
         }

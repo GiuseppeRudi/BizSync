@@ -13,7 +13,9 @@ object InvitoMapper {
             idAzienda = dto.idAzienda,
             manager = dto.manager,
             nomeRuolo = dto.nomeRuolo,
-            stato = dto.stato  // stringa come arriva da Firebase
+            stato = dto.stato ,
+            ccnlInfo = dto.ccnlInfo
+
         )
     }
 
@@ -25,7 +27,8 @@ object InvitoMapper {
             idAzienda = domain.idAzienda,
             manager = domain.manager,
             nomeRuolo = domain.nomeRuolo,
-            stato = domain.stato // stato come stringa
+            stato = domain.stato,
+            ccnlInfo = domain.ccnlInfo
         )
     }
 }

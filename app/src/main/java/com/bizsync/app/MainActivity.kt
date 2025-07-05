@@ -4,6 +4,7 @@ package com.bizsync.app
 import LoginScreen
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -45,10 +46,14 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         FirebaseApp.initializeApp(this)
+
         FirebaseAppCheck.getInstance()
             .installAppCheckProviderFactory(
                 DebugAppCheckProviderFactory.getInstance()
             )
+
+
+
 
 
         //PER FARE DI DEPLOY

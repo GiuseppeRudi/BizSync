@@ -12,7 +12,10 @@ object AziendaMapper {
             idAzienda = dto.id,
             nome = dto.nome,
             areeLavoro = dto.areeLavoro,
-            turniFrequenti = dto.turniFrequenti
+            turniFrequenti = dto.turniFrequenti,
+            sector = dto.sector,
+            numDipendentiRange = dto.numDipendentiRange
+
         )
     }
 
@@ -21,7 +24,9 @@ object AziendaMapper {
             id = domain.idAzienda,
             nome = domain.nome,
             areeLavoro = domain.areeLavoro,
-            turniFrequenti = domain.turniFrequenti
+            turniFrequenti = domain.turniFrequenti,
+            sector = domain.sector,
+            numDipendentiRange = domain.numDipendentiRange
         )
     }
 }

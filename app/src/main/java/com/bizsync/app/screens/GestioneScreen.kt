@@ -34,7 +34,7 @@ fun MainManagementScreen(
     onNavigateToProjects: () -> Unit,
     onNavigateToFinance: () -> Unit,
     onNavigateToRequest: () -> Unit,
-    onNavigateToCustomers: () -> Unit,
+    onNavigateToManageCompany: () -> Unit,
     onNavigateToReports: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToSecurity: () -> Unit,
@@ -82,11 +82,11 @@ fun MainManagementScreen(
             ) { onNavigateToRequest() },
 
             ManagementCard(
-                title = "Clienti",
-                description = "CRM e relazioni clienti",
+                title = "Azienda",
+                description = "Gestione Azienda",
                 icon = Icons.Default.ContactPhone,
                 gradient = BizSyncColors.CardGradients[4]
-            ) { onNavigateToCustomers() },
+            ) { onNavigateToManageCompany() },
 
             ManagementCard(
                 title = "Reportistica",
@@ -346,14 +346,7 @@ fun FinanceManagementScreen(onBackClick: () -> Unit) {
 
 
 
-@Composable
-fun CustomersManagementScreen(onBackClick: () -> Unit) {
-    ManagementScreenTemplate(
-        title = "Gestione Clienti",
-        onBackClick = onBackClick,
-        content = "Sezione Clienti - Coming Soon"
-    )
-}
+
 
 @Composable
 fun ReportsManagementScreen(onBackClick: () -> Unit) {

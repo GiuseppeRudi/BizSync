@@ -12,8 +12,8 @@ object AziendaUiMapper {
             nome = domain.nome,
             areeLavoro = domain.areeLavoro,
             turniFrequenti = domain.turniFrequenti,
-            numeroDipendenti = 0,
-            descrizioneAzienda = ""
+            sector = domain.sector,
+            numDipendentiRange = domain.numDipendentiRange
         )
     }
 
@@ -22,7 +22,9 @@ object AziendaUiMapper {
             idAzienda = ui.idAzienda,
             nome = ui.nome,
             areeLavoro = ui.areeLavoro,
-            turniFrequenti = ui.turniFrequenti
+            turniFrequenti = ui.turniFrequenti,
+            sector = ui.sector,
+            numDipendentiRange = ui.numDipendentiRange
         )
     }
 

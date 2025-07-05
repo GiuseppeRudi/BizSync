@@ -8,7 +8,7 @@ sealed class GestioneScreenRoute(val route: String) {
     object Projects : GestioneScreenRoute("gestione_projects")
     object Finance : GestioneScreenRoute("gestione_finance")
     object Request : GestioneScreenRoute("gestione_request")
-    object Customers : GestioneScreenRoute("gestione_customers")
+    object Company : GestioneScreenRoute("gestione_company")
     object Reports : GestioneScreenRoute("gestione_reports")
     object Settings : GestioneScreenRoute("gestione_settings")
     object Security : GestioneScreenRoute("gestione_security")
