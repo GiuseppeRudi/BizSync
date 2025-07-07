@@ -10,6 +10,7 @@ data class User(
     val photourl: String = "",
     val idAzienda: String = "",
     val manager: Boolean = false,
-    val ruolo: String = ""
+    val posizioneLavorativa: String = "",
+    val dipartimento : String = ""
 )
 

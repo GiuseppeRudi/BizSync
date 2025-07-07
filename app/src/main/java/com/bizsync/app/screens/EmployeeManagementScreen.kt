@@ -1,5 +1,6 @@
 package com.bizsync.app.screens
 
+import EmployeeAvatar
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -20,13 +21,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -36,11 +34,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,119 +51,119 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.bizsync.app.navigation.LocalUserViewModel
-
-
-// Data class per rappresentare un dipendente
-data class Employee(
-    val id: String,
-    val name: String,
-    val surname: String,
-    val position: String,
-    val department: String,
-    val email: String,
-    val phone: String,
-    val status: EmployeeStatus,
-    val avatarUrl: String? = null,
-    val hireDate: String,
-    val salary: Double? = null
-)
-
-enum class EmployeeStatus(val displayName: String, val color: Color) {
-    ACTIVE("Attivo", Color(0xFF4CAF50)),
-    ON_LEAVE("In Permesso", Color(0xFFFF9800)),
-    INACTIVE("Inattivo", Color(0xFFF44336))
-}
-
+import com.bizsync.domain.model.AreaLavoro
+import com.bizsync.ui.model.UserUi
+import com.bizsync.ui.viewmodels.EmployeeViewModel
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EmployeeManagementScreen(
-    onBackClick: () -> Unit = {}
+    onBackClick: () -> Unit = {},
 ) {
-    var searchQuery by remember { mutableStateOf("") }
-    var selectedDepartment by remember { mutableStateOf("Tutti") }
-    var showAddEmployeeDialog by remember { mutableStateOf(false) }
-    var selectedEmployee by remember { mutableStateOf<Employee?>(null) }
 
-    val userVm = LocalUserViewModel.current
 
-    // Dati di esempio per i dipendenti
-    val sampleEmployees = remember {
-        listOf(
-            Employee(
-                id = "1",
-                name = "Marco",
-                surname = "Rossi",
-                position = "Sviluppatore Senior",
-                department = "IT",
-                email = "marco.rossi@bizsync.com",
-                phone = "+39 123 456 7890",
-                status = EmployeeStatus.ACTIVE,
-                hireDate = "15/01/2022",
-                salary = 45000.0
-            ),
-            Employee(
-                id = "2",
-                name = "Giulia",
-                surname = "Bianchi",
-                position = "Project Manager",
-                department = "Gestione Progetti",
-                email = "giulia.bianchi@bizsync.com",
-                phone = "+39 123 456 7891",
-                status = EmployeeStatus.ACTIVE,
-                hireDate = "03/05/2021",
-                salary = 42000.0
-            ),
-            Employee(
-                id = "3",
-                name = "Andrea",
-                surname = "Verdi",
-                position = "Designer UX/UI",
-                department = "Design",
-                email = "andrea.verdi@bizsync.com",
-                phone = "+39 123 456 7892",
-                status = EmployeeStatus.ON_LEAVE,
-                hireDate = "20/09/2022",
-                salary = 38000.0
-            ),
-            Employee(
-                id = "4",
-                name = "Sara",
-                surname = "Neri",
-                position = "Responsabile HR",
-                department = "Risorse Umane",
-                email = "sara.neri@bizsync.com",
-                phone = "+39 123 456 7893",
-                status = EmployeeStatus.ACTIVE,
-                hireDate = "10/03/2020",
-                salary = 40000.0
-            ),
-            Employee(
-                id = "5",
-                name = "Luca",
-                surname = "Gialli",
-                position = "Analista Finanziario",
-                department = "Finanze",
-                email = "luca.gialli@bizsync.com",
-                phone = "+39 123 456 7894",
-                status = EmployeeStatus.INACTIVE,
-                hireDate = "05/11/2023",
-                salary = 35000.0
-            )
+    val employeeVM : EmployeeViewModel = hiltViewModel()
+
+
+    val userVM = LocalUserViewModel.current
+    val userState by userVM.uiState.collectAsState()
+
+    val uiState by employeeVM.uiState.collectAsState()
+
+
+    val searchQuery = uiState.searchQuery
+    val selectedDepartment = uiState.selectedDepartment
+    // Recupera la lista dei dipendenti dal ViewModel
+//    val employees = uiState.employees
+    val isLoading = uiState.isLoading
+
+    // Carica i dipendenti quando la schermata viene aperta
+//    LaunchedEffect(Unit) {
+//        employeeVM.loadEmployees()
+//    }
+
+    val mockEmployees = listOf(
+        UserUi(
+            uid = "u1",
+            email = "maria.rossi@azienda.com",
+            nome = "Maria",
+            cognome = "Rossi",
+            photourl = "",
+            idAzienda = "az123",
+            isManager = false,
+            posizioneLavorativa = "Impiegata amministrativa",
+            dipartimento = "Amministrazione"
+        ),
+        UserUi(
+            uid = "u2",
+            email = "luca.verdi@azienda.com",
+            nome = "Luca",
+            cognome = "Verdi",
+            photourl = "",
+            idAzienda = "az123",
+            isManager = false,
+            posizioneLavorativa = "Tecnico informatico",
+            dipartimento = "IT"
+        ),
+        UserUi(
+            uid = "u3",
+            email = "giulia.bianchi@azienda.com",
+            nome = "Giulia",
+            cognome = "Bianchi",
+            photourl = "",
+            idAzienda = "az123",
+            isManager = false,
+            posizioneLavorativa = "Operatrice call center",
+            dipartimento = "Customer Service"
+        ),
+        UserUi(
+            uid = "u4",
+            email = "marco.neri@azienda.com",
+            nome = "Marco",
+            cognome = "Neri",
+            photourl = "",
+            idAzienda = "az123",
+            isManager = true,
+            posizioneLavorativa = "Responsabile IT",
+            dipartimento = "IT"
+        ),
+        UserUi(
+            uid = "u5",
+            email = "sara.rizzo@azienda.com",
+            nome = "Sara",
+            cognome = "Rizzo",
+            photourl = "https://lh3.googleusercontent.com/a-/ALV-UjWCNEhTcHDfdrI96_gIMfVFp7SajWSKmnmO3ASMfWlT5yI9P8A=s96-c",
+            idAzienda = "az123",
+            isManager = false,
+            posizioneLavorativa = "Analista contabile",
+            dipartimento = "Amministrazione"
+        ),
+        UserUi(
+            uid = "u6",
+            email = "fabio.moro@azienda.com",
+            nome = "Fabio",
+            cognome = "Moro",
+            photourl = "",
+            idAzienda = "az123",
+            isManager = false,
+            posizioneLavorativa = "Magazziniere",
+            dipartimento = "Logistica"
         )
-    }
+    )
 
+    val employees = mockEmployees
+    val departments = listOf(AreaLavoro(nomeArea = "Tutti")) + userState.azienda.areeLavoro
 
-    val departments = remember {
-        listOf("Tutti") + sampleEmployees.map { it.department }.distinct()
-    }
+    val selectedEmployee = uiState.selectedEmployee
 
-    val filteredEmployees = sampleEmployees.filter { employee ->
-        val matchesSearch = employee.name.contains(searchQuery, ignoreCase = true) ||
-                employee.surname.contains(searchQuery, ignoreCase = true) ||
-                employee.position.contains(searchQuery, ignoreCase = true)
-        val matchesDepartment = selectedDepartment == "Tutti" || employee.department == selectedDepartment
+    val filteredEmployees = employees.filter { employee ->
+        val matchesSearch = employee.nome.contains(searchQuery, ignoreCase = true) ||
+                employee.cognome.contains(searchQuery, ignoreCase = true) ||
+                employee.posizioneLavorativa.contains(searchQuery, ignoreCase = true)
+        val matchesDepartment = selectedDepartment == "Tutti" || employee.dipartimento == selectedDepartment
         matchesSearch && matchesDepartment
     }
 
@@ -202,42 +199,6 @@ fun EmployeeManagementScreen(
             }
         )
 
-        // Stats cards
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(horizontal = 16.dp),
-            modifier = Modifier.padding(bottom = 16.dp)
-        ) {
-            item {
-                StatsCard(
-                    title = "Totale",
-                    value = sampleEmployees.size.toString(),
-                    color = Color(0xFF3498DB)
-                )
-            }
-            item {
-                StatsCard(
-                    title = "Attivi",
-                    value = sampleEmployees.count { it.status == EmployeeStatus.ACTIVE }.toString(),
-                    color = Color(0xFF4CAF50)
-                )
-            }
-            item {
-                StatsCard(
-                    title = "In Permesso",
-                    value = sampleEmployees.count { it.status == EmployeeStatus.ON_LEAVE }.toString(),
-                    color = Color(0xFFFF9800)
-                )
-            }
-            item {
-                StatsCard(
-                    title = "Inattivi",
-                    value = sampleEmployees.count { it.status == EmployeeStatus.INACTIVE }.toString(),
-                    color = Color(0xFFF44336)
-                )
-            }
-        }
-
         // Filtri
         Card(
             modifier = Modifier
@@ -252,7 +213,7 @@ fun EmployeeManagementScreen(
                 // Barra di ricerca
                 OutlinedTextField(
                     value = searchQuery,
-                    onValueChange = { searchQuery = it },
+                    onValueChange = { employeeVM.updateSearchQuery(it) },
                     label = { Text("Cerca dipendente...") },
                     leadingIcon = {
                         Icon(Icons.Default.Search, contentDescription = "Cerca")
@@ -268,9 +229,9 @@ fun EmployeeManagementScreen(
                 ) {
                     items(departments) { department ->
                         FilterChip(
-                            onClick = { selectedDepartment = department },
-                            label = { Text(department) },
-                            selected = selectedDepartment == department,
+                            onClick = {  employeeVM.updateSelectedDepartment(department.nomeArea) },
+                            label = { Text(department.nomeArea) },
+                            selected = selectedDepartment == department.nomeArea,
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = Color(0xFF3498DB),
                                 selectedLabelColor = Color.White
@@ -290,11 +251,11 @@ fun EmployeeManagementScreen(
             items(filteredEmployees) { employee ->
                 EmployeeCard(
                     employee = employee,
-                    onClick = { selectedEmployee = employee }
+                    onClick = { employeeVM.updateSelectedEmployee(employee) }
                 )
             }
 
-            if (filteredEmployees.isEmpty()) {
+            if (filteredEmployees.isEmpty() && !isLoading) {
                 item {
                     EmptyStateCard()
                 }
@@ -302,51 +263,18 @@ fun EmployeeManagementScreen(
         }
     }
 
-    // Dialog dettagli dipendente
     selectedEmployee?.let { employee ->
-        EmployeeDetailDialog(
+        EmployeeDetailScreen(
             employee = employee,
-            onDismiss = { selectedEmployee = null }
+            employeeVm = employeeVM
         )
     }
 
 }
 
 @Composable
-fun StatsCard(
-    title: String,
-    value: String,
-    color: Color
-) {
-    Card(
-        modifier = Modifier.width(100.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = color.copy(alpha = 0.1f)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = value,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = color
-            )
-            Text(
-                text = title,
-                fontSize = 12.sp,
-                color = Color(0xFF7F8C8D)
-            )
-        }
-    }
-}
-
-@Composable
 fun EmployeeCard(
-    employee: Employee,
+    employee: UserUi,
     onClick: () -> Unit
 ) {
     var isPressed by remember { mutableStateOf(false) }
@@ -374,61 +302,33 @@ fun EmployeeCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Avatar
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .clip(CircleShape)
-                    .background(
-                        Brush.linearGradient(
-                            colors = listOf(Color(0xFF667eea), Color(0xFF764ba2))
-                        )
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "${employee.name.first()}${employee.surname.first()}",
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+            EmployeeAvatar(
+                photoUrl = employee.photourl,
+                nome = employee.nome,
+                cognome = employee.cognome
+            )
+
 
             Spacer(modifier = Modifier.width(16.dp))
 
             // Info dipendente
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "${employee.name} ${employee.surname}",
+                    text = "${employee.nome} ${employee.cognome}",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF2C3E50)
                 )
                 Text(
-                    text = employee.position,
+                    text = employee.posizioneLavorativa,
                     fontSize = 14.sp,
                     color = Color(0xFF7F8C8D),
                     modifier = Modifier.padding(vertical = 2.dp)
                 )
                 Text(
-                    text = employee.department,
+                    text = employee.dipartimento,
                     fontSize = 12.sp,
                     color = Color(0xFF95A5A6)
-                )
-            }
-
-            // Status badge
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = employee.status.color.copy(alpha = 0.1f)
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(
-                    text = employee.status.displayName,
-                    fontSize = 10.sp,
-                    color = employee.status.color,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                 )
             }
         }
@@ -436,104 +336,9 @@ fun EmployeeCard(
 
     LaunchedEffect(isPressed) {
         if (isPressed) {
-            kotlinx.coroutines.delay(100)
+            delay(100)
             isPressed = false
         }
-    }
-}
-
-@Composable
-fun EmployeeDetailDialog(
-    employee: Employee,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(
-                            Brush.linearGradient(
-                                colors = listOf(Color(0xFF667eea), Color(0xFF764ba2))
-                            )
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "${employee.name.first()}${employee.surname.first()}",
-                        color = Color.White,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Text("${employee.name} ${employee.surname}")
-            }
-        },
-        text = {
-            Column {
-                DetailRow("Posizione", employee.position)
-                DetailRow("Dipartimento", employee.department)
-                DetailRow("Email", employee.email)
-                DetailRow("Telefono", employee.phone)
-                DetailRow("Data Assunzione", employee.hireDate)
-                employee.salary?.let {
-                    DetailRow("Stipendio", "€${String.format("%.2f", it)}")
-                }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Status: ",
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(end = 8.dp)
-                    )
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = employee.status.color.copy(alpha = 0.1f)
-                        ),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text(
-                            text = employee.status.displayName,
-                            fontSize = 12.sp,
-                            color = employee.status.color,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Chiudi")
-            }
-        }
-    )
-}
-
-@Composable
-fun DetailRow(label: String, value: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp)
-    ) {
-        Text(
-            text = "$label: ",
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier.width(100.dp)
-        )
-        Text(
-            text = value,
-            modifier = Modifier.weight(1f)
-        )
     }
 }
 

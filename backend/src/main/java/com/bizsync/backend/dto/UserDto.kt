@@ -1,7 +1,6 @@
 package com.bizsync.backend.dto
 
 
-import com.bizsync.domain.model.User
 import com.google.firebase.firestore.Exclude
 
 data class UserDto(
@@ -16,7 +15,9 @@ data class UserDto(
     val photourl: String = "",
     val idAzienda: String = "",
     val manager: Boolean = false,
-    val ruolo: String = ""
+    val posizioneLavorativa: String = "",
+    val dipartimento : String = ""
+
 )
 
 

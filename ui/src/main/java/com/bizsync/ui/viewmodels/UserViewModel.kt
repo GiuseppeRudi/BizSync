@@ -8,7 +8,6 @@ import com.bizsync.backend.repository.ContractRepository
 import com.bizsync.backend.repository.UserRepository
 import com.bizsync.domain.constants.sealedClass.Resource.*
 import com.bizsync.domain.model.AreaLavoro
-import com.bizsync.domain.model.Invito
 import com.bizsync.domain.model.TurnoFrequente
 import com.bizsync.domain.constants.sealedClass.RuoliAzienda
 import com.bizsync.domain.model.Contratto
@@ -50,7 +49,7 @@ class UserViewModel @Inject constructor(
                             user = _uiState.value.user.copy
                                 (
                                 idAzienda = idAzienda,
-                                ruolo = RuoliAzienda.Proprietario.route,
+                                posizioneLavorativa = RuoliAzienda.Proprietario.route,
                                 isManager = RuoliAzienda.Proprietario.isPrivileged
                             ), hasLoadedAgency = true
                         )
@@ -195,7 +194,8 @@ class UserViewModel @Inject constructor(
                                 currentUser.copy(
                                     idAzienda = invite.idAzienda,
                                     isManager = invite.manager,
-                                    ruolo = invite.posizioneLavorativa
+                                    posizioneLavorativa = invite.posizioneLavorativa,
+                                    dipartimento = invite.dipartimento
                                 ),
                             contratto = contratto
                         )

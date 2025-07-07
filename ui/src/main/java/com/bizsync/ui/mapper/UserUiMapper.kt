@@ -14,7 +14,8 @@ object UserUiMapper {
             photourl = user.photourl,
             idAzienda = user.idAzienda,
             isManager = user.manager,
-            ruolo = user.ruolo,
+            posizioneLavorativa = user.posizioneLavorativa,
+            dipartimento = user.dipartimento
         )
     }
 
@@ -27,7 +28,8 @@ object UserUiMapper {
             photourl = userUi.photourl,
             idAzienda = userUi.idAzienda,
             manager = userUi.isManager,
-            ruolo = userUi.ruolo
+            posizioneLavorativa = userUi.posizioneLavorativa,
+            dipartimento = userUi.dipartimento
         )
     }
 

@@ -8,5 +8,6 @@ data class UserUi(
     val photourl: String = "",
     val idAzienda: String = "",
     val isManager: Boolean = false,
-    val ruolo: String = ""
+    val posizioneLavorativa: String = "",
+    val dipartimento : String = ""
 )
