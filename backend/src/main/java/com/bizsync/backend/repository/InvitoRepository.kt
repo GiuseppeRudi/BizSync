@@ -22,13 +22,13 @@ class InvitoRepository @Inject constructor(private val db : FirebaseFirestore)
                 .await()
 
             val list = snapshot.documents.mapNotNull { doc ->
-                doc.toObject(Invito::class.java)?.copy(id = doc.id)
+                doc.toObject(InvitoDto::class.java)?.copy(id = doc.id)
             }
 
             if (list.isEmpty()) {
                 Resource.Empty
             } else {
-                Resource.Success(list)
+                Resource.Success(list.toDomainList())
             }
 
         } catch (e: Exception) {

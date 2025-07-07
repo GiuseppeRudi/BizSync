@@ -3,15 +3,20 @@ package com.bizsync.backend.repository
 import android.util.Log
 import com.bizsync.backend.prompts.AiPrompts
 import com.bizsync.backend.prompts.ContractPrompts
+import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.Ccnlnfo
+import com.bizsync.domain.model.Contratto
 import com.google.firebase.ai.GenerativeModel
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.tasks.await
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
 class ContractRepository @Inject constructor(
     private val json: Json,
-    private val ai: GenerativeModel
+    private val ai: GenerativeModel,
+    private val db : FirebaseFirestore
 ) {
 
     suspend fun generateCcnlInfo(
@@ -61,4 +66,19 @@ class ContractRepository @Inject constructor(
             malattiaRetribuita = 180
         )
     }
+
+    suspend fun saveContract(contratto: Contratto): Resource<Unit> {
+        return try {
+            val docRef = db.collection("contratti").document()
+            db.collection("contratti")
+                .document(docRef.id)
+                .set(contratto.copy(id = docRef.id))
+                .await()
+
+            Resource.Success(Unit)
+        } catch (e: Exception) {
+            Resource.Error("Errore nel salvataggio contratto: ${e.message}")
+        }
+    }
+
 }

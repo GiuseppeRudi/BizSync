@@ -70,7 +70,6 @@ fun InviteManagementScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-            // .verticalScroll(rememberScrollState()) // ← REMOVED THIS LINE
         ) {
             when (inviteState.currentView) {
                 InviteView.SELECTION -> {

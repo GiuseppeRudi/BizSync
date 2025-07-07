@@ -68,56 +68,54 @@ class UserViewModel @Inject constructor(private val userRepository: UserReposito
 
     fun checkUser(userId: String) {
         viewModelScope.launch(Dispatchers.IO) {
-
             val result = userRepository.getUserById(userId)
 
-            Log.d("LOGINREPO_DEBUG", result.toString())
+            when (result) {
+                is Success -> {
+                    val userUi = result.data.toUiState()
 
+                    _uiState.update {
+                        it.copy(
+                            user = userUi,
+                            hasLoadedUser = true
+                        )
+                    }
 
-             when (result) {
-                is Success -> _uiState.update {
-                    it.copy(
-                        user = result.data.toUiState(),
-                        hasLoadedUser = true
-                    )
+                    val idAzienda = userUi.idAzienda
+                    Log.d("VEDIAMO", "hasLoadedUser: true, idAzienda: $idAzienda")
+
+                    if (idAzienda.isNotEmpty()) {
+                        val loaded = aziendaRepository.getAziendaById(idAzienda)
+
+                        when (loaded) {
+                            is Success -> {
+                                _uiState.update {
+                                    it.copy(
+                                        azienda = loaded.data.toUiState(),
+                                        hasLoadedAgency = true,
+                                        checkUser = true
+                                    )
+                                }
+                            }
+                            is Error -> _uiState.update { it.copy(resultMsg = loaded.message) }
+                            is Empty -> _uiState.update { it.copy(resultMsg = "Azienda non trovata") }
+                            else -> _uiState.update { it.copy(resultMsg = "Errore sconosciuto") }
+                        }
+                    } else {
+                        _uiState.update { it.copy(checkUser = false) }
+                        Log.d("VEDIAMO", "SONO QUA x2")
+                    }
                 }
 
                 is Error -> _uiState.update { it.copy(resultMsg = result.message) }
-                is Empty -> _uiState.update { it.copy(resultMsg = "Utente non trovato") }
+                is Empty -> _uiState.update { it.copy(hasLoadedUser = true , checkUser = false) }
                 else -> _uiState.update { it.copy(resultMsg = "Errore sconosciuto") }
             }
-
-            val idAzienda = _uiState.value.user.idAzienda
-
-            if (idAzienda.isNotEmpty() && _uiState.value.hasLoadedUser) {
-
-                val loaded = aziendaRepository.getAziendaById(idAzienda)
-
-                when (loaded) {
-                    is Success -> {
-                        _uiState.update {
-                            it.copy(
-                                azienda = loaded.data.toUiState(),
-                                hasLoadedAgency = true
-                            )
-                        }
-                        _uiState.update { it.copy(checkUser = true) }
-                    }
-                    is Error -> {_uiState.update { it.copy(resultMsg = loaded.message) } }
-                    is Empty -> {  _uiState.update { it.copy(resultMsg = "Azienda non trovata") } }
-                    else -> {_uiState.update { it.copy(resultMsg = "Errore sconosciuto") }
-                }
-            }
-
-            if (idAzienda.isEmpty() && _uiState.value.hasLoadedUser) {
-                _uiState.update { it.copy(checkUser = false) }
-            }
-
         }
-       }
     }
 
-        fun clearError()
+
+    fun clearError()
         {
             _uiState.update { it.copy(resultMsg = null) }}
 

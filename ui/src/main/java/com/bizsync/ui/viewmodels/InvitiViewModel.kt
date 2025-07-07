@@ -2,9 +2,11 @@ package com.bizsync.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bizsync.backend.repository.ContractRepository
 import com.bizsync.backend.repository.InvitoRepository
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.constants.sealedClass.Resource.Success
+import com.bizsync.domain.model.Contratto
 import com.bizsync.domain.model.Invito
 import com.bizsync.domain.utils.toDomain
 import com.bizsync.domain.utils.toUiStateList
@@ -22,7 +24,10 @@ import javax.inject.Inject
 
 
 @HiltViewModel
-class InvitiViewModel @Inject constructor(private val invitoRepository: InvitoRepository) : ViewModel() {
+class InvitiViewModel @Inject constructor(
+    private val invitoRepository: InvitoRepository,
+    private val contractRepository: ContractRepository
+) : ViewModel() {
 
 
     private val _uiState = MutableStateFlow(InvitiState())
@@ -47,19 +52,54 @@ class InvitiViewModel @Inject constructor(private val invitoRepository: InvitoRe
         _uiState.update { it.copy(resultMsg = null, statusMsg = DialogStatusType.ERROR) }
     }
 
+    fun acceptInvite(invite: InvitoUi, idUtente : String) = viewModelScope.launch {
+        val oggi = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+        val newInvite = invite.copy(acceptedDate = oggi)
 
-    fun acceptInvite(invite: InvitoUi) = viewModelScope.launch {
-        val newInvite = invite.copy(acceptedDate = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
+        val result = invitoRepository.updateInvito(newInvite.toDomain())
 
-        val result  = invitoRepository.updateInvito(newInvite.toDomain())
+        when (result) {
+            is Success -> {
+                // Crea oggetto contratto
+                val contratto = Contratto(
+                    idDipendente = idUtente,
+                    idAzienda = newInvite.idAzienda,
+                    emailDipendente = newInvite.email,
+                    posizioneLavorativa = newInvite.posizioneLavorativa,
+                    dipartimento = newInvite.dipartimento,
+                    tipoContratto = newInvite.tipoContratto,
+                    oreSettimanali = newInvite.oreSettimanali,
+                    settoreAziendale = newInvite.settoreAziendale,
+                    dataInizio = oggi,
+                    ccnlInfo = newInvite.ccnlInfo
+                )
 
-        when(result){
-            is Success -> {  _uiState.update { it.copy(updateInvite = true) }}
-            is Resource.Error -> { onInviteMsg(DialogStatusType.ERROR, result.message) }
-            else -> {onInviteMsg(DialogStatusType.ERROR, "Errore Sconosciuto")}
+                // Salva contratto
+                val contrattoResult = contractRepository.saveContract(contratto)
+
+                when (contrattoResult) {
+                    is Success -> {
+                        _uiState.update { it.copy(updateInvite = true) }
+                    }
+                    is Resource.Error -> {
+                        onInviteMsg(DialogStatusType.ERROR, "Invito accettato ma errore nel salvataggio contratto: ${contrattoResult.message}")
+                    }
+                    else -> {
+                        onInviteMsg(DialogStatusType.ERROR, "Errore sconosciuto nel salvataggio contratto")
+                    }
+                }
+            }
+
+            is Resource.Error -> {
+                onInviteMsg(DialogStatusType.ERROR, result.message)
+            }
+
+            else -> {
+                onInviteMsg(DialogStatusType.ERROR, "Errore Sconosciuto")
+            }
         }
-
     }
+
 
     fun declineInvite(invite: InvitoUi) = viewModelScope.launch {
         // repo.declineInvite(...)

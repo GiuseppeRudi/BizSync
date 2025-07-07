@@ -1,6 +1,5 @@
 package com.bizsync.app.screens
 
-
 import androidx.compose.material3.Button
 import androidx.compose.runtime.Composable
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -13,21 +12,27 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Business
+import androidx.compose.material.icons.filled.Euro
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.domain.model.Invito
 import com.bizsync.ui.components.StatusDialog
 import com.bizsync.ui.model.InvitoUi
 import com.bizsync.ui.viewmodels.InvitiViewModel
-
-
 
 @Composable
 fun ChooseInvito(onTerminate: () -> Unit) {
@@ -63,7 +68,18 @@ fun ChooseInvito(onTerminate: () -> Unit) {
             exit = fadeOut()
         ) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(text = "Caricamento inviti...", style = MaterialTheme.typography.bodyLarge)
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(48.dp),
+                        strokeWidth = 4.dp
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Caricamento inviti...",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
             }
         }
 
@@ -75,20 +91,46 @@ fun ChooseInvito(onTerminate: () -> Unit) {
         ) {
             if (invites.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(text = "Nessun invito disponibile", style = MaterialTheme.typography.bodyLarge)
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            imageVector = Icons.Default.Business,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Nessun invito disponibile",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "Controlla più tardi per nuove opportunità",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize().padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Ciclo tramite i dati (invites)
+                    item {
+                        Text(
+                            text = "I tuoi inviti (${invites.size})",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
                     items(invites.size) { index ->
                         val invite = invites[index]
-                        InviteCard(
+                        ModernInviteCard(
                             invite = invite,
-                            onAccept = { invitiVM.acceptInvite(invite);
-                                            if (updateInvite == true){ userVM.onAcceptInvite(invite) } },
+                            onAccept = { invitiVM.acceptInvite(invite,user.uid);
+                                if (updateInvite == true){ userVM.onAcceptInvite(invite) } },
                             onDetails = { invitiVM.showDetails(invite) },
                             onDecline = { invitiVM.declineInvite(invite) }
                         )
@@ -100,61 +142,352 @@ fun ChooseInvito(onTerminate: () -> Unit) {
 
     StatusDialog(message = resultMsgUser, statusType = statusMsgUser, onDismiss = { userVM.clearMessage()} )
     StatusDialog(message = resultMsgInvire, statusType = statusMsgInvite, onDismiss = { invitiVM.clearMessage()} )
-
 }
 
-
-
-
-
 @Composable
-private fun InviteCard(
+private fun ModernInviteCard(
     invite: InvitoUi,
     onAccept: () -> Unit,
     onDetails: () -> Unit,
     onDecline: () -> Unit
 ) {
-    var expanded = remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            //.animateItemPlacement()
             .animateContentSize(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = "Azienda: ${invite.aziendaNome}", style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(text = "Manageriale : ${invite.manager}", style = MaterialTheme.typography.bodyMedium)
-            Text(text = "Ruolo: ${invite.posizioneLavorativa}", style = MaterialTheme.typography.bodyMedium)
+        Column(modifier = Modifier.padding(20.dp)) {
+            // Header - Azienda e Ruolo
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = invite.aziendaNome,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(top = 4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = invite.posizioneLavorativa,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        if (invite.manager) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer
+                            ) {
+                                Text(
+                                    text = "Manager",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
+                    }
+                }
 
-            // Extra content
-            AnimatedVisibility(visible = expanded.value) {
+                StatusBadge(status = invite.stato)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Informazioni principali del contratto
+            ContractInfoSection(invite = invite)
+
+            // Sezione CCNL
+            if (invite.ccnlInfo.settore.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(12.dp))
+                CCNLInfoSection(invite = invite)
+            }
+
+            // Sezione espandibile per dettagli aggiuntivi
+            Spacer(modifier = Modifier.height(12.dp))
+
+            TextButton(
+                onClick = { expanded = !expanded },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Dettagli aggiuntivi")
+                Icon(
+                    imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+
+            AnimatedVisibility(visible = expanded) {
                 Column(modifier = Modifier.padding(vertical = 8.dp)) {
-                 //   Text(text = "Data offerta: ${invite.date}")
-                 //   Text(text = "Posizione: ${invite.position}")
+                    HorizontalDivider(
+                        modifier = Modifier.padding(bottom = 12.dp),
+                        thickness = 1.dp,
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                    )
+
+                    if (invite.dipartimento.isNotEmpty()) {
+                        DetailItem(label = "Dipartimento", value = invite.dipartimento)
+                    }
+
+                    if (invite.settoreAziendale.isNotEmpty()) {
+                        DetailItem(label = "Settore", value = invite.settoreAziendale)
+                    }
+
+                    if (invite.sentDate.isNotEmpty()) {
+                        DetailItem(label = "Data invito", value = invite.sentDate)
+                    }
+
+                    if (invite.ccnlInfo.ferieAnnue > 0) {
+                        DetailItem(label = "Ferie annue", value = "${invite.ccnlInfo.ferieAnnue} giorni")
+                    }
+
+                    if (invite.ccnlInfo.rolAnnui > 0) {
+                        DetailItem(label = "ROL annui", value = "${invite.ccnlInfo.rolAnnui} giorni")
+                    }
+
+                    if (invite.ccnlInfo.malattiaRetribuita > 0) {
+                        DetailItem(label = "Malattia retribuita", value = "${invite.ccnlInfo.malattiaRetribuita} giorni")
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Pulsanti azione
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Button(onClick = onAccept) { Text("Accetta") }
-                Button(onClick = onDetails) { Text("Dettagli") }
-                Button(onClick = onDecline) { Text("Rifiuta") }
+                OutlinedButton(
+                    onClick = onDecline,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Rifiuta")
+                }
+
+                OutlinedButton(
+                    onClick = onDetails,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Dettagli")
+                }
+
+                Button(
+                    onClick = onAccept,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Accetta")
+                }
             }
         }
     }
 }
 
+@Composable
+private fun ContractInfoSection(invite: InvitoUi) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Dettagli Contratto",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
 
+            Spacer(modifier = Modifier.height(8.dp))
 
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                if (invite.tipoContratto.isNotEmpty()) {
+                    InfoChip(
+                        icon = Icons.Default.Schedule,
+                        label = "Tipo",
+                        value = invite.tipoContratto
+                    )
+                }
 
+                if (invite.oreSettimanali.isNotEmpty()) {
+                    InfoChip(
+                        icon = Icons.Default.Schedule,
+                        label = "Ore/sett",
+                        value = "${invite.oreSettimanali}h"
+                    )
+                }
+            }
+        }
+    }
+}
 
+@Composable
+private fun CCNLInfoSection(invite: InvitoUi) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Informazioni CCNL",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
 
+            Spacer(modifier = Modifier.height(8.dp))
 
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    if (invite.ccnlInfo.settore.isNotEmpty()) {
+                        Text(
+                            text = "Settore: ${invite.ccnlInfo.settore}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                    if (invite.ccnlInfo.ruolo.isNotEmpty()) {
+                        Text(
+                            text = "Ruolo: ${invite.ccnlInfo.ruolo}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
 
+                if (invite.ccnlInfo.stipendioAnnualeLordo > 0) {
+                    Column(horizontalAlignment = Alignment.End) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Euro,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "${invite.ccnlInfo.stipendioAnnualeLordo}€",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Text(
+                            text = "lordo/anno",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
 
+@Composable
+private fun InfoChip(
+    icon: ImageVector,
+    label: String,
+    value: String
+) {
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = MaterialTheme.colorScheme.surface
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(14.dp),
+                tint = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = "$label: $value",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+    }
+}
+
+@Composable
+private fun StatusBadge(status: com.bizsync.domain.constants.enumClass.StatusInvite) {
+    val (color, text) = when (status) {
+        com.bizsync.domain.constants.enumClass.StatusInvite.PENDING ->
+            MaterialTheme.colorScheme.tertiary to "In attesa"
+        com.bizsync.domain.constants.enumClass.StatusInvite.ACCEPTED ->
+            MaterialTheme.colorScheme.primary to "Accettato"
+        com.bizsync.domain.constants.enumClass.StatusInvite.REJECTED ->
+            MaterialTheme.colorScheme.error to "Rifiutato"
+        else -> MaterialTheme.colorScheme.outline to "Sconosciuto"
+    }
+
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = color.copy(alpha = 0.15f)
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall,
+            color = color,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+        )
+    }
+}
+
+@Composable
+private fun DetailItem(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
+}
