@@ -130,7 +130,7 @@ fun ChooseInvito(onTerminate: () -> Unit) {
                         ModernInviteCard(
                             invite = invite,
                             onAccept = { invitiVM.acceptInvite(invite,user.uid);
-                                if (updateInvite == true){ userVM.onAcceptInvite(invite) } },
+                                if (updateInvite == true){ userVM.onAcceptInvite(invite,inviteState.contratto) } },
                             onDetails = { invitiVM.showDetails(invite) },
                             onDecline = { invitiVM.declineInvite(invite) }
                         )

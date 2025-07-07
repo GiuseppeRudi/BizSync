@@ -4,12 +4,14 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.repository.AziendaRepository
+import com.bizsync.backend.repository.ContractRepository
 import com.bizsync.backend.repository.UserRepository
 import com.bizsync.domain.constants.sealedClass.Resource.*
 import com.bizsync.domain.model.AreaLavoro
 import com.bizsync.domain.model.Invito
 import com.bizsync.domain.model.TurnoFrequente
 import com.bizsync.domain.constants.sealedClass.RuoliAzienda
+import com.bizsync.domain.model.Contratto
 import com.bizsync.domain.utils.toDomain
 import com.bizsync.ui.components.DialogStatusType
 import com.bizsync.ui.mapper.toUiState
@@ -25,7 +27,10 @@ import javax.inject.Inject
 
 
 @HiltViewModel
-class UserViewModel @Inject constructor(private val userRepository: UserRepository, private val aziendaRepository: AziendaRepository) : ViewModel() {
+class UserViewModel @Inject constructor(
+    private val userRepository: UserRepository,
+    private val aziendaRepository: AziendaRepository,
+    private val contractRepository: ContractRepository) : ViewModel() {
 
     private val _uiState = MutableStateFlow(UserState())
     val uiState: StateFlow<UserState> = _uiState
@@ -89,14 +94,65 @@ class UserViewModel @Inject constructor(private val userRepository: UserReposito
 
                         when (loaded) {
                             is Success -> {
-                                _uiState.update {
-                                    it.copy(
-                                        azienda = loaded.data.toUiState(),
-                                        hasLoadedAgency = true,
-                                        checkUser = true
-                                    )
+
+                                if (!userUi.isManager) {
+                                    val idUser = _uiState.value.user.uid
+                                    val idAzienda = loaded.data.idAzienda
+
+                                    val contrattoResult =
+                                        contractRepository.getContrattoByUserAndAzienda(
+                                            idUser,
+                                            idAzienda
+                                        )
+
+                                    when (contrattoResult) {
+                                        is Success -> {
+                                            val contratto = contrattoResult.data
+
+                                            _uiState.update {
+                                                it.copy(
+                                                    azienda = loaded.data.toUiState(),
+                                                    contratto = contratto, // salva se hai un campo nel UI state
+                                                    hasLoadedAgency = true,
+                                                    resultMsg = "Invito accettato con successo. Complimenti",
+                                                    statusMsg = DialogStatusType.SUCCESS,
+                                                    checkAcceptInvite = true
+                                                )
+                                            }
+                                        }
+
+                                        is Empty -> {
+                                            _uiState.update {
+                                                it.copy(
+                                                    resultMsg = "Contratto non trovato per questo utente.",
+                                                    statusMsg = DialogStatusType.ERROR
+                                                )
+                                            }
+                                        }
+
+                                        is Error -> {
+                                            _uiState.update {
+                                                it.copy(
+                                                    resultMsg = contrattoResult.message,
+                                                    statusMsg = DialogStatusType.ERROR
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
-                            }
+                                    else
+                                    {
+                                        _uiState.update {
+                                            it.copy(
+                                                azienda = loaded.data.toUiState(),
+                                                hasLoadedAgency = true,
+                                                checkUser = true
+                                            )
+                                        }
+
+                                    }
+                                }
+
                             is Error -> _uiState.update { it.copy(resultMsg = loaded.message) }
                             is Empty -> _uiState.update { it.copy(resultMsg = "Azienda non trovata") }
                             else -> _uiState.update { it.copy(resultMsg = "Errore sconosciuto") }
@@ -120,7 +176,7 @@ class UserViewModel @Inject constructor(private val userRepository: UserReposito
             _uiState.update { it.copy(resultMsg = null) }}
 
 
-        fun onAcceptInvite(invite: InvitoUi) {
+        fun onAcceptInvite(invite: InvitoUi, contratto : Contratto) {
 
 
             viewModelScope.launch {
@@ -140,7 +196,8 @@ class UserViewModel @Inject constructor(private val userRepository: UserReposito
                                     idAzienda = invite.idAzienda,
                                     isManager = invite.manager,
                                     ruolo = invite.posizioneLavorativa
-                                )
+                                ),
+                            contratto = contratto
                         )
                     }
 

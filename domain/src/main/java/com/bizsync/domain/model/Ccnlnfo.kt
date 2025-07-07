@@ -1,6 +1,5 @@
 package com.bizsync.domain.model
 
-
 import kotlinx.serialization.Serializable
 
 @Serializable

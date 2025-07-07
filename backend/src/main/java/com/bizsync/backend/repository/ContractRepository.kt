@@ -3,6 +3,7 @@ package com.bizsync.backend.repository
 import android.util.Log
 import com.bizsync.backend.prompts.AiPrompts
 import com.bizsync.backend.prompts.ContractPrompts
+import com.bizsync.backend.remote.ContrattiFirestore
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.Ccnlnfo
 import com.bizsync.domain.model.Contratto
@@ -16,7 +17,7 @@ import javax.inject.Inject
 class ContractRepository @Inject constructor(
     private val json: Json,
     private val ai: GenerativeModel,
-    private val db : FirebaseFirestore
+    private val db: FirebaseFirestore
 ) {
 
     suspend fun generateCcnlInfo(
@@ -67,18 +68,38 @@ class ContractRepository @Inject constructor(
         )
     }
 
-    suspend fun saveContract(contratto: Contratto): Resource<Unit> {
+    suspend fun saveContract(contratto: Contratto): Resource<String> {
         return try {
-            val docRef = db.collection("contratti").document()
-            db.collection("contratti")
-                .document(docRef.id)
-                .set(contratto.copy(id = docRef.id))
-                .await()
+            val docRef = db.collection(ContrattiFirestore.COLLECTION).document() // genera nuovo ID
+            val contrattoConId = contratto.copy(id = docRef.id)
 
-            Resource.Success(Unit)
+            docRef.set(contrattoConId).await()
+
+            Resource.Success(docRef.id) // restituisci l'ID
         } catch (e: Exception) {
             Resource.Error("Errore nel salvataggio contratto: ${e.message}")
         }
     }
 
+    suspend fun getContrattoByUserAndAzienda(idDipendente: String, idAzienda: String): Resource<Contratto> {
+        return try {
+            val querySnapshot = db.collection(ContrattiFirestore.COLLECTION)
+                .whereEqualTo(ContrattiFirestore.Fields.ID_DIPENDENTE, idDipendente)
+                .whereEqualTo(ContrattiFirestore.Fields.ID_AZIENDA, idAzienda)
+                .get()
+                .await()
+
+            val document = querySnapshot.documents.firstOrNull()
+
+            if (document != null) {
+                val contratto = document.toObject(Contratto::class.java)!!
+                Resource.Success(contratto)
+            } else {
+                Resource.Empty
+            }
+
+        } catch (e: Exception) {
+            Resource.Error("Errore nel recupero contratto: ${e.message}")
+        }
+    }
 }

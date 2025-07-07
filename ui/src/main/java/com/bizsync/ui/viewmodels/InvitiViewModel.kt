@@ -1,13 +1,14 @@
 package com.bizsync.ui.viewmodels
 
+import com.bizsync.domain.model.Contratto
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.repository.ContractRepository
 import com.bizsync.backend.repository.InvitoRepository
+import com.bizsync.domain.constants.enumClass.StatusInvite
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.constants.sealedClass.Resource.Success
-import com.bizsync.domain.model.Contratto
-import com.bizsync.domain.model.Invito
 import com.bizsync.domain.utils.toDomain
 import com.bizsync.domain.utils.toUiStateList
 import com.bizsync.ui.components.DialogStatusType
@@ -54,10 +55,11 @@ class InvitiViewModel @Inject constructor(
 
     fun acceptInvite(invite: InvitoUi, idUtente : String) = viewModelScope.launch {
         val oggi = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-        val newInvite = invite.copy(acceptedDate = oggi)
+        val newInvite = invite.copy(acceptedDate = oggi, stato = StatusInvite.ACCEPTED)
 
         val result = invitoRepository.updateInvito(newInvite.toDomain())
 
+        Log.d("Contratto ", result.toString())
         when (result) {
             is Success -> {
                 // Crea oggetto contratto
@@ -77,9 +79,12 @@ class InvitiViewModel @Inject constructor(
                 // Salva contratto
                 val contrattoResult = contractRepository.saveContract(contratto)
 
+                Log.d("Contratto ", contrattoResult.toString())
+
                 when (contrattoResult) {
                     is Success -> {
-                        _uiState.update { it.copy(updateInvite = true) }
+                        val contrattoConId = contratto.copy(id = contrattoResult.data)
+                        _uiState.update { it.copy(updateInvite = true, contratto = contrattoConId) }
                     }
                     is Resource.Error -> {
                         onInviteMsg(DialogStatusType.ERROR, "Invito accettato ma errore nel salvataggio contratto: ${contrattoResult.message}")
