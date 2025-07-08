@@ -1,0 +1,24 @@
+package com.bizsync.cache.entity
+
+
+import androidx.room.Embedded
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+@Entity(tableName = "contratti")
+data class ContrattoEntity(
+    @PrimaryKey val id: String = "",
+    val idDipendente: String = "",
+    val idAzienda: String = "",
+    val emailDipendente: String = "",
+    val posizioneLavorativa: String = "",
+    val dipartimento: String = "",
+    val tipoContratto: String = "",
+    val oreSettimanali: String = "",
+    val settoreAziendale: String = "",
+    val dataInizio: String = "",
+
+    // Room non supporta direttamente tipi complessi, quindi si usa @Embedded
+    @Embedded val ccnlInfo: CcnlnfoEntity = CcnlnfoEntity()
+)
+

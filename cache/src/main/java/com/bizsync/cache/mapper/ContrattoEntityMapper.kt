@@ -1,0 +1,55 @@
+package com.bizsync.cache.mapper
+
+import com.bizsync.cache.entity.CcnlnfoEntity
+import com.bizsync.cache.entity.ContrattoEntity
+import com.bizsync.domain.model.Ccnlnfo
+import com.bizsync.domain.model.Contratto
+
+object ContrattoEntityMapper {
+
+    fun fromEntity(entity: ContrattoEntity): Contratto {
+        return Contratto(
+            id = entity.id,
+            idDipendente = entity.idDipendente,
+            idAzienda = entity.idAzienda,
+            emailDipendente = entity.emailDipendente,
+            posizioneLavorativa = entity.posizioneLavorativa,
+            dipartimento = entity.dipartimento,
+            tipoContratto = entity.tipoContratto,
+            oreSettimanali = entity.oreSettimanali,
+            settoreAziendale = entity.settoreAziendale,
+            dataInizio = entity.dataInizio,
+            ccnlInfo = Ccnlnfo(
+                settore = entity.ccnlInfo.settore,
+                ruolo = entity.ccnlInfo.ruolo,
+                ferieAnnue = entity.ccnlInfo.ferieAnnue,
+                rolAnnui = entity.ccnlInfo.rolAnnui,
+                stipendioAnnualeLordo = entity.ccnlInfo.stipendioAnnualeLordo,
+                malattiaRetribuita = entity.ccnlInfo.malattiaRetribuita
+            )
+        )
+    }
+
+    fun toEntity(domain: Contratto): ContrattoEntity {
+        return ContrattoEntity(
+            id = domain.id,
+            idDipendente = domain.idDipendente,
+            idAzienda = domain.idAzienda,
+            emailDipendente = domain.emailDipendente,
+            posizioneLavorativa = domain.posizioneLavorativa,
+            dipartimento = domain.dipartimento,
+            tipoContratto = domain.tipoContratto,
+            oreSettimanali = domain.oreSettimanali,
+            settoreAziendale = domain.settoreAziendale,
+            dataInizio = domain.dataInizio,
+            ccnlInfo = CcnlnfoEntity(
+                settore = domain.ccnlInfo.settore,
+                ruolo = domain.ccnlInfo.ruolo,
+                ferieAnnue = domain.ccnlInfo.ferieAnnue,
+                rolAnnui = domain.ccnlInfo.rolAnnui,
+                stipendioAnnualeLordo = domain.ccnlInfo.stipendioAnnualeLordo,
+                malattiaRetribuita = domain.ccnlInfo.malattiaRetribuita
+            )
+        )
+    }
+}

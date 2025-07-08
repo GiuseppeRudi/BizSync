@@ -30,30 +30,10 @@ import com.bizsync.app.navigation.LocalScaffoldViewModel
 @Composable
 fun ChatScreen() {
 
-    val viewModel = ChatScreenViewModel()
 
-//    LazyColumn {
-//        if (isLoading) {
-//            // Mostra 3 shimmer card placeholder
-//            items(3) {
-//                ShiftCard(loading = true)
-//            }
-//        } else {
-//            items(shifts) { shift ->
-//                AnimatedVisibility(
-//                    visible = true,
-//                    enter = fadeIn() + slideInVertically(),
-//                    exit = fadeOut()
-//                ) {
-//                    ShiftCard(
-//                        loading = false,
-//                        title = shift.title,
-//                        time = shift.time
-//                    )
-//                }
-//            }
-//        }
-//    }
+  //  AIChatScreen(onBackClick = {})
+
+    EmployeeChatScreen(onBackClick = {})
 
     val sscaffoldVM = LocalScaffoldViewModel.current
 
