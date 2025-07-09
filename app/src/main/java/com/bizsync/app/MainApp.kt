@@ -34,11 +34,15 @@ fun MainApp(onLogout : () -> Unit) {
     LaunchedEffect(uid) {
         if (uid != null) {
             userVM.checkUser(uid)
-            splashVM.getAllUserByIdAgency(userState.azienda.idAzienda)
         }
     }
 
 
+    LaunchedEffect(userState.azienda.idAzienda) {
+        if (userState.azienda.idAzienda.isNotEmpty()) {
+            splashVM.getAllUserByIdAgency(userState.azienda.idAzienda)
+        }
+    }
 
 
     when (check) {

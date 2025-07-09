@@ -1,5 +1,6 @@
 package com.bizsync.ui.viewmodels
 
+import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.traceEventEnd
 import androidx.lifecycle.ViewModel
@@ -17,7 +18,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SplashViewModel @Inject constructor(
-    private val userOrchestrator: UserOrchestrator 
+    private val userOrchestrator: UserOrchestrator
 ) : ViewModel() {
 
     data class SplashState(
@@ -42,10 +43,8 @@ class SplashViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, syncInProgress = true) }
 
             try {
-                // 🔄 STEP 1: Chiama l'orchestrator per sincronizzazione intelligente
                 when (val result = userOrchestrator.getDipendenti(idAzienda, forceRefresh)) {
                     is Resource.Success -> {
-                        // ✅ STEP 2: Aggiorna UI con i dati sincronizzati
                         _uiState.update { currentState ->
                             currentState.copy(
                                 isLoading = false,
@@ -56,15 +55,13 @@ class SplashViewModel @Inject constructor(
                             )
                         }
 
-                        // 📊 Log per debug
-                        println("✅ Caricati ${result.data.size} dipendenti per azienda: $idAzienda")
+                        Log.d("DIPENDENTI_DEBUG", "✅ Caricati ${result.data.size} dipendenti per azienda: $idAzienda")
                         result.data.forEach { user ->
-                            println("   - ${user.nome} (${user.posizioneLavorativa})")
+                            Log.d("DIPENDENTI_DEBUG", "   - ${user.nome} (${user.posizioneLavorativa})")
                         }
                     }
 
                     is Resource.Error -> {
-                        // ❌ STEP 3: Gestisci errori
                         _uiState.update { currentState ->
                             currentState.copy(
                                 isLoading = false,
@@ -74,7 +71,7 @@ class SplashViewModel @Inject constructor(
                             )
                         }
 
-                        println("❌ Errore nel caricamento dipendenti: ${result.message}")
+                        Log.d("DIPENDENTI_DEBUG", "❌ Errore nel caricamento dipendenti: ${result.message}")
                     }
 
                     is Resource.Empty -> {
@@ -89,7 +86,6 @@ class SplashViewModel @Inject constructor(
                             )
                         }
 
-                        println("📭 Nessun dipendente trovato per azienda: $idAzienda")
                     }
                 }
 
