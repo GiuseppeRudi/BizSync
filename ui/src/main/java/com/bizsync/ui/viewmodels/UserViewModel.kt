@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.DayOfWeek
 import javax.inject.Inject
 
 
@@ -35,6 +36,9 @@ class UserViewModel @Inject constructor(
     val uiState: StateFlow<UserState> = _uiState
 
 
+    fun setGiornoPublicazioneTurni(giorno: DayOfWeek) {
+        _uiState.update { it.copy(azienda = _uiState.value.azienda.copy(giornoPubblicazioneTurni = giorno)) }
+    }
     fun onAddAziendaRole(idAzienda: String) {
 
         viewModelScope.launch {

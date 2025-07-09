@@ -153,6 +153,43 @@ fun OperationSelectorScreen(
             }
         }
 
+
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onOperationSelected(CompanyOperation.GIORNO_PUBBLICAZIONE) },
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Schedule,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(32.dp)
+                    )
+
+                    Column {
+                        Text(
+                            text = "GestiscI il giorno di pubblicazione",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "decidi quando pubblicare i turni ",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+
     }
 }
 

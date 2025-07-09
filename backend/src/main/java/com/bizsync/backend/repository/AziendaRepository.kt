@@ -4,6 +4,7 @@ import android.util.Log
 import com.bizsync.backend.dto.AziendaDto
 import com.bizsync.backend.mapper.toDomain
 import com.bizsync.backend.mapper.toDto
+import com.bizsync.backend.mapper.toDtoList
 import com.bizsync.backend.remote.AziendeFirestore
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.AreaLavoro
@@ -12,6 +13,7 @@ import com.bizsync.domain.model.TurnoFrequente
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
+import java.time.DayOfWeek
 import javax.inject.Inject
 
 class AziendaRepository @Inject constructor(private val db : FirebaseFirestore) {
@@ -35,6 +37,29 @@ class AziendaRepository @Inject constructor(private val db : FirebaseFirestore) 
     }
 
 
+    suspend fun updateGiornoPublicazioneTurni(idAzienda: String, nuovoGiorno: DayOfWeek): Resource<Unit> {
+        return try {
+            // Converte DayOfWeek in stringa per Firebase
+            val giornoString = nuovoGiorno.name
+
+            db.collection(AziendeFirestore.COLLECTION)
+                .document(idAzienda)
+                .set(
+                    mapOf(
+                        AziendeFirestore.Fields.GIORNO_PUBBLICAZIONE_TURNI to giornoString
+                    ),
+                    SetOptions.merge()
+                )
+                .await()
+
+            Log.d("AZIENDA_DEBUG", "Giorno pubblicazione aggiornato a: $giornoString per azienda: $idAzienda")
+            Resource.Success(Unit)
+
+        } catch (e: Exception) {
+            Log.e("AZIENDA_DEBUG", "Errore nell'aggiornare il giorno di pubblicazione", e)
+            Resource.Error(message = "Errore durante l'aggiornamento del giorno di pubblicazione: ${e.message}")
+        }
+    }
 
     suspend fun addPianificaSetup(
         idAzienda: String,
@@ -45,38 +70,44 @@ class AziendaRepository @Inject constructor(private val db : FirebaseFirestore) 
             val success = aree.isNotEmpty() && turni.isNotEmpty()
 
             if (success) {
+
+
                 db.collection(AziendeFirestore.COLLECTION)
                     .document(idAzienda)
                     .set(
                         mapOf(
-                            AziendeFirestore.Fields.AREE to aree,
-                            AziendeFirestore.Fields.TURNI to turni
+                            AziendeFirestore.Fields.AREE to aree.toDtoList(),
+                            AziendeFirestore.Fields.TURNI to turni // se `TurnoFrequente` è serializzabile
                         ),
                         SetOptions.merge()
                     )
                     .await()
-                Resource.Success(Unit)}
-            else {
 
+                Resource.Success(Unit)
+            } else {
                 Resource.Empty
             }
 
         } catch (e: Exception) {
+            Log.e("AZIENDA ", e.toString())
             Resource.Error(message = "Errore durante l'aggiornamento del setup di pianificazione")
         }
     }
+
 
 
     suspend fun updateAreeLavoro(idAzienda: String, aree: List<AreaLavoro>): Resource<Unit> {
         return try {
             val success = aree.isNotEmpty()
 
+
             if (success) {
+
                 db.collection(AziendeFirestore.COLLECTION)
                     .document(idAzienda)
                     .set(
                         mapOf(
-                            AziendeFirestore.Fields.AREE to aree
+                            AziendeFirestore.Fields.AREE to aree.toDtoList()
                         ),
                         SetOptions.merge()
                     )

@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.DayOfWeek
 import javax.inject.Inject
 
 @HiltViewModel
@@ -23,6 +24,240 @@ class CompanyViewModel @Inject constructor( private val aziendaRepository: Azien
 
     private val _uiState = MutableStateFlow(CompanyState())
     val uiState: StateFlow<CompanyState> = _uiState.asStateFlow()
+
+    fun setOrariSettimanaliModificati(orari: Map<String, Map<DayOfWeek, Pair<String, String>>>) {
+        _uiState.update { it.copy(orariSettimanaliModificati = orari) }
+    }
+
+    fun setEditingOrariAreaId(areaId: String?) {
+        _uiState.update { it.copy(editingOrariAreaId = areaId) }
+    }
+
+    fun setShowOrariDialog(show: Boolean) {
+        _uiState.update { it.copy(showOrariDialog = show) }
+    }
+
+    fun setOrariTemp(orari: Map<DayOfWeek, Pair<String, String>>) {
+        _uiState.update { it.copy(orariTemp = orari) }
+    }
+
+    fun openOrariDialog(areaId: String) {
+        val orariEsistenti = _uiState.value.orariSettimanaliModificati[areaId] ?: emptyMap()
+        _uiState.update {
+            it.copy(
+                editingOrariAreaId = areaId,
+                showOrariDialog = true,
+                orariTemp = orariEsistenti
+            )
+        }
+    }
+
+    fun onGiornoLavoroChanged(giorno: DayOfWeek, isChecked: Boolean) {
+        _uiState.update { current ->
+            val nuoviOrari = current.orariTemp.toMutableMap()
+            if (isChecked) {
+                nuoviOrari[giorno] = Pair("08:00", "17:00") // Valori default
+            } else {
+                nuoviOrari.remove(giorno)
+            }
+            current.copy(orariTemp = nuoviOrari)
+        }
+    }
+
+    fun onOrarioInizioChanged(giorno: DayOfWeek, orario: String) {
+        _uiState.update { current ->
+            val nuoviOrari = current.orariTemp.toMutableMap()
+            val orarioCorrente = nuoviOrari[giorno] ?: Pair("", "")
+            nuoviOrari[giorno] = orarioCorrente.copy(first = orario)
+            current.copy(orariTemp = nuoviOrari)
+        }
+    }
+
+
+    fun setGiornoPublicazioneTemp(giorno: DayOfWeek) {
+        _uiState.update {
+            it.copy(
+                giornoPublicazioneTemp = giorno,
+                hasGiornoPublicazioneChanges = true
+            )
+        }
+    }
+
+    fun setGiornoPublicazioneTempNull() {
+        _uiState.update {
+            it.copy(
+                giornoPublicazioneTemp = null,
+            )
+        }
+    }
+
+
+    fun setShowGiornoPublicazioneDialog(show: Boolean) {
+        _uiState.update { it.copy(showGiornoPublicazioneDialog = show) }
+    }
+
+    fun openGiornoPublicazioneDialog(giornoAttuale: DayOfWeek) {
+        _uiState.update {
+            it.copy(
+                giornoPublicazioneTemp = giornoAttuale,
+                showGiornoPublicazioneDialog = true,
+                hasGiornoPublicazioneChanges = false
+            )
+        }
+    }
+
+    fun closeGiornoPublicazioneDialog() {
+        _uiState.update {
+            it.copy(
+                showGiornoPublicazioneDialog = false,
+                giornoPublicazioneTemp = null,
+                hasGiornoPublicazioneChanges = false
+            )
+        }
+    }
+
+    fun setHasGiornoPubblicazioneChanges(value: Boolean) {
+        _uiState.update { it.copy(hasGiornoPubblicato = value) }
+    }
+
+
+    fun salvaGiornoPublicazione(idAzienda: String) {
+        val nuovoGiorno = _uiState.value.giornoPublicazioneTemp ?: return
+
+        viewModelScope.launch {
+            setLoading(true)
+
+            when (val result = aziendaRepository.updateGiornoPublicazioneTurni(idAzienda, nuovoGiorno)) {
+                is Resource.Success -> {
+                    setStatusMessage("Giorno di pubblicazione aggiornato con successo", DialogStatusType.SUCCESS)
+                    _uiState.update {
+                        it.copy(
+                            showGiornoPublicazioneDialog = false,
+                            hasGiornoPublicazioneChanges = false,
+                            hasGiornoPubblicato = true
+
+                        )
+                    }
+                }
+
+                is Resource.Error -> {
+                    setStatusMessage(result.message ?: "Errore nel salvataggio", DialogStatusType.ERROR)
+                }
+
+                is Resource.Empty -> {
+                    setStatusMessage("Nessuna modifica da salvare", DialogStatusType.ERROR)
+                }
+            }
+
+            setLoading(false)
+        }
+    }
+
+    // AGGIORNA resetTempState
+    fun resetTempState() {
+        _uiState.update {
+            it.copy(
+                showAddDialog = false,
+                editingArea = null,
+                showOrariDialog = false,
+                editingOrariAreaId = null,
+                orariTemp = emptyMap(),
+                showGiornoPublicazioneDialog = false,
+                giornoPublicazioneTemp = null,
+                hasGiornoPublicazioneChanges = false,
+                resultMsg = null,
+                hasChanges = false
+            )
+        }
+    }
+
+
+    fun onOrarioFineChanged(giorno: DayOfWeek, orario: String) {
+        _uiState.update { current ->
+            val nuoviOrari = current.orariTemp.toMutableMap()
+            val orarioCorrente = nuoviOrari[giorno] ?: Pair("", "")
+            nuoviOrari[giorno] = orarioCorrente.copy(second = orario)
+            current.copy(orariTemp = nuoviOrari)
+        }
+    }
+
+    fun onChangedOrariTemp(orari: Map<DayOfWeek, Pair<String, String>>?) {
+        _uiState.update { current ->
+            current.copy(orariTemp = orari ?: emptyMap())
+        }
+    }
+
+    fun salvaOrariArea() {
+        val areaId = _uiState.value.editingOrariAreaId ?: return
+        _uiState.update { current ->
+            val nuoviOrariModificati = current.orariSettimanaliModificati.toMutableMap()
+            nuoviOrariModificati[areaId] = current.orariTemp
+            current.copy(
+                orariSettimanaliModificati = nuoviOrariModificati,
+                showOrariDialog = false,
+                editingOrariAreaId = null,
+                orariTemp = emptyMap(),
+                hasChanges = true
+            )
+        }
+    }
+
+    fun closeOrariDialog() {
+        _uiState.update {
+            it.copy(
+                showOrariDialog = false,
+                editingOrariAreaId = null,
+                orariTemp = emptyMap()
+            )
+        }
+    }
+
+    // AGGIORNA la funzione di rimozione area per rimuovere anche gli orari
+    fun removeAreaModificata(area: AreaLavoro) {
+        _uiState.update { current ->
+            val nuoveAree = current.areeModificate.filterNot { it.id == area.id }
+            val nuoviOrari = current.orariSettimanaliModificati.filterKeys { it != area.id }
+            current.copy(
+                areeModificate = nuoveAree,
+                orariSettimanaliModificati = nuoviOrari,
+                hasChanges = true
+            )
+        }
+    }
+
+    // AGGIORNA la funzione di salvataggio per includere gli orari
+    fun onSaveChanges(idAzienda: String) {
+        viewModelScope.launch {
+            setLoading(true)
+
+            val areeDaSalvare = _uiState.value.areeModificate
+            val orariDaSalvare = _uiState.value.orariSettimanaliModificati
+
+            val areeAggiornate = areeDaSalvare.map { area ->
+                val nuoviOrari = orariDaSalvare[area.id] ?: area.orariSettimanali
+                area.copy(orariSettimanali = nuoviOrari)
+            }
+
+            when (val result = aziendaRepository.updateAreeLavoro(idAzienda, areeAggiornate)) {
+                is Resource.Success -> {
+                    setStatusMessage("Modifiche salvate con successo", DialogStatusType.SUCCESS)
+                    setHasChanges(false)
+                }
+
+                is Resource.Empty -> {
+                    setStatusMessage("Nessuna modifica da salvare", DialogStatusType.ERROR)
+                }
+
+                is Resource.Error -> {
+                    setStatusMessage(result.message ?: "Errore generico", DialogStatusType.ERROR)
+                }
+            }
+
+            setLoading(false)
+        }
+    }
+
+
 
     /** Seleziona l'operazione attiva nella schermata principale */
     fun setSelectedOperation(operation: CompanyOperation?) {
@@ -84,13 +319,13 @@ class CompanyViewModel @Inject constructor( private val aziendaRepository: Azien
         }
     }
 
-    /** Rimuove un'area dall'elenco */
-    fun removeAreaModificata(area: AreaLavoro) {
-        _uiState.update { current ->
-            val nuoveAree = current.areeModificate.filterNot { it.id == area.id }
-            current.copy(areeModificate = nuoveAree, hasChanges = true)
-        }
-    }
+//    /** Rimuove un'area dall'elenco */
+//    fun removeAreaModificata(area: AreaLavoro) {
+//        _uiState.update { current ->
+//            val nuoveAree = current.areeModificate.filterNot { it.id == area.id }
+//            current.copy(areeModificate = nuoveAree, hasChanges = true)
+//        }
+//    }
 
     /** Imposta se ci sono modifiche da salvare */
     fun setHasChanges(value: Boolean) {
@@ -102,30 +337,30 @@ class CompanyViewModel @Inject constructor( private val aziendaRepository: Azien
         _uiState.update { it.copy(showAddDialog = show) }
     }
 
-    fun onSaveChanges(idAzienda: String) {
-        viewModelScope.launch {
-            setLoading(true)
-
-            val areeDaSalvare = _uiState.value.areeModificate
-
-            when (val result = aziendaRepository.updateAreeLavoro(idAzienda, areeDaSalvare)) {
-                is Resource.Success -> {
-                    setStatusMessage("Modifiche salvate con successo", DialogStatusType.SUCCESS)
-                    setHasChanges(false)
-                }
-
-                is Resource.Empty -> {
-                    setStatusMessage("Nessuna area da salvare", DialogStatusType.ERROR)
-                }
-
-                is Resource.Error -> {
-                    setStatusMessage(result.message ?: "Errore generico", DialogStatusType.ERROR)
-                }
-            }
-
-            setLoading(false)
-        }
-    }
+//    fun onSaveChanges(idAzienda: String) {
+//        viewModelScope.launch {
+//            setLoading(true)
+//
+//            val areeDaSalvare = _uiState.value.areeModificate
+//
+//            when (val result = aziendaRepository.updateAreeLavoro(idAzienda, areeDaSalvare)) {
+//                is Resource.Success -> {
+//                    setStatusMessage("Modifiche salvate con successo", DialogStatusType.SUCCESS)
+//                    setHasChanges(false)
+//                }
+//
+//                is Resource.Empty -> {
+//                    setStatusMessage("Nessuna area da salvare", DialogStatusType.ERROR)
+//                }
+//
+//                is Resource.Error -> {
+//                    setStatusMessage(result.message ?: "Errore generico", DialogStatusType.ERROR)
+//                }
+//            }
+//
+//            setLoading(false)
+//        }
+//    }
 
 
 
@@ -135,14 +370,14 @@ class CompanyViewModel @Inject constructor( private val aziendaRepository: Azien
     }
 
     /** Reset dello stato temporaneo, utile dopo conferma salvataggi */
-    fun resetTempState() {
-        _uiState.update {
-            it.copy(
-                showAddDialog = false,
-                editingArea = null,
-                resultMsg = null,
-                hasChanges = false
-            )
-        }
-    }
+//    fun resetTempState() {
+//        _uiState.update {
+//            it.copy(
+//                showAddDialog = false,
+//                editingArea = null,
+//                resultMsg = null,
+//                hasChanges = false
+//            )
+//        }
+//    }
 }

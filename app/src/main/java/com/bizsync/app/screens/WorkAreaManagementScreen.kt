@@ -1,71 +1,66 @@
+// 3. AGGIORNA DipartimentiManagementScreen.kt
 package com.bizsync.app.screens
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import android.util.Log
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Business
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.bizsync.app.navigation.LocalScaffoldViewModel
 import com.bizsync.domain.model.AreaLavoro
 import com.bizsync.ui.components.AreaLavoroDialog
 import com.bizsync.ui.viewmodels.CompanyViewModel
+import java.time.DayOfWeek
+import java.time.format.TextStyle
+import java.util.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DipartimentiManagementScreen(companyVm: CompanyViewModel, areeLavoro: List<AreaLavoro>, idAzienda : String) {
+fun DipartimentiManagementScreen(
+    companyVm: CompanyViewModel,
+    areeLavoro: List<AreaLavoro>,
+    idAzienda: String,
+    orariSettimanali: Map<String, Map<DayOfWeek, Pair<String, String>>>
+) {
+
+    Log.d("ORARI ", orariSettimanali.toString())
 
     val uiState by companyVm.uiState.collectAsState()
-
     val scaffoldVM = LocalScaffoldViewModel.current
+
     val areeModificate = uiState.areeModificate
+    val orariModificati = uiState.orariSettimanaliModificati
     val showAddDialog = uiState.showAddDialog
     val editingArea = uiState.editingArea
+    val showOrariDialog = uiState.showOrariDialog
+    val editingOrariAreaId = uiState.editingOrariAreaId
+    val orariTemp = uiState.orariTemp
     val hasChanges = uiState.hasChanges
     val isLoading = uiState.isLoading
 
     LaunchedEffect(Unit) {
         scaffoldVM.onFullScreenChanged(false)
         companyVm.setAreeModificate(areeLavoro)
+        companyVm.setOrariSettimanaliModificati(orariSettimanali) // INIZIALIZZA ORARI
     }
 
-
-
-    LaunchedEffect(areeModificate) {
-        val hasDiff = uiState.areeModificate != areeLavoro
+    LaunchedEffect(areeModificate, orariModificati) {
+        val hasDiff = (uiState.areeModificate != areeLavoro) || (uiState.orariSettimanaliModificati != orariSettimanali)
         companyVm.setHasChanges(hasDiff)
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        // Top Bar
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Top Bar (stesso codice esistente)
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp),
@@ -105,10 +100,7 @@ fun DipartimentiManagementScreen(companyVm: CompanyViewModel, areeLavoro: List<A
                     }
                 }
 
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    // Bottone Aggiungi
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (areeModificate.size < 10) {
                         IconButton(
                             onClick = { companyVm.setShowAddDialog(true) },
@@ -121,7 +113,6 @@ fun DipartimentiManagementScreen(companyVm: CompanyViewModel, areeLavoro: List<A
                         }
                     }
 
-                    // Bottone Salva (solo se ci sono modifiche)
                     if (hasChanges) {
                         Button(
                             onClick = { companyVm.onSaveChanges(idAzienda) },
@@ -141,7 +132,7 @@ fun DipartimentiManagementScreen(companyVm: CompanyViewModel, areeLavoro: List<A
             }
         }
 
-        // Lista delle aree
+        // Lista delle aree CON GESTIONE ORARI
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -152,14 +143,12 @@ fun DipartimentiManagementScreen(companyVm: CompanyViewModel, areeLavoro: List<A
                 items = areeModificate,
                 key = { it.id }
             ) { area ->
-                AreaItemEditable(
+                AreaItemEditableWithOrari(
                     area = area,
-                    onEdit = {
-                        companyVm.setEditingArea(area)
-                    },
-                    onDelete = {
-                        companyVm.removeAreaModificata(area)
-                    },
+                    orariConfigurati = orariModificati[area.id]?.isNotEmpty() == true,
+                    onEdit = { companyVm.setEditingArea(area) },
+                    onDelete = { companyVm.removeAreaModificata(area) },
+                    onEditOrari = { companyVm.openOrariDialog(area.id) },
                     enabled = !isLoading
                 )
             }
@@ -198,7 +187,8 @@ fun DipartimentiManagementScreen(companyVm: CompanyViewModel, areeLavoro: List<A
             onConfirm = { nomeArea ->
                 val nuovaArea = AreaLavoro(nomeArea = nomeArea)
                 companyVm.addAreaModificata(nuovaArea)
-                companyVm.setShowAddDialog(false)            }
+                companyVm.setShowAddDialog(false)
+            }
         )
     }
 
@@ -208,18 +198,25 @@ fun DipartimentiManagementScreen(companyVm: CompanyViewModel, areeLavoro: List<A
             area = editingArea,
             onDismiss = { companyVm.setEditingArea(null) },
             onConfirm = { nomeArea ->
-                companyVm.updateAreaModificata(editingArea!!.id, nomeArea)
-                companyVm.setEditingArea(null)            }
+                companyVm.updateAreaModificata(editingArea.id, nomeArea)
+                companyVm.setEditingArea(null)
+            }
         )
+    }
+
+    // NUOVO DIALOG PER GESTIONE ORARI
+    if (showOrariDialog && editingOrariAreaId != null) {
+        OrariSettimanaliDialog(companyVm)
     }
 }
 
-
 @Composable
-private fun AreaItemEditable(
+private fun AreaItemEditableWithOrari(
     area: AreaLavoro,
+    orariConfigurati: Boolean,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
+    onEditOrari: () -> Unit,
     enabled: Boolean
 ) {
     Card(
@@ -229,57 +226,217 @@ private fun AreaItemEditable(
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(16.dp)
         ) {
+            // Prima riga: Nome area e azioni principali
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Default.Business,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Text(
-                    text = area.nomeArea,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                IconButton(
-                    onClick = onEdit,
-                    enabled = enabled
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.weight(1f)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = "Modifica",
-                        tint = MaterialTheme.colorScheme.primary
+                        imageVector = Icons.Default.Business,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Text(
+                        text = area.nomeArea,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium
                     )
                 }
 
-                IconButton(
-                    onClick = onDelete,
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    IconButton(
+                        onClick = onEdit,
+                        enabled = enabled
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Modifica",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    IconButton(
+                        onClick = onDelete,
+                        enabled = enabled
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Elimina",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
+
+            // Seconda riga: Gestione orari
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Schedule,
+                        contentDescription = null,
+                        tint = if (orariConfigurati)
+                            MaterialTheme.colorScheme.primary
+                        else
+                            MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+
+                    Text(
+                        text = if (orariConfigurati) "Orari configurati" else "Orari non configurati",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (orariConfigurati)
+                            MaterialTheme.colorScheme.primary
+                        else
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    if (orariConfigurati) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = "Configurati",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+
+                OutlinedButton(
+                    onClick = onEditOrari,
                     enabled = enabled
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Elimina",
-                        tint = MaterialTheme.colorScheme.error
+                        imageVector = Icons.Default.Schedule,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
                     )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(if (orariConfigurati) "Modifica Orari" else "Configura Orari")
                 }
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun OrariSettimanaliDialog(
+   companyVm: CompanyViewModel
+) {
+    val giorni = listOf(
+        DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY,
+        DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY, DayOfWeek.SUNDAY
+    )
+    val uiState by companyVm.uiState.collectAsState()
+    val areeModificate = uiState.areeModificate
+    val orariTemp = uiState.orariTemp
+    val editingOrariAreaId = uiState.editingOrariAreaId
+
+    val orarisettimanali = uiState.orariSettimanaliModificati
+
+    LaunchedEffect(Unit) {
+        companyVm.onChangedOrariTemp(orarisettimanali[editingOrariAreaId])
+    }
+
+    val nomeArea = areeModificate.find { it.id == editingOrariAreaId }?.nomeArea ?: ""
+
+
+    AlertDialog(
+        onDismissRequest = {companyVm.closeOrariDialog()},
+        title = {
+            Text("Orari Settimanali - $nomeArea")
+        },
+        text = {
+            LazyColumn(
+                modifier = Modifier.height(400.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(giorni) { giorno ->
+                    val nomeGiorno = giorno.getDisplayName(TextStyle.FULL, Locale.ITALIAN)
+                    val orarioGiorno = orariTemp?.get(giorno)
+
+                    Column(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(
+                                checked = orarioGiorno != null,
+                                onCheckedChange = { isChecked ->
+                                    companyVm.onGiornoLavoroChanged(giorno, isChecked)
+                                }
+                            )
+
+                            Text(
+                                text = nomeGiorno.replaceFirstChar { it.uppercase() },
+                                modifier = Modifier.padding(start = 8.dp),
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = if (orarioGiorno != null) FontWeight.Medium else FontWeight.Normal
+                            )
+                        }
+
+                        if (orarioGiorno != null) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 40.dp, top = 8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                OutlinedTextField(
+                                    value = orarioGiorno.first,
+                                    onValueChange = { companyVm.onOrarioInizioChanged(giorno, it) },
+                                    label = { Text("Inizio") },
+                                    modifier = Modifier.weight(1f),
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                                )
+
+                                OutlinedTextField(
+                                    value = orarioGiorno.second,
+                                    onValueChange = { companyVm.onOrarioFineChanged(giorno, it) },
+                                    label = { Text("Fine") },
+                                    modifier = Modifier.weight(1f),
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { companyVm.salvaOrariArea() },
+                enabled = orariTemp?.isNotEmpty() ?: false
+            ) {
+                Text("Salva")
+            }
+        },
+        dismissButton = {
+            OutlinedButton(onClick = {companyVm.closeOrariDialog()}) {
+                Text("Annulla")
+            }
+        }
+    )
+}

@@ -35,7 +35,7 @@ import com.bizsync.domain.constants.enumClass.CompanyOperation
 import com.bizsync.domain.model.AreaLavoro
 import com.bizsync.domain.model.Azienda
 import com.bizsync.domain.model.TurnoFrequente
-
+import java.time.DayOfWeek
 
 
 @Composable
@@ -75,13 +75,18 @@ fun CompanyCore(companyVm: CompanyViewModel, azienda: AziendaUi) {
     val azienda = userState.azienda
     val selectedOperation = companyState.selectedOperation
 
+
+    val areeLavoro: List<AreaLavoro> =  azienda.areeLavoro// la tua lista
+    val orariSettimanali: Map<String, Map<DayOfWeek, Pair<String, String>>> =
+        buildOrariSettimanaliMap(areeLavoro)
+
     // Schermata di gestione specifica
     when (selectedOperation) {
         CompanyOperation.DIPARTIMENTI -> {
-            DipartimentiManagementScreen(companyVm, azienda.areeLavoro, azienda.idAzienda)
+            DipartimentiManagementScreen(companyVm, areeLavoro, azienda.idAzienda, orariSettimanali)
         }
 
-        CompanyOperation.GESTIONE_INVITI  -> {
+        CompanyOperation.GESTIONE_INVITI -> {
             InviteManagementScreen(companyVm)
         }
 
@@ -96,6 +101,14 @@ fun CompanyCore(companyVm: CompanyViewModel, azienda: AziendaUi) {
             )
         }
 
+        CompanyOperation.GIORNO_PUBBLICAZIONE -> {
+            GiornoPublicazioneManagementScreen(
+                companyVm = companyVm,
+                userVm = userViewModel,
+                idAzienda = azienda.idAzienda
+            )
+        }
+
         null -> OperationSelectorScreen(
             onOperationSelected = { operation ->
                 companyVm.setSelectedOperation(operation)
@@ -104,3 +117,9 @@ fun CompanyCore(companyVm: CompanyViewModel, azienda: AziendaUi) {
     }
 }
 
+
+fun buildOrariSettimanaliMap(aree: List<AreaLavoro>): Map<String, Map<DayOfWeek, Pair<String, String>>> {
+    return aree.associate { area ->
+        area.id to area.orariSettimanali
+    }
+}
