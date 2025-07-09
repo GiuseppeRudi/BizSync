@@ -14,6 +14,7 @@ import com.bizsync.domain.constants.sealedClass.OnboardingScreen
 import androidx.compose.runtime.getValue
 import com.bizsync.app.screensMore.AppScaffold
 import com.bizsync.ui.components.StatusDialog
+import kotlinx.coroutines.delay
 
 
 @Composable
@@ -33,9 +34,12 @@ fun MainApp(onLogout : () -> Unit) {
     LaunchedEffect(uid) {
         if (uid != null) {
             userVM.checkUser(uid)
-            splashVM.hideSplash()
+            splashVM.getAllUserByIdAgency(userState.azienda.idAzienda)
         }
     }
+
+
+
 
     when (check) {
         null  -> SplashScreen()

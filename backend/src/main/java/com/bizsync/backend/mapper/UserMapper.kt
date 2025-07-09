@@ -37,3 +37,7 @@ object UserMapper {
 
 fun User.toDto(): UserDto = UserMapper.toDto(this)
 fun UserDto.toDomain(): User = UserMapper.toDomain(this)
+
+fun List<User>.toDtoList(): List<UserDto> = this.map { it.toDto() }
+
+fun List<UserDto>.toDomainList(): List<User> = this.map { it.toDomain() }
