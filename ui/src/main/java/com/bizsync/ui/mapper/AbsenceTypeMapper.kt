@@ -35,34 +35,7 @@ fun AbsenceType.toUiData(): AbsenceTypeUi = when (this) {
         color = Color(0xFFF44336),
         requiresApproval = false
     )
-    AbsenceType.WORK_INJURY -> AbsenceTypeUi(
-        type = this,
-        displayName = "Infortunio Lavoro",
-        icon = Icons.Default.Warning,
-        color = Color(0xFFFF5722),
-        requiresApproval = false
-    )
-    AbsenceType.MATERNITY -> AbsenceTypeUi(
-        type = this,
-        displayName = "Maternità",
-        icon = Icons.Default.ChildCare,
-        color = Color(0xFFE91E63),
-        requiresApproval = false
-    )
-    AbsenceType.PATERNITY -> AbsenceTypeUi(
-        type = this,
-        displayName = "Paternità",
-        icon = Icons.Default.FamilyRestroom,
-        color = Color(0xFF3F51B5),
-        requiresApproval = false
-    )
-    AbsenceType.LAW_104 -> AbsenceTypeUi(
-        type = this,
-        displayName = "Permessi L.104",
-        icon = Icons.Default.Accessible,
-        color = Color(0xFF607D8B),
-        requiresApproval = false
-    )
+
     AbsenceType.UNPAID_LEAVE -> AbsenceTypeUi(
         type = this,
         displayName = "Non Retribuiti",
@@ -70,13 +43,7 @@ fun AbsenceType.toUiData(): AbsenceTypeUi = when (this) {
         color = Color(0xFF795548),
         requiresApproval = true
     )
-    AbsenceType.TRAINING -> AbsenceTypeUi(
-        type = this,
-        displayName = "Formazione/Studio",
-        icon = Icons.Default.School,
-        color = Color(0xFF00BCD4),
-        requiresApproval = true
-    )
+
     AbsenceType.STRIKE -> AbsenceTypeUi(
         type = this,
         displayName = "Sciopero",

@@ -16,6 +16,8 @@ class InvitoRepository @Inject constructor(private val db : FirebaseFirestore)
 {
     suspend fun getInvitesByEmail(email: String): Resource<List<Invito>> {
         return try {
+            Log.d("INVITI_DEBUG", email.toString())
+
             val snapshot = db.collection(InvitiFirestore.COLLECTION)
                 .whereEqualTo(InvitiFirestore.Fields.EMAIL, email)
                 .get()
@@ -24,6 +26,9 @@ class InvitoRepository @Inject constructor(private val db : FirebaseFirestore)
             val list = snapshot.documents.mapNotNull { doc ->
                 doc.toObject(InvitoDto::class.java)?.copy(id = doc.id)
             }
+
+            Log.d("INVITI_DEBUG", list.toString())
+
 
             if (list.isEmpty()) {
                 Resource.Empty

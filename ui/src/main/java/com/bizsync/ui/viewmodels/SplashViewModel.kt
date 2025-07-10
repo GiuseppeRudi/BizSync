@@ -5,8 +5,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.traceEventEnd
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bizsync.backend.orchestrator.ContrattoOrchestrator
 import com.bizsync.backend.orchestrator.UserOrchestrator
 import com.bizsync.domain.constants.sealedClass.Resource
+import com.bizsync.domain.model.Contratto
 import com.bizsync.domain.model.User
 import com.bizsync.ui.components.DialogStatusType
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,12 +20,14 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SplashViewModel @Inject constructor(
-    private val userOrchestrator: UserOrchestrator
+    private val userOrchestrator: UserOrchestrator,
+    private val contrattoOrchestrator: ContrattoOrchestrator
 ) : ViewModel() {
 
     data class SplashState(
         val isLoading: Boolean = false,
         val users: List<User> = emptyList(),
+        val contratti: List<Contratto> = emptyList(),
         val errorMsg: String? = null,
         val statusType: DialogStatusType = DialogStatusType.ERROR,
         val syncInProgress: Boolean = false,
@@ -32,6 +36,77 @@ class SplashViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(SplashState())
     val uiState: StateFlow<SplashState> = _uiState
+
+
+    fun getAllContrattiByIdAzienda(idAzienda: String, forceRefresh: Boolean = false) {
+        if (idAzienda.isEmpty()) {
+            setError("ID Azienda non valido")
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, syncInProgress = true) }
+
+            try {
+                when (val result = contrattoOrchestrator.getContratti(idAzienda, forceRefresh)) {
+                    is Resource.Success -> {
+                        _uiState.update { currentState ->
+                            currentState.copy(
+                                isLoading = false,
+                                syncInProgress = false,
+                                contratti = result.data,
+                                errorMsg = null,
+                                lastSyncTime = System.currentTimeMillis()
+                            )
+                        }
+
+                        Log.d("CONTRATTI_DEBUG", "✅ Caricati ${result.data.size} contratti per azienda: $idAzienda")
+                        result.data.forEach { contratto ->
+                            Log.d("CONTRATTI_DEBUG", "   - ${contratto.id} - ${contratto.posizioneLavorativa} - ${contratto.tipoContratto}")
+                        }
+                    }
+
+                    is Resource.Error -> {
+                        _uiState.update { currentState ->
+                            currentState.copy(
+                                isLoading = false,
+                                syncInProgress = false,
+                                errorMsg = result.message,
+                                statusType = DialogStatusType.ERROR
+                            )
+                        }
+
+                        Log.d("CONTRATTI_DEBUG", "❌ Errore nel caricamento contratti: ${result.message}")
+                    }
+
+                    is Resource.Empty -> {
+                        _uiState.update { currentState ->
+                            currentState.copy(
+                                isLoading = false,
+                                syncInProgress = false,
+                                contratti = emptyList(),
+                                errorMsg = null,
+                                lastSyncTime = System.currentTimeMillis()
+                            )
+                        }
+                    }
+                }
+
+            } catch (e: Exception) {
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        isLoading = false,
+                        syncInProgress = false,
+                        errorMsg = "Errore imprevisto: ${e.message}",
+                        statusType = DialogStatusType.ERROR
+                    )
+                }
+
+                println("🚨 Eccezione in getAllContrattiByIdAzienda: ${e.message}")
+            }
+        }
+    }
+
 
     fun getAllUserByIdAgency(idAzienda: String, forceRefresh: Boolean = false) {
         if (idAzienda.isEmpty()) {

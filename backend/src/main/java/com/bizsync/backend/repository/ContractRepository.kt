@@ -20,6 +20,29 @@ class ContractRepository @Inject constructor(
     private val db: FirebaseFirestore
 ) {
 
+    suspend fun getContrattiByAzienda(idAzienda: String): Resource<List<Contratto>> {
+        return try {
+            val querySnapshot = db.collection(ContrattiFirestore.COLLECTION)
+                .whereEqualTo(ContrattiFirestore.Fields.ID_AZIENDA, idAzienda)
+                .get()
+                .await()
+
+            val contratti = querySnapshot.documents
+                .mapNotNull { it.toObject(Contratto::class.java) }
+
+            Log.d("CONTRATTI_DEBUG", contratti.toString())
+
+            if (contratti.isNotEmpty()) {
+                Resource.Success(contratti)
+            } else {
+                Resource.Empty
+            }
+
+        } catch (e: Exception) {
+            Resource.Error("Errore nel recupero contratti: ${e.message}")
+        }
+    }
+
     suspend fun generateCcnlInfo(
         posizioneLavorativa: String,
         dipartimento: String,

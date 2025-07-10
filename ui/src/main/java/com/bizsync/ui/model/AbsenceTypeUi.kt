@@ -12,3 +12,17 @@ data class AbsenceTypeUi(
     val color: Color,
     val requiresApproval: Boolean
 )
+
+// Extension function per AbsenceType
+fun AbsenceType.getTimeType(): AbsenceTimeType {
+    return when (this) {
+        AbsenceType.VACATION,
+        AbsenceType.SICK_LEAVE,
+        AbsenceType.STRIKE -> AbsenceTimeType.FULL_DAYS_ONLY
+
+        AbsenceType.ROL -> AbsenceTimeType.HOURLY_SINGLE_DAY
+
+        AbsenceType.PERSONAL_LEAVE,
+        AbsenceType.UNPAID_LEAVE -> AbsenceTimeType.FLEXIBLE
+    }
+}

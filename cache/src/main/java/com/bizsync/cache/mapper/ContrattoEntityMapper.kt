@@ -7,7 +7,7 @@ import com.bizsync.domain.model.Contratto
 
 object ContrattoEntityMapper {
 
-    fun fromEntity(entity: ContrattoEntity): Contratto {
+    fun toDomain(entity: ContrattoEntity): Contratto {
         return Contratto(
             id = entity.id,
             idDipendente = entity.idDipendente,
@@ -52,4 +52,20 @@ object ContrattoEntityMapper {
             )
         )
     }
+}
+
+fun ContrattoEntity.toDomain(): Contratto {
+    return ContrattoEntityMapper.toDomain(this)
+}
+
+fun Contratto.toEntity(): ContrattoEntity {
+    return ContrattoEntityMapper.toEntity(this)
+}
+
+fun List<ContrattoEntity>.toDomainList(): List<Contratto> {
+    return this.map { it.toDomain() }
+}
+
+fun List<Contratto>.toEntityList(): List<ContrattoEntity> {
+    return this.map { it.toEntity() }
 }

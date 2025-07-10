@@ -33,7 +33,7 @@ class HashStorage @Inject constructor(
         prefs.edit { clear() }
     }
 
-    // Funzioni di convenienza per dipendenti
+
     fun saveDipendentiHash(idAzienda: String, hash: String) {
         saveHash("dipendenti_$idAzienda", hash)
     }
@@ -45,4 +45,17 @@ class HashStorage @Inject constructor(
     fun deleteDipendentiHash(idAzienda: String) {
         deleteHash("dipendenti_$idAzienda")
     }
+
+    fun getContrattiHash(idAzienda: String): String? {
+        return getHash("contratti_$idAzienda")
+    }
+
+    fun saveContrattiHash(idAzienda: String, hash: String) {
+        saveHash("contratti_$idAzienda", hash)
+    }
+
+    fun deleteContrattiHash(idAzienda: String) {
+        deleteHash("contratti_$idAzienda")
+    }
+
 }

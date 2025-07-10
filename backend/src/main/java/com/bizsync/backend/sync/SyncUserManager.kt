@@ -1,7 +1,6 @@
 package com.bizsync.backend.sync
 
 
-import com.bizsync.backend.dto.UserDto
 import com.bizsync.backend.repository.UserRepository
 import com.bizsync.cache.dao.UserDao
 import com.bizsync.domain.constants.sealedClass.Resource
@@ -14,7 +13,7 @@ import com.bizsync.domain.model.User
 import javax.inject.Inject
 
 
-class SyncManager @Inject constructor(
+class SyncUserManager @Inject constructor(
     private val userRepository: UserRepository,
     private val userDao: UserDao,
     private val hashStorage: HashStorage

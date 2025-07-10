@@ -25,7 +25,7 @@ fun Absence.toUi(): AbsenceUi {
         startTime = startTime,
         endTime = endTime,
 
-        totalDays = "", // opzionale: puoi calcolarlo nella ViewModel se vuoi un valore preciso
+        totalDays = null,
 
         reason = reason,
         statusUi = status.statusToUiData(),

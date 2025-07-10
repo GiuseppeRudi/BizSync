@@ -4,24 +4,24 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.repository.AbsenceRepository
 import com.bizsync.domain.constants.enumClass.AbsenceStatus
-import com.bizsync.domain.constants.enumClass.AbsenceType
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.ui.mapper.toUiData
 import com.bizsync.ui.model.AbsenceTypeUi
 import com.bizsync.ui.model.AbsenceUi
-import com.bizsync.ui.state.AbsenceState
 import com.bizsync.ui.components.DialogStatusType
 import com.bizsync.ui.mapper.toDomain
 import com.bizsync.ui.mapper.toUi
+import com.bizsync.ui.model.AbsenceState
+import com.bizsync.ui.model.AbsenceTimeType
+import com.bizsync.ui.model.getTimeType
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
-import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 
 @HiltViewModel
@@ -31,6 +31,55 @@ class AbsenceViewModel @Inject constructor(private val absenceRepository: Absenc
     val uiState: StateFlow<AbsenceState> = _uiState
 
 
+    // Nel tuo AbsenceViewModel
+    fun updateAddAbsenceTotalHours(totalHours: Int?) {
+        _uiState.update { currentState ->
+            currentState.copy(
+                addAbsence = currentState.addAbsence.copy(
+                    totalHours = totalHours
+                )
+            )
+        }
+    }
+
+    // Metodi da aggiungere al ViewModel
+    fun setFlexibleModeFullDay(isFullDay: Boolean) {
+        _uiState.update { currentState ->
+            currentState.copy(isFlexibleModeFullDay = isFullDay)
+        }
+    }
+
+    fun updateSelectedTimeType(timeType: AbsenceTimeType) {
+        _uiState.update { currentState ->
+            currentState.copy(selectedTimeType = timeType)
+        }
+    }
+
+    // Modifica il metodo esistente per gestire il tipo di assenza
+    fun updateAddAbsenceType(typeUi: AbsenceTypeUi) {
+        val timeType = typeUi.type.getTimeType()
+
+        _uiState.update { currentState ->
+            currentState.copy(
+                addAbsence = currentState.addAbsence.copy(typeUi = typeUi),
+                selectedTimeType = timeType,
+                // Reset valori quando cambia tipo
+                isFlexibleModeFullDay = true
+            )
+        }
+
+        // Reset dei campi quando cambia tipo di assenza
+        resetDateTimeFields()
+    }
+
+    private fun resetDateTimeFields() {
+        updateAddAbsenceStartDate(null)
+        updateAddAbsenceEndDate(null)
+        updateAddAbsenceStartTime(null)
+        updateAddAbsenceEndTime(null)
+        updateAddAbsenceTotalDays(null)
+        updateAddAbsenceTotalHours(null)
+    }
 
     fun saveAbsence(fullName : String,idAzienda: String, idUser: String) {
         viewModelScope.launch {
@@ -129,11 +178,6 @@ class AbsenceViewModel @Inject constructor(private val absenceRepository: Absenc
     }
 
 
-    fun updateAddAbsenceType(typeUi: AbsenceTypeUi) {
-        _uiState.value = _uiState.value.copy(
-            addAbsence = _uiState.value.addAbsence.copy(typeUi = typeUi)
-        )
-    }
 
 
     fun updateAddAbsenceStartDate(date: LocalDate?) {
@@ -174,37 +218,22 @@ class AbsenceViewModel @Inject constructor(private val absenceRepository: Absenc
         )
     }
 
-    fun updateAddAbsenceTotalDays(totalDays: String) {
-        _uiState.value = _uiState.value.copy(
-            addAbsence = _uiState.value.addAbsence.copy(totalDays = totalDays)
-        )
-    }
-
-
-    fun calculateTotalDays(
-        startDate: LocalDate?,
-        endDate: LocalDate?,
-        isFullDay: Boolean,
-        startTime: LocalTime? = null,
-        endTime: LocalTime? = null
-    ): String {
-        return try {
-            if (startDate == null || endDate == null) return "0 giorni"
-
-            val days = java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate) + 1
-            if (isFullDay) {
-                "$days giorni"
-            } else if (startTime != null && endTime != null) {
-                val duration = java.time.Duration.between(startTime, endTime).toHours()
-                val totalHours = duration * days
-                "$totalHours ore"
-            } else {
-                "$days giorni (parziale)"
-            }
-        } catch (e: Exception) {
-            "0 giorni"
+    fun updateAddAbsenceTotalDays(totalDays: Int?) {
+        _uiState.update { currentState ->
+            currentState.copy(
+                addAbsence = currentState.addAbsence.copy(
+                    totalDays = totalDays
+                )
+            )
         }
     }
+
+    // Crea un metodo helper per calcolare i giorni
+    fun calculateTotalDaysInt(startDate: LocalDate, endDate: LocalDate): Int {
+        return ChronoUnit.DAYS.between(startDate, endDate).toInt() + 1 // +1 per includere entrambi i giorni
+    }
+
+
 
 
     fun setIsFullDay(value: Boolean) {

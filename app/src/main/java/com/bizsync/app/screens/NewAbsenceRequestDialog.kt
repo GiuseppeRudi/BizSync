@@ -2,31 +2,26 @@ package com.bizsync.app.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -49,30 +44,37 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.bizsync.app.navigation.LocalScaffoldViewModel
 import com.bizsync.domain.constants.enumClass.AbsenceType
-import com.bizsync.domain.constants.sealedClass.Resource
+import com.bizsync.ui.components.AbsenceLimitWarning
+import com.bizsync.ui.components.AbsenceTypeSelector
 import com.bizsync.ui.components.DateButton
 import com.bizsync.ui.components.DatePickerDialog
 import com.bizsync.ui.components.DialogStatusType
+import com.bizsync.ui.components.SingleDayTimeRangePicker
 import com.bizsync.ui.components.StatusDialog
 import com.bizsync.ui.components.TimePickerField
-import com.bizsync.ui.components.TimeRangePicker
-import com.bizsync.ui.mapper.toUiData
-import com.bizsync.ui.model.AbsenceTypeUi
-import com.bizsync.ui.theme.BizSyncColors.Surface
+import com.bizsync.ui.components.calculateRequestedHours
+import com.bizsync.ui.model.AbsenceTimeType
+import com.bizsync.ui.model.AbsenceUi
 import com.bizsync.ui.viewmodels.AbsenceViewModel
 import com.bizsync.ui.viewmodels.UserViewModel
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+
+
+// Funzione helper per calcolare ore
+fun calculateHoursBetween(startTime: LocalTime, endTime: LocalTime): Int {
+    return Duration.between(startTime, endTime).toHours().toInt()
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -95,6 +97,7 @@ fun NewAbsenceRequestScreen(
     val idAzienda = userState.azienda.idAzienda
     val fullName = userState.user.cognome + " " + userState.user.nome
     val idUser = userState.user.uid
+    val contratto = userState.contratto
 
     LaunchedEffect(status) {
         if (status == DialogStatusType.SUCCESS) {
@@ -107,19 +110,72 @@ fun NewAbsenceRequestScreen(
         scaffoldVM.onFullScreenChanged(false)
     }
 
-    LaunchedEffect(addAbsence.startDate, addAbsence.endDate, addAbsence.startTime, addAbsence.endTime, isFullDay) {
+    LaunchedEffect(
+        addAbsence.startDate,
+        addAbsence.endDate,
+        addAbsence.startTime,
+        addAbsence.endTime,
+        uiState.selectedTimeType,
+        uiState.isFlexibleModeFullDay,
+        addAbsence.typeUi
+    ) {
         val startDate = addAbsence.startDate
         val endDate = addAbsence.endDate
         val startTime = addAbsence.startTime
         val endTime = addAbsence.endTime
 
-        if (startDate != null && endDate != null) {
-            val totalDays = absenceVM.calculateTotalDays(startDate, endDate, isFullDay, startTime, endTime)
-            absenceVM.updateAddAbsenceTotalDays(totalDays)
-        } else {
-            absenceVM.updateAddAbsenceTotalDays("0 giorni")
+        when (uiState.selectedTimeType) {
+            AbsenceTimeType.FULL_DAYS_ONLY -> {
+                // Solo calcolo giorni per VACATION, SICK_LEAVE, STRIKE
+                if (startDate != null && endDate != null) {
+                    val totalDays = absenceVM.calculateTotalDaysInt(startDate, endDate)
+                    absenceVM.updateAddAbsenceTotalDays(totalDays)
+                    absenceVM.updateAddAbsenceTotalHours(null) // Reset ore
+                } else {
+                    absenceVM.updateAddAbsenceTotalDays(0)
+                    absenceVM.updateAddAbsenceTotalHours(null)
+                }
+            }
+
+            AbsenceTimeType.HOURLY_SINGLE_DAY -> {
+                // Solo calcolo ore per ROL
+                if (startTime != null && endTime != null && startDate != null) {
+                    val hours = calculateHoursBetween(startTime, endTime)
+                    absenceVM.updateAddAbsenceTotalHours(hours)
+                    absenceVM.updateAddAbsenceTotalDays(0) // ROL non usa giorni
+                } else {
+                    absenceVM.updateAddAbsenceTotalHours(0)
+                    absenceVM.updateAddAbsenceTotalDays(0)
+                }
+            }
+
+            AbsenceTimeType.FLEXIBLE -> {
+                if (uiState.isFlexibleModeFullDay) {
+                    // Modalità giorni interi per PERSONAL_LEAVE/UNPAID_LEAVE
+                    if (startDate != null && endDate != null) {
+                        val totalDays = absenceVM.calculateTotalDaysInt(startDate, endDate)
+                        absenceVM.updateAddAbsenceTotalDays(totalDays)
+                        absenceVM.updateAddAbsenceTotalHours(null)
+                    } else {
+                        absenceVM.updateAddAbsenceTotalDays(0)
+                        absenceVM.updateAddAbsenceTotalHours(null)
+                    }
+                } else {
+                    // Modalità oraria per PERSONAL_LEAVE/UNPAID_LEAVE
+                    if (startTime != null && endTime != null && startDate != null) {
+                        val hours = calculateHoursBetween(startTime, endTime)
+                        absenceVM.updateAddAbsenceTotalHours(hours)
+                        absenceVM.updateAddAbsenceTotalDays(0) // Non usare giorni in modalità oraria
+                    } else {
+                        absenceVM.updateAddAbsenceTotalHours(0)
+                        absenceVM.updateAddAbsenceTotalDays(0)
+                    }
+                }
+            }
         }
     }
+
+
 
     // Logica di validazione migliorata per il pulsante INVIA
     val isValidSubmission = remember(addAbsence.startDate, addAbsence.endDate, addAbsence.reason, isFullDay, addAbsence.startTime, addAbsence.endTime) {
@@ -186,194 +242,39 @@ fun NewAbsenceRequestScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             // Absence Type Selector
-            ModernAbsenceTypeSelector(
+            AbsenceTypeSelector(
                 selectedType = addAbsence.typeUi,
                 onTypeSelected = { selectedType ->
                     selectedType?.let { absenceVM.updateAddAbsenceType(it) }
                 }
             )
 
-            // Date Selection Section
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            // Sostituisci la Card esistente con questo
+            AbsencePeriodSelector(
+                addAbsence = addAbsence,
+                absenceVM = absenceVM,
+                timeType = uiState.selectedTimeType,
+                isFlexibleModeFullDay = uiState.isFlexibleModeFullDay
+            )
+
+            // Controllo limiti per ferie, ROL e malattia
+            val requestedHours = if (addAbsence.typeUi.type == AbsenceType.ROL) {
+                calculateRequestedHours(
+                    addAbsence.totalDays,
+                    isFullDay,
+                    addAbsence.startTime,
+                    addAbsence.endTime,
+                    addAbsence.startDate,
+                    addAbsence.endDate
                 )
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Text(
-                        text = "Periodo di assenza",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Medium
-                    )
+            } else null
 
-                    // Date buttons
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        DateButton(
-                            label = "Data inizio",
-                            selectedDate = addAbsence.startDate,
-                            modifier = Modifier.weight(1f),
-                            onClick = {
-                                absenceVM.setShowStartDatePicker(true)
-                            }
-                        )
-
-                        DateButton(
-                            label = "Data fine",
-                            selectedDate = addAbsence.endDate,
-                            modifier = Modifier.weight(1f),
-                            onClick = {
-                                absenceVM.setShowEndDatePicker(true)
-                            }
-                        )
-                    }
-
-                    // Full day toggle
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "Giornata intera",
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                        Switch(
-                            checked = isFullDay,
-                            onCheckedChange = { newValue ->
-                                absenceVM.setIsFullDay(newValue)
-                                if (newValue) {
-                                    absenceVM.updateAddAbsenceStartTime(null)
-                                    absenceVM.updateAddAbsenceEndTime(null)
-                                }
-                            }
-                        )
-                    }
-
-                    // Helper functions
-                    val isSingleDay = addAbsence.startDate != null && addAbsence.endDate != null &&
-                            addAbsence.startDate == addAbsence.endDate
-
-                    val shouldShowTimeSection = addAbsence.startDate != null && addAbsence.endDate != null && !isFullDay
-
-                    // Time selection section
-                    if (shouldShowTimeSection) {
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
-                            ),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Info,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Column {
-                                    Text(
-                                        text = if (isSingleDay) {
-                                            "Assenza giornaliera parziale"
-                                        } else {
-                                            "Assenza su più giorni"
-                                        },
-                                        style = MaterialTheme.typography.labelLarge,
-                                        fontWeight = FontWeight.Medium,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                    Text(
-                                        text = if (isSingleDay) {
-                                            "Seleziona l'orario di inizio e fine assenza per questo giorno"
-                                        } else {
-                                            "Orario di inizio il ${addAbsence.startDate?.format(DateTimeFormatter.ofPattern("dd/MM"))} e fine il ${addAbsence.endDate?.format(DateTimeFormatter.ofPattern("dd/MM"))}. I giorni intermedi saranno calcolati come assenza completa."
-                                        },
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                                    )
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        // Time Range Picker
-                        if (isSingleDay) {
-                            SingleDayTimeRangePicker(
-                                startTime = addAbsence.startTime?.format(DateTimeFormatter.ofPattern("HH:mm")) ?: "",
-                                endTime = addAbsence.endTime?.format(DateTimeFormatter.ofPattern("HH:mm")) ?: "",
-                                onStartTimeSelected = { timeString ->
-                                    val localTime = try {
-                                        LocalTime.parse(timeString, DateTimeFormatter.ofPattern("HH:mm"))
-                                    } catch (e: Exception) {
-                                        null
-                                    }
-                                    absenceVM.updateAddAbsenceStartTime(localTime)
-                                },
-                                onEndTimeSelected = { timeString ->
-                                    val localTime = try {
-                                        LocalTime.parse(timeString, DateTimeFormatter.ofPattern("HH:mm"))
-                                    } catch (e: Exception) {
-                                        null
-                                    }
-                                    absenceVM.updateAddAbsenceEndTime(localTime)
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        } else {
-                            MultiDayTimeRangePicker(
-                                startTime = addAbsence.startTime?.format(DateTimeFormatter.ofPattern("HH:mm")) ?: "",
-                                endTime = addAbsence.endTime?.format(DateTimeFormatter.ofPattern("HH:mm")) ?: "",
-                                startDate = addAbsence.startDate,
-                                endDate = addAbsence.endDate,
-                                onStartTimeSelected = { timeString ->
-                                    val localTime = try {
-                                        LocalTime.parse(timeString, DateTimeFormatter.ofPattern("HH:mm"))
-                                    } catch (e: Exception) {
-                                        null
-                                    }
-                                    absenceVM.updateAddAbsenceStartTime(localTime)
-                                },
-                                onEndTimeSelected = { timeString ->
-                                    val localTime = try {
-                                        LocalTime.parse(timeString, DateTimeFormatter.ofPattern("HH:mm"))
-                                    } catch (e: Exception) {
-                                        null
-                                    }
-                                    absenceVM.updateAddAbsenceEndTime(localTime)
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    }
-
-                    // Total days display
-                    if (addAbsence.totalDays != "0 giorni") {
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer
-                            )
-                        ) {
-                            Text(
-                                text = "Totale: ${addAbsence.totalDays}",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.padding(12.dp)
-                            )
-                        }
-                    }
-                }
-            }
+            AbsenceLimitWarning(
+                selectedType = addAbsence.typeUi,
+                totalDays = addAbsence.totalDays,
+                totalHours = addAbsence.totalHours,
+                contratto = contratto
+            )
 
             // Reason and Comments
             Card(
@@ -473,15 +374,22 @@ fun NewAbsenceRequestScreen(
 
 
 
-@Composable
-private fun ModernAbsenceTypeSelector(
-    selectedType: AbsenceTypeUi?,
-    onTypeSelected: (AbsenceTypeUi) -> Unit
-) {
-    val absenceTypes = remember {
-        AbsenceType.entries.map { it.toUiData() }
-    }
 
+
+
+
+
+
+
+
+// Componente principale per la selezione periodo - sostituisce la Card esistente
+@Composable
+fun AbsencePeriodSelector(
+    addAbsence: AbsenceUi,
+    absenceVM: AbsenceViewModel,
+    timeType: AbsenceTimeType,
+    isFlexibleModeFullDay: Boolean
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -489,351 +397,275 @@ private fun ModernAbsenceTypeSelector(
         )
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = "Tipo di assenza",
+                text = when (timeType) {
+                    AbsenceTimeType.FULL_DAYS_ONLY -> "Periodo di assenza (giorni interi)"
+                    AbsenceTimeType.HOURLY_SINGLE_DAY -> "Giorno e orario di assenza"
+                    AbsenceTimeType.FLEXIBLE -> "Periodo di assenza"
+                },
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Medium
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(absenceTypes) { type ->
-                    FilterChip(
-                        onClick = { onTypeSelected(type) },
-                        label = { Text(type.displayName) },
-                        selected = selectedType?.type == type.type,
-                        leadingIcon = {
-                            Icon(
-                                imageVector = if (selectedType?.type == type.type) Icons.Default.Check else type.icon,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp),
-                                tint = if (selectedType?.type == type.type) type.color else Color.Gray
-                            )
-                        }
-                    )
+            when (timeType) {
+                AbsenceTimeType.FULL_DAYS_ONLY -> {
+                    FullDaysSelector(addAbsence, absenceVM)
                 }
+                AbsenceTimeType.HOURLY_SINGLE_DAY -> {
+                    SingleDayHourlySelector(addAbsence, absenceVM)
+                }
+                AbsenceTimeType.FLEXIBLE -> {
+                    FlexibleSelector(addAbsence, absenceVM, isFlexibleModeFullDay)
+                }
+            }
+
+            // Mostra il totale calcolato
+// Mostra il totale calcolato
+            if ((addAbsence.totalDays ?: 0) > 0 || (addAbsence.totalHours ?: 0) > 0) {
+                TotalDisplay(addAbsence, timeType, isFlexibleModeFullDay)
             }
         }
     }
 }
 
-
+// Selettore per giorni interi (VACATION, SICK_LEAVE, STRIKE)
 @Composable
-fun SingleDayTimeRangePicker(
-    startTime: String,
-    endTime: String,
-    onStartTimeSelected: (String) -> Unit,
-    onEndTimeSelected: (String) -> Unit,
-    modifier: Modifier = Modifier
+private fun FullDaysSelector(
+    addAbsence: AbsenceUi,
+    absenceVM: AbsenceViewModel
 ) {
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            DateButton(
+                label = "Data inizio",
+                selectedDate = addAbsence.startDate,
+                modifier = Modifier.weight(1f),
+                onClick = { absenceVM.setShowStartDatePicker(true) }
+            )
+
+            DateButton(
+                label = "Data fine",
+                selectedDate = addAbsence.endDate,
+                modifier = Modifier.weight(1f),
+                onClick = { absenceVM.setShowEndDatePicker(true) }
+            )
+        }
+
+        // Info card
+        InfoCard(
+            title = "Giorni interi",
+            description = "L'assenza sarà calcolata per giorni lavorativi completi dal ${addAbsence.startDate?.format(DateTimeFormatter.ofPattern("dd/MM")) ?: "..."} al ${addAbsence.endDate?.format(DateTimeFormatter.ofPattern("dd/MM")) ?: "..."}"
+        )
+    }
+}
+
+// Selettore per singolo giorno con orario (ROL)
+@Composable
+private fun SingleDayHourlySelector(
+    addAbsence: AbsenceUi,
+    absenceVM: AbsenceViewModel
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        DateButton(
+            label = "Giorno di assenza",
+            selectedDate = addAbsence.startDate,
+            modifier = Modifier.fillMaxWidth(),
+            onClick = { absenceVM.setShowStartDatePicker(true) }
+        )
+
+        if (addAbsence.startDate != null) {
+            // Assicurati che endDate sia uguale a startDate per ROL
+            LaunchedEffect(addAbsence.startDate) {
+                absenceVM.updateAddAbsenceEndDate(addAbsence.startDate!!)
+            }
+
+            SingleDayTimeRangePicker(
+                startTime = addAbsence.startTime?.format(DateTimeFormatter.ofPattern("HH:mm")) ?: "",
+                endTime = addAbsence.endTime?.format(DateTimeFormatter.ofPattern("HH:mm")) ?: "",
+                onStartTimeSelected = { timeString ->
+                    val localTime = try {
+                        LocalTime.parse(timeString, DateTimeFormatter.ofPattern("HH:mm"))
+                    } catch (e: Exception) { null }
+                    absenceVM.updateAddAbsenceStartTime(localTime)
+                },
+                onEndTimeSelected = { timeString ->
+                    val localTime = try {
+                        LocalTime.parse(timeString, DateTimeFormatter.ofPattern("HH:mm"))
+                    } catch (e: Exception) { null }
+                    absenceVM.updateAddAbsenceEndTime(localTime)
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
+        InfoCard(
+            title = "Permesso orario",
+            description = "Seleziona il giorno e la fascia oraria per il permesso ROL"
+        )
+    }
+}
+
+// Selettore flessibile (PERSONAL_LEAVE, UNPAID_LEAVE)
+@Composable
+private fun FlexibleSelector(
+    addAbsence: AbsenceUi,
+    absenceVM: AbsenceViewModel,
+    isFlexibleModeFullDay: Boolean
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        // Toggle per scegliere modalità
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = "Orario di assenza",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(bottom = 16.dp)
+                text = "Tipo di assenza",
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium
             )
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                TimePickerField(
-                    label = "Dalle ore",
-                    time = startTime,
-                    onTimeSelected = { time ->
-                        // Validazione per giorno singolo: deve essere prima dell'ora di fine
-                        if (endTime.isNotEmpty()) {
-                            val startTimeObj = LocalTime.parse(time, DateTimeFormatter.ofPattern("HH:mm"))
-                            val endTimeObj = LocalTime.parse(endTime, DateTimeFormatter.ofPattern("HH:mm"))
-
-                            if (startTimeObj.isBefore(endTimeObj)) {
-                                onStartTimeSelected(time)
-                            }
-                        } else {
-                            onStartTimeSelected(time)
-                        }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                FilterChip(
+                    onClick = {
+                        absenceVM.setFlexibleModeFullDay(true)
+                        // Reset orari quando si passa a giorni interi
+                        absenceVM.updateAddAbsenceStartTime(null)
+                        absenceVM.updateAddAbsenceEndTime(null)
                     },
-                    modifier = Modifier.weight(1f)
-                )
-
-                // Freccia di connessione
-                Column(
-                    modifier = Modifier.align(Alignment.CenterVertically),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowForward,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-
-                TimePickerField(
-                    label = "Alle ore",
-                    time = endTime,
-                    onTimeSelected = { time ->
-                        // Validazione per giorno singolo: deve essere dopo l'ora di inizio
-                        if (startTime.isNotEmpty()) {
-                            val startTimeObj = LocalTime.parse(startTime, DateTimeFormatter.ofPattern("HH:mm"))
-                            val endTimeObj = LocalTime.parse(time, DateTimeFormatter.ofPattern("HH:mm"))
-
-                            if (endTimeObj.isAfter(startTimeObj)) {
-                                onEndTimeSelected(time)
-                            }
-                        } else {
-                            onEndTimeSelected(time)
-                        }
-                    },
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            // Durata calcolata per giorno singolo
-            if (startTime.isNotEmpty() && endTime.isNotEmpty()) {
-                val duration = calculateSingleDayDuration(startTime, endTime)
-                if (duration.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Surface(
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Timer,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Ore di assenza: $duration",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
+                    label = { Text("Giorni interi") },
+                    selected = isFlexibleModeFullDay,
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.DateRange,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
                     }
-                }
-            }
+                )
 
-            // Nota informativa
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "L'orario di fine deve essere successivo all'orario di inizio nello stesso giorno",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontStyle = FontStyle.Italic
-            )
+                Spacer(modifier = Modifier.width(8.dp))
+
+                FilterChip(
+                    onClick = {
+                        absenceVM.setFlexibleModeFullDay(false)
+                        // Assicurati che sia un giorno singolo quando si passa a orario
+                        if (addAbsence.startDate != null) {
+                            absenceVM.updateAddAbsenceEndDate(addAbsence.startDate!!)
+                        }
+                    },
+                    label = { Text("Fascia oraria") },
+                    selected = !isFlexibleModeFullDay,
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.Schedule,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                )
+            }
         }
-    }
-}
 
-private fun calculateSingleDayDuration(startTime: String, endTime: String): String {
-    return try {
-        val startParts = startTime.split(":")
-        val endParts = endTime.split(":")
-
-        val startHour = startParts[0].toInt()
-        val startMinute = startParts[1].toInt()
-        val endHour = endParts[0].toInt()
-        val endMinute = endParts[1].toInt()
-
-        val startTotalMinutes = startHour * 60 + startMinute
-        val endTotalMinutes = endHour * 60 + endMinute
-
-        // Per giorno singolo, l'ora di fine deve essere dopo quella di inizio
-        if (endTotalMinutes > startTotalMinutes) {
-            val durationMinutes = endTotalMinutes - startTotalMinutes
-            val hours = durationMinutes / 60
-            val minutes = durationMinutes % 60
-
-            when {
-                hours > 0 && minutes > 0 -> "${hours}h ${minutes}m"
-                hours > 0 -> "${hours}h"
-                minutes > 0 -> "${minutes}m"
-                else -> ""
-            }
+        // Contenuto basato sulla modalità selezionata
+        if (isFlexibleModeFullDay) {
+            FullDaysSelector(addAbsence, absenceVM)
         } else {
-            ""
+            SingleDayHourlySelector(addAbsence, absenceVM)
         }
-    } catch (e: Exception) {
-        ""
+    }
+}
+// Aggiorna il TotalDisplay component
+@Composable
+private fun TotalDisplay(
+    addAbsence: AbsenceUi,
+    timeType: AbsenceTimeType,
+    isFlexibleModeFullDay: Boolean
+) {
+    // Mostra solo se c'è qualcosa da mostrare
+    val hasValue = when {
+        timeType == AbsenceTimeType.HOURLY_SINGLE_DAY -> (addAbsence.totalHours ?: 0) > 0
+        timeType == AbsenceTimeType.FLEXIBLE && !isFlexibleModeFullDay -> (addAbsence.totalHours ?: 0) > 0
+        else -> (addAbsence.totalDays ?: 0) > 0
+    }
+
+    if (hasValue) {
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer
+            )
+        ) {
+            Row(
+                modifier = Modifier.padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.Calculate,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+
+                val displayText = when {
+                    timeType == AbsenceTimeType.HOURLY_SINGLE_DAY -> {
+                        addAbsence.formattedTotalHours ?: "0 ore"
+                    }
+                    timeType == AbsenceTimeType.FLEXIBLE && !isFlexibleModeFullDay -> {
+                        addAbsence.formattedTotalHours ?: "0 ore"
+                    }
+                    else -> {
+                        addAbsence.formattedTotalDays
+                    }
+                }
+
+                Text(
+                    text = "Totale: $displayText",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+        }
     }
 }
 
-
+// Componente info card helper
 @Composable
-fun MultiDayTimeRangePicker(
-    startTime: String,
-    endTime: String,
-    startDate: LocalDate?,
-    endDate: LocalDate?,
-    onStartTimeSelected: (String) -> Unit,
-    onEndTimeSelected: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
+private fun InfoCard(title: String, description: String) {
     Card(
-        modifier = modifier,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
+        )
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "Orario di inizio e fine assenza",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(bottom = 16.dp)
+            Icon(
+                Icons.Default.Info,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp)
             )
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(
-                        text = "Inizio assenza",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(bottom = 4.dp)
-                    )
-                    Text(
-                        text = startDate?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) ?: "",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                    TimePickerField(
-                        label = "Dalle ore",
-                        time = startTime,
-                        onTimeSelected = onStartTimeSelected,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-
-                // Separatore visivo
-                Column(
-                    modifier = Modifier.align(Alignment.CenterVertically),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.MoreHoriz,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-
-                Column(
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(
-                        text = "Fine assenza",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(bottom = 4.dp)
-                    )
-                    Text(
-                        text = endDate?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) ?: "",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                    TimePickerField(
-                        label = "Alle ore",
-                        time = endTime,
-                        onTimeSelected = onEndTimeSelected,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            }
-
-            // Calcolo giorni intermedi
-            if (startDate != null && endDate != null) {
-                val intermediateDays = ChronoUnit.DAYS.between(startDate, endDate) - 1
-                if (intermediateDays > 0) {
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Surface(
-                        color = MaterialTheme.colorScheme.secondaryContainer,
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.DateRange,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = if (intermediateDays == 1L) {
-                                    "1 giorno intermedio (assenza completa)"
-                                } else {
-                                    "$intermediateDays giorni intermedi (assenza completa)"
-                                },
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Nota informativa per multi-day
-            Spacer(modifier = Modifier.height(8.dp))
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            Spacer(modifier = Modifier.width(8.dp))
+            Column {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.primary
                 )
-            ) {
-                Column(
-                    modifier = Modifier.padding(12.dp)
-                ) {
-                    Text(
-                        text = "Come funziona:",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "• Primo giorno: assenza dall'orario selezionato fino a fine giornata\n" +
-                                "• Giorni intermedi: assenza completa (24h)\n" +
-                                "• Ultimo giorno: assenza da inizio giornata all'orario selezionato",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
             }
         }
     }

@@ -27,6 +27,7 @@ import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.domain.constants.enumClass.AbsenceStatus
 import com.bizsync.domain.constants.enumClass.AbsenceType
 import com.bizsync.domain.constants.sealedClass.Resource
+import com.bizsync.domain.model.Contratto
 import com.bizsync.ui.components.DialogStatusType
 import com.bizsync.ui.components.TimeButton
 import com.bizsync.ui.components.DatePickerDialog
@@ -58,6 +59,8 @@ fun AbsencesManagementScreen(onBackClick: () -> Unit) {
     val userVM = LocalUserViewModel.current
     val userState by userVM.uiState.collectAsState()
 
+    val contratto = userState.contratto
+
     LaunchedEffect(Unit) {
         absenceVM.fetchAllAbsences(userState.user.uid)
     }
@@ -75,8 +78,7 @@ fun AbsencesManagementScreen(onBackClick: () -> Unit) {
         Box(modifier = Modifier.fillMaxSize()) {               // ← qui
             when (absenceState.selectedTab) {
                 0 -> RequestsListContent(absenceVM)
-                1 -> StatisticsContent(absenceState.absences)
-                2 -> NewAbsenceRequestScreen(                      // adesso riceve fillMaxSize
+                2 -> NewAbsenceRequestScreen(
                     userVM,
                     absenceVM,
                     onDismiss = { absenceVM.setSelectedTab(0) },
@@ -88,101 +90,269 @@ fun AbsencesManagementScreen(onBackClick: () -> Unit) {
     }
 
 
-
-
-//        Box(
-//            modifier = Modifier.fillMaxSize()
-//        ) {
-//            Column(
-//                modifier = Modifier
-//                    .fillMaxSize()
-//                    .background(Color(0xFFF5F5F5))
-//                    .padding(bottom = 80.dp) // spazio per il FAB
-//            ) {
-//                TabRow(selectedTabIndex = absenceState.selectedTab) {
-//                    Tab(
-//                        selected = absenceState.selectedTab == 0,
-//                        onClick = { absenceVM.setSelectedTab(0) },
-//                        text = { Text("Le Mie Richieste") }
-//                    )
-//                    Tab(
-//                        selected = absenceState.selectedTab == 1,
-//                        onClick = { absenceVM.setSelectedTab(1) },
-//                        text = { Text("Statistiche") }
-//                    )
-//                }
-
-
 }
 
 
-
-
-//        }
-
-//}
-
-
-
 @Composable
-private fun RequestsListContent(absenceVM : AbsenceViewModel) {
-
+private fun RequestsListContent(absenceVM: AbsenceViewModel) {
     val uiState by absenceVM.uiState.collectAsState()
     val requests = uiState.absences
+
+    val userVM = LocalUserViewModel.current
+    val userState by userVM.uiState.collectAsState()
+    val contratto = userState.contratto
 
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
-        // Tutto il contenuto della schermata, ad esempio:
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = 80.dp) // spazio per il FAB se serve
-        ) {
-            // ... contenuti vari
+        if (requests.isEmpty()) {
+            // Stato vuoto - mostra solo le statistiche e il messaggio
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                // Card statistiche anche quando è vuoto
+                contratto?.let {
+                    StatisticsCard(contratto = it)
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
+                // Messaggio di lista vuota
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            Icons.Default.EventBusy,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = Color.Gray
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            "Nessuna richiesta di assenza",
+                            color = Color.Gray,
+                            fontSize = 16.sp
+                        )
+                    }
+                }
+            }
+        } else {
+            // Lista con richieste - LazyColumn con statistiche in cima
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 80.dp), // spazio per il FAB
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Prima item: Card delle statistiche
+                item {
+                    contratto?.let {
+                        StatisticsCard(contratto = it)
+                    }
+                }
+
+                // Divider tra statistiche e richieste
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Le Mie Richieste",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color.Gray
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Box(
+                            modifier = Modifier
+                                .height(1.dp)
+                                .weight(1f)
+                                .background(Color.Gray.copy(alpha = 0.3f))
+                        )
+                    }
+                }
+
+                // Lista delle richieste
+                items(requests) { request ->
+                    AbsenceRequestCard(request = request)
+                }
+            }
         }
 
-        // FAB in basso a destra
+        // FAB sempre visibile
         FloatingActionButton(
             onClick = { absenceVM.setSelectedTab(2) },
             modifier = Modifier
-                .align(Alignment.BottomEnd) // <<< ECCO QUI
+                .align(Alignment.BottomEnd)
                 .padding(16.dp)
         ) {
             Icon(imageVector = Icons.Default.Add, contentDescription = "Nuova richiesta")
         }
     }
+}
 
-    if (requests.isEmpty()) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
+@Composable
+private fun StatisticsCard(contratto: Contratto) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Icon(
-                    Icons.Default.EventBusy,
+                    Icons.Default.Analytics,
                     contentDescription = null,
-                    modifier = Modifier.size(64.dp),
-                    tint = Color.Gray
+                    tint = Color(0xFF1976D2),
+                    modifier = Modifier.size(24.dp)
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    "Nessuna richiesta di assenza",
-                    color = Color.Gray,
-                    fontSize = 16.sp
+                    "Riepilogo Anno Corrente",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Color(0xFF1976D2)
                 )
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Ferie
+            StatisticProgressRow(
+                label = "Ferie",
+                used = contratto.ferieUsate,
+                max = contratto.ccnlInfo.ferieAnnue,
+                unit = "giorni",
+                color = Color(0xFF4CAF50),
+                icon = Icons.Default.BeachAccess
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // ROL
+            StatisticProgressRow(
+                label = "Permessi ROL",
+                used = contratto.rolUsate,
+                max = contratto.ccnlInfo.rolAnnui,
+                unit = "ore",
+                color = Color(0xFF2196F3),
+                icon = Icons.Default.Schedule
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Malattia
+            StatisticProgressRow(
+                label = "Malattia",
+                used = contratto.malattiaUsata,
+                max = contratto.ccnlInfo.malattiaRetribuita,
+                unit = "giorni",
+                color = Color(0xFFFF9800),
+                icon = Icons.Default.LocalHospital
+            )
         }
     }
-    else {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+}
+
+@Composable
+private fun StatisticProgressRow(
+    label: String,
+    used: Int,
+    max: Int,
+    unit: String,
+    color: Color,
+    icon: androidx.compose.ui.graphics.vector.ImageVector
+) {
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            items(requests) { request ->
-                AbsenceRequestCard(request = request)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = color,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    label,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
             }
+            Text(
+                "$used/$max $unit",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = color
+            )
+        }
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        // Barra di progresso
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(6.dp)
+                .background(
+                    color.copy(alpha = 0.15f),
+                    RoundedCornerShape(3.dp)
+                )
+        ) {
+            val progress = if (max > 0) (used.toFloat() / max.toFloat()).coerceIn(0f, 1f) else 0f
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(progress)
+                    .height(6.dp)
+                    .background(
+                        color,
+                        RoundedCornerShape(3.dp)
+                    )
+            )
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        // Percentuale e rimanenti
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            val percentage = if (max > 0) ((used.toFloat() / max.toFloat()) * 100).toInt() else 0
+            val remaining = (max - used).coerceAtLeast(0)
+
+            Text(
+                "$percentage% utilizzato",
+                fontSize = 11.sp,
+                color = Color.Gray
+            )
+            Text(
+                "Rimangono $remaining $unit",
+                fontSize = 11.sp,
+                color = when {
+                    remaining == 0 -> Color(0xFFD32F2F)
+                    remaining <= max * 0.2 -> Color(0xFFFF9800)
+                    else -> Color.Gray
+                }
+            )
         }
     }
 }
@@ -300,72 +470,6 @@ private fun StatusChip(status: AbsenceStatusUi) {
         )
     }
 }
-
-@Composable
-private fun StatisticsContent(requests: List<AbsenceUi>) {
-//    val approvedRequests = requests.filter { it.statusUi.status == AbsenceStatus.APPROVED }
-//    val vacationDays = approvedRequests.filter { it.typeUi.type == AbsenceType.VACATION }.sumOf { it.totalDays }
-//    val sickDays = approvedRequests.filter { it.typeUi.type == AbsenceType.SICK_LEAVE }.sumOf { it.totalDays }
-//    val rolDays = approvedRequests.filter { it.typeUi.type == AbsenceType.ROL }.sumOf { it.totalDays }
-//
-//    LazyColumn(
-//        modifier = Modifier.fillMaxSize(),
-//        contentPadding = PaddingValues(16.dp),
-//        verticalArrangement = Arrangement.spacedBy(12.dp)
-//    ) {
-//        item {
-//            Card(
-//                modifier = Modifier.fillMaxWidth(),
-//                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-//            ) {
-//                Column(
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                        .padding(16.dp)
-//                ) {
-//                    Text(
-//                        "Riepilogo Anno Corrente",
-//                        fontWeight = FontWeight.Bold,
-//                        fontSize = 18.sp
-//                    )
-//                    Spacer(modifier = Modifier.height(16.dp))
-//
-//                    StatisticRow("Ferie utilizzate", "$vacationDays giorni", AbsenceType.VACATION.color)
-//                    StatisticRow("Giorni malattia", "$sickDays giorni", AbsenceType.SICK_LEAVE.color)
-//                    StatisticRow("Permessi ROL", "$rolDays giorni", AbsenceType.ROL.color)
-//                }
-//            }
-//        }
-//    }
-}
-
-@Composable
-private fun StatisticRow(label: String, value: String, color: Color) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(12.dp)
-                    .background(color, RoundedCornerShape(6.dp))
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(label, fontSize = 14.sp)
-        }
-        Text(
-            value,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium,
-            color = color
-        )
-    }
-}
-
 
 
 

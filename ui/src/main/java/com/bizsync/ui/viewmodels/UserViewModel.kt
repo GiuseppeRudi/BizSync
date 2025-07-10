@@ -117,7 +117,7 @@ class UserViewModel @Inject constructor(
                                                     azienda = loaded.data.toUiState(),
                                                     contratto = contratto, // salva se hai un campo nel UI state
                                                     hasLoadedAgency = true,
-                                                    resultMsg = "Invito accettato con successo. Complimenti",
+                                                    checkUser = true,
                                                     statusMsg = DialogStatusType.SUCCESS,
                                                     checkAcceptInvite = true
                                                 )

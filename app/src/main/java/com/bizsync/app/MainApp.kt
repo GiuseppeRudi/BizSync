@@ -41,6 +41,7 @@ fun MainApp(onLogout : () -> Unit) {
     LaunchedEffect(userState.azienda.idAzienda) {
         if (userState.azienda.idAzienda.isNotEmpty()) {
             splashVM.getAllUserByIdAgency(userState.azienda.idAzienda)
+            splashVM.getAllContrattiByIdAzienda(userState.azienda.idAzienda)
         }
     }
 

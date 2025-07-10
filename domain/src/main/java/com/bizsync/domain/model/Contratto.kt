@@ -11,5 +11,10 @@ data class Contratto(
     val oreSettimanali: String = "",
     val settoreAziendale: String = "",
     val dataInizio: String = "",
-    val ccnlInfo: Ccnlnfo = Ccnlnfo()
+    val ccnlInfo: Ccnlnfo = Ccnlnfo(),
+
+    // Nuove variabili di utilizzo
+    val ferieUsate: Int = 0,             // in giorni
+    val rolUsate: Int = 0,               // in ore
+    val malattiaUsata: Int = 0           // in giorni
 )
