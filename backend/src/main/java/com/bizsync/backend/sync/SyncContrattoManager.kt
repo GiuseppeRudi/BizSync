@@ -4,8 +4,9 @@ import android.util.Log
 import com.bizsync.cache.dao.ContrattoDao
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.backend.hash.HashStorage
-import com.bizsync.backend.hash.generateCacheHash
-import com.bizsync.backend.hash.generateDomainHash
+import com.bizsync.backend.hash.extensions.generateCacheHash
+import com.bizsync.backend.hash.extensions.generateDomainHash
+import com.bizsync.backend.hash.storage.ContrattiHashStorage
 import com.bizsync.backend.repository.ContractRepository
 import com.bizsync.cache.entity.ContrattoEntity
 import com.bizsync.cache.mapper.toEntityList
@@ -15,7 +16,7 @@ import javax.inject.Inject
 class SyncContrattoManager @Inject constructor(
     private val contrattoRepository: ContractRepository,
     private val contrattoDao: ContrattoDao,
-    private val hashStorage: HashStorage
+    private val hashStorage: ContrattiHashStorage
 ) {
 
     suspend fun syncIfNeeded(idAzienda: String): Resource<List<ContrattoEntity>> {

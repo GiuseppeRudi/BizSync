@@ -3,6 +3,7 @@ package com.bizsync.cache.hilt
 import android.content.Context
 import androidx.room.Room
 import com.bizsync.cache.AppDatabase
+import com.bizsync.cache.dao.AbsenceDao
 import com.bizsync.cache.dao.ContrattoDao
 import com.bizsync.cache.dao.TurnoDao
 import com.bizsync.cache.dao.UserDao
@@ -35,4 +36,7 @@ object RoomModule {
 
     @Provides
     fun provideTurnoDao(db: AppDatabase): TurnoDao = db.turnoDao()
+
+    @Provides
+    fun provideAbsenceDao(db: AppDatabase): AbsenceDao = db.absenceDao()
 }

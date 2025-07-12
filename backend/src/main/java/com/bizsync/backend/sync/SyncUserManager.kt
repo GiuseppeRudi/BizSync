@@ -5,8 +5,9 @@ import com.bizsync.backend.repository.UserRepository
 import com.bizsync.cache.dao.UserDao
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.backend.hash.HashStorage
-import com.bizsync.backend.hash.generateCacheHash
-import com.bizsync.backend.hash.generateDomainHash
+import com.bizsync.backend.hash.extensions.generateCacheHash
+import com.bizsync.backend.hash.extensions.generateDomainHash
+import com.bizsync.backend.hash.storage.DipendentiHashStorage
 import com.bizsync.cache.entity.UserEntity
 import com.bizsync.cache.mapper.toEntityList
 import com.bizsync.domain.model.User
@@ -16,7 +17,7 @@ import javax.inject.Inject
 class SyncUserManager @Inject constructor(
     private val userRepository: UserRepository,
     private val userDao: UserDao,
-    private val hashStorage: HashStorage
+    private val hashStorage: DipendentiHashStorage
 ) {
 
     suspend fun syncIfNeeded(idAzienda: String): Resource<List<UserEntity>> {

@@ -1,6 +1,7 @@
-package com.bizsync.backend.hash
+package com.bizsync.backend.hash.extensions
 
 import com.bizsync.backend.dto.UserDto
+import com.bizsync.backend.hash.HashManager
 import com.bizsync.cache.entity.UserEntity
 import com.bizsync.domain.model.User
 

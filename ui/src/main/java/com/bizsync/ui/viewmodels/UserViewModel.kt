@@ -35,10 +35,10 @@ class UserViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(UserState())
     val uiState: StateFlow<UserState> = _uiState
 
-
     fun setGiornoPublicazioneTurni(giorno: DayOfWeek) {
         _uiState.update { it.copy(azienda = _uiState.value.azienda.copy(giornoPubblicazioneTurni = giorno)) }
     }
+
     fun onAddAziendaRole(idAzienda: String) {
 
         viewModelScope.launch {
@@ -65,14 +65,15 @@ class UserViewModel @Inject constructor(
 
         }
 
-
     }
-
 
     fun clearMessage() {
         _uiState.update { it.copy(resultMsg = null, statusMsg = DialogStatusType.ERROR) }
     }
 
+    fun changeContract(contratto: Contratto) {
+        _uiState.update { it.copy(contratto = contratto) }
+    }
 
     fun checkUser(userId: String) {
         viewModelScope.launch(Dispatchers.IO) {

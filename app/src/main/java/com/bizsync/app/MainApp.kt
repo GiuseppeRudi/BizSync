@@ -1,5 +1,6 @@
 package com.bizsync.app
 
+import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -42,6 +43,7 @@ fun MainApp(onLogout : () -> Unit) {
         if (userState.azienda.idAzienda.isNotEmpty()) {
             splashVM.getAllUserByIdAgency(userState.azienda.idAzienda)
             splashVM.getAllContrattiByIdAzienda(userState.azienda.idAzienda)
+            splashVM.getAllAbsencesByIdAzienda(userState.azienda.idAzienda)
         }
     }
 

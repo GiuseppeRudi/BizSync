@@ -1,6 +1,7 @@
-package com.bizsync.backend.hash
+package com.bizsync.backend.hash.extensions
 
 
+import com.bizsync.backend.hash.HashManager
 import com.bizsync.cache.entity.ContrattoEntity
 import com.bizsync.cache.mapper.toDomain
 import com.bizsync.domain.model.Contratto

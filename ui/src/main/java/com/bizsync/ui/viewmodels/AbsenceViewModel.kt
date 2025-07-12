@@ -4,7 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.repository.AbsenceRepository
 import com.bizsync.domain.constants.enumClass.AbsenceStatus
+import com.bizsync.domain.constants.enumClass.AbsenceTimeType
+import com.bizsync.domain.constants.enumClass.AbsenceType
 import com.bizsync.domain.constants.sealedClass.Resource
+import com.bizsync.domain.model.Contratto
 import com.bizsync.ui.mapper.toUiData
 import com.bizsync.ui.model.AbsenceTypeUi
 import com.bizsync.ui.model.AbsenceUi
@@ -12,7 +15,7 @@ import com.bizsync.ui.components.DialogStatusType
 import com.bizsync.ui.mapper.toDomain
 import com.bizsync.ui.mapper.toUi
 import com.bizsync.ui.model.AbsenceState
-import com.bizsync.ui.model.AbsenceTimeType
+import com.bizsync.ui.model.PendingStats
 import com.bizsync.ui.model.getTimeType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,8 +33,6 @@ class AbsenceViewModel @Inject constructor(private val absenceRepository: Absenc
     private val _uiState = MutableStateFlow(AbsenceState())
     val uiState: StateFlow<AbsenceState> = _uiState
 
-
-    // Nel tuo AbsenceViewModel
     fun updateAddAbsenceTotalHours(totalHours: Int?) {
         _uiState.update { currentState ->
             currentState.copy(
@@ -42,7 +43,6 @@ class AbsenceViewModel @Inject constructor(private val absenceRepository: Absenc
         }
     }
 
-    // Metodi da aggiungere al ViewModel
     fun setFlexibleModeFullDay(isFullDay: Boolean) {
         _uiState.update { currentState ->
             currentState.copy(isFlexibleModeFullDay = isFullDay)
@@ -55,7 +55,6 @@ class AbsenceViewModel @Inject constructor(private val absenceRepository: Absenc
         }
     }
 
-    // Modifica il metodo esistente per gestire il tipo di assenza
     fun updateAddAbsenceType(typeUi: AbsenceTypeUi) {
         val timeType = typeUi.type.getTimeType()
 
@@ -63,12 +62,10 @@ class AbsenceViewModel @Inject constructor(private val absenceRepository: Absenc
             currentState.copy(
                 addAbsence = currentState.addAbsence.copy(typeUi = typeUi),
                 selectedTimeType = timeType,
-                // Reset valori quando cambia tipo
                 isFlexibleModeFullDay = true
             )
         }
 
-        // Reset dei campi quando cambia tipo di assenza
         resetDateTimeFields()
     }
 
@@ -81,9 +78,9 @@ class AbsenceViewModel @Inject constructor(private val absenceRepository: Absenc
         updateAddAbsenceTotalHours(null)
     }
 
-    fun saveAbsence(fullName : String,idAzienda: String, idUser: String) {
+    fun saveAbsence(fullName : String,idAzienda: String, idUser: String, contratto : Contratto ) {
         viewModelScope.launch {
-            // Aggiorna lo stato con la data di invio e status PENDING
+
             _uiState.update {
                 it.copy(addAbsence = it.addAbsence.copy(
                     statusUi = AbsenceStatus.PENDING.toUiData(),
@@ -96,24 +93,46 @@ class AbsenceViewModel @Inject constructor(private val absenceRepository: Absenc
 
             val absence = _uiState.value.addAbsence
 
-            // Chiamata repository e cattura risultato
             when (val result = absenceRepository.salvaAbsence(absence.toDomain())) {
                 is Resource.Success -> {
 
                     val updatedAbsence = _uiState.value.addAbsence.copy(id = result.data)
 
-                    // Aggiungi la nuova assenza alla lista, reset addAbsence e mostra messaggio successo
-                    _uiState.update { currentState ->
-                        currentState.copy(
-                            absences = currentState.absences + updatedAbsence, // oppure aggiorna da repo se preferisci
-                            addAbsence = AbsenceUi(), // reset form
-                            resultMsg = "Richiesta di assenza inviata con successo",
-                            statusMsg = DialogStatusType.SUCCESS
-                        )
+                    // Aggiorna il contratto in base al tipo di assenza
+                    val updatedContract = when (updatedAbsence.typeUi.type) {
+                        AbsenceType.VACATION -> {
+                            // Ferie: aggiorna ferieUsate con i giorni
+                            val daysToAdd = updatedAbsence.totalDays ?: 0
+                            contratto.copy(ferieUsate = contratto.ferieUsate + daysToAdd)
+                        }
+
+                        AbsenceType.ROL -> {
+                            // ROL: aggiorna rolUsate con le ore
+                            val hoursToAdd = updatedAbsence.totalHours ?: 0
+                            contratto.copy(rolUsate = contratto.rolUsate + hoursToAdd)
+                        }
+
+                        AbsenceType.SICK_LEAVE -> {
+                            // Malattia: aggiorna malattiaUsata con i giorni
+                            val daysToAdd = updatedAbsence.totalDays ?: 0
+                            contratto.copy(malattiaUsata = contratto.malattiaUsata + daysToAdd)
+                        }
+
+                        else -> contratto
                     }
+
+                        _uiState.update { currentState ->
+                            currentState.copy(
+                                absences = currentState.absences + updatedAbsence,
+                                contract = updatedContract,
+                                addAbsence = AbsenceUi(),
+                                resultMsg = "Richiesta di assenza inviata con successo",
+                                statusMsg = DialogStatusType.SUCCESS
+                            )
+                        }
+
                 }
                 is Resource.Error -> {
-                    // Mostra messaggio di errore
                     _uiState.update {
                         it.copy(
                             resultMsg = result.message ?: "Errore sconosciuto durante il salvataggio",
@@ -122,7 +141,6 @@ class AbsenceViewModel @Inject constructor(private val absenceRepository: Absenc
                     }
                 }
                 is Resource.Empty -> {
-                    // Gestisci caso vuoto se serve, altrimenti ignora o logga
                     _uiState.update {
                         it.copy(
                             resultMsg = "Nessun dato salvato",
@@ -132,6 +150,43 @@ class AbsenceViewModel @Inject constructor(private val absenceRepository: Absenc
                 }
             }
         }
+    }
+
+    fun changePendingStatus() {
+        _uiState.update { it.copy( pendingStats = calculatePendingStats(it.absences) ) }
+
+    }
+
+    // Funzione per calcolare le statistiche pending
+    private fun calculatePendingStats(absences: List<AbsenceUi>): PendingStats {
+        val pendingAbsences = absences.filter { it.statusUi.status == AbsenceStatus.PENDING }
+
+        var pendingVacationDays = 0
+        var pendingRolHours = 0
+        var pendingSickDays = 0
+
+        pendingAbsences.forEach { absence ->
+            when (absence.typeUi.type) {
+                AbsenceType.VACATION -> {
+                    pendingVacationDays += absence.totalDays ?: 0
+                }
+                AbsenceType.ROL -> {
+                    pendingRolHours += absence.totalHours ?: 0
+                }
+                AbsenceType.SICK_LEAVE -> {
+                    pendingSickDays += absence.totalDays ?: 0
+                }
+                else -> {
+                    // PERSONAL_LEAVE, UNPAID_LEAVE, STRIKE non contano per i limiti
+                }
+            }
+        }
+
+        return PendingStats(
+            pendingVacationDays = pendingVacationDays,
+            pendingRolHours = pendingRolHours,
+            pendingSickDays = pendingSickDays
+        )
     }
 
     fun fetchAllAbsences(idUser : String) {
@@ -230,7 +285,7 @@ class AbsenceViewModel @Inject constructor(private val absenceRepository: Absenc
 
     // Crea un metodo helper per calcolare i giorni
     fun calculateTotalDaysInt(startDate: LocalDate, endDate: LocalDate): Int {
-        return ChronoUnit.DAYS.between(startDate, endDate).toInt() + 1 // +1 per includere entrambi i giorni
+        return ChronoUnit.DAYS.between(startDate, endDate).toInt() + 1
     }
 
 

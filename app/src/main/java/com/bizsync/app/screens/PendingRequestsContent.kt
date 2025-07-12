@@ -20,7 +20,9 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -44,8 +46,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.bizsync.domain.constants.enumClass.AbsenceType
+import com.bizsync.domain.model.Contratto
 import com.bizsync.ui.model.AbsenceUi
 import com.bizsync.ui.viewmodels.RequestViewModel
+
 
 
 enum class DialogType {
@@ -83,14 +88,20 @@ fun PendingRequestsContent(
     }
 }
 
+// Aggiorna il PendingRequestCard per includere le info del contratto
 @Composable
 private fun PendingRequestCard(
     request: AbsenceUi,
-    approver : String,
+    approver: String,
     requestVM: RequestViewModel
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var dialogType by remember { mutableStateOf<DialogType?>(null) }
+
+    val requestState by requestVM.uiState.collectAsState()
+
+    // Trova il contratto del dipendente che ha fatto la richiesta
+    val employeeContract = requestState.contracts.find { it.idDipendente == request.idUser }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -100,17 +111,24 @@ private fun PendingRequestCard(
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            // Header with status
+            // Header with employee info
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = request.typeUi.displayName,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                Column {
+                    Text(
+                        text = request.submittedName,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = request.typeUi.displayName,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = request.typeUi.color
+                    )
+                }
 
                 Surface(
                     color = request.statusUi.color.copy(alpha = 0.1f),
@@ -126,79 +144,21 @@ private fun PendingRequestCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            // Date range
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.DateRange,
-                    contentDescription = null,
-                    tint = Color.Gray,
-                    modifier = Modifier.size(16.dp)
+            // Request details
+            RequestDetailsSection(request)
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Contract impact section - NUOVO
+            employeeContract?.let { contract ->
+                ContractImpactSection(
+                    request = request,
+                    contract = contract
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = request.formattedDateRange,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Gray
-                )
+                Spacer(modifier = Modifier.height(12.dp))
             }
-
-            // Hours if available
-            request.formattedHours?.let { hours ->
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Schedule,
-                        contentDescription = null,
-                        tint = Color.Gray,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = hours,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.Gray
-                    )
-                }
-            }
-
-            // Total days
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "Durata: ${request.totalDays}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray
-            )
-
-            // Reason
-            if (request.reason.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Motivo:",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = request.reason,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Gray
-                )
-            }
-
-            // Submitted date
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Richiesta inviata: ${request.submittedDate}",
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
 
             // Action buttons
             Row(
@@ -251,25 +211,26 @@ private fun PendingRequestCard(
     if (showDialog && dialogType != null) {
         ActionDialog(
             type = dialogType!!,
+            request = request,
+            contract = employeeContract,
             onDismiss = {
                 showDialog = false
                 dialogType = null
             },
             onConfirm = { comment ->
                 val isApproved = dialogType == DialogType.APPROVE
-                requestVM.handleRequestDecision(approver, request, isApproved, comment)
+                requestVM.handleRequestDecision(approver, request, isApproved, comment, employeeContract)
                 showDialog = false
                 dialogType = null
             }
         )
     }
 }
-
-
-
 @Composable
 private fun ActionDialog(
     type: DialogType,
+    request: AbsenceUi,
+    contract: Contratto?,
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit
 ) {
@@ -286,6 +247,109 @@ private fun ActionDialog(
         },
         text = {
             Column {
+                // Summary della richiesta
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp)
+                    ) {
+                        Text(
+                            text = "Riepilogo Richiesta",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Dipendente: ${request.submittedName}",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Text(
+                            text = "Tipo: ${request.typeUi.displayName}",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Text(
+                            text = "Periodo: ${request.formattedDateRange}",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+
+                        val durationText = when (request.typeUi.type) {
+                            AbsenceType.ROL -> request.formattedTotalHours ?: "0 ore"
+                            else -> request.formattedTotalDays
+                        }
+                        Text(
+                            text = "Durata: $durationText",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Impact sul contratto se si approva
+                if (isApprove && contract != null) {
+                    val impactInfo = calculateContractImpact(request, contract)
+                    impactInfo?.let { impact ->
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (impact.exceedsLimit) {
+                                    Color(0xFFFFEBEE)
+                                } else {
+                                    Color(0xFFE8F5E8)
+                                }
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(12.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = if (impact.exceedsLimit) Icons.Default.Warning else Icons.Default.CheckCircle,
+                                        contentDescription = null,
+                                        tint = if (impact.exceedsLimit) Color(0xFFD32F2F) else Color(0xFF4CAF50),
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "Impatto Contrattuale",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                Text(
+                                    text = "${impact.type}: ${impact.currentUsed} + ${impact.requestedAmount} = ${impact.totalAfterRequest} / ${impact.maxAllowed} ${impact.unit}",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+
+                                if (impact.exceedsLimit) {
+                                    Text(
+                                        text = "⚠️ ATTENZIONE: Supererà il limite di ${impact.maxAllowed} ${impact.unit}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color(0xFFD32F2F),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                } else {
+                                    val remaining = impact.maxAllowed - impact.totalAfterRequest
+                                    Text(
+                                        text = "✅ Entro i limiti. Rimarranno $remaining ${impact.unit}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color(0xFF4CAF50)
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+                }
+
                 Text(
                     text = if (isApprove)
                         "Vuoi aggiungere una nota all'approvazione?"
@@ -314,7 +378,7 @@ private fun ActionDialog(
                 ),
                 enabled = if (isApprove) true else comment.isNotBlank()
             ) {
-                Text(if (isApprove) "Approva" else "Rifiuta")
+                Text(if (isApprove) "Conferma Approvazione" else "Conferma Rifiuto")
             }
         },
         dismissButton = {
@@ -324,3 +388,295 @@ private fun ActionDialog(
         }
     )
 }
+
+// Funzione helper per calcolare l'impatto
+private fun calculateContractImpact(
+    request: AbsenceUi,
+    contract: Contratto
+): ContractImpact? {
+    return when (request.typeUi.type) {
+        AbsenceType.VACATION -> {
+            val requestedDays = request.totalDays ?: 0
+            val currentUsed = contract.ferieUsate
+            val maxAllowed = contract.ccnlInfo.ferieAnnue
+            val totalAfterRequest = currentUsed + requestedDays
+            ContractImpact(
+                type = "Ferie",
+                currentUsed = currentUsed,
+                maxAllowed = maxAllowed,
+                requestedAmount = requestedDays,
+                totalAfterRequest = totalAfterRequest,
+                unit = "giorni",
+                exceedsLimit = totalAfterRequest > maxAllowed
+            )
+        }
+
+        AbsenceType.ROL -> {
+            val requestedHours = request.totalHours ?: 0
+            val currentUsed = contract.rolUsate
+            val maxAllowed = contract.ccnlInfo.rolAnnui
+            val totalAfterRequest = currentUsed + requestedHours
+            ContractImpact(
+                type = "Permessi ROL",
+                currentUsed = currentUsed,
+                maxAllowed = maxAllowed,
+                requestedAmount = requestedHours,
+                totalAfterRequest = totalAfterRequest,
+                unit = "ore",
+                exceedsLimit = totalAfterRequest > maxAllowed
+            )
+        }
+
+        AbsenceType.SICK_LEAVE -> {
+            val requestedDays = request.totalDays ?: 0
+            val currentUsed = contract.malattiaUsata
+            val maxAllowed = contract.ccnlInfo.malattiaRetribuita
+            val totalAfterRequest = currentUsed + requestedDays
+            ContractImpact(
+                type = "Malattia",
+                currentUsed = currentUsed,
+                maxAllowed = maxAllowed,
+                requestedAmount = requestedDays,
+                totalAfterRequest = totalAfterRequest,
+                unit = "giorni",
+                exceedsLimit = totalAfterRequest > maxAllowed
+            )
+        }
+
+        else -> null
+    }
+}
+// Componente per i dettagli della richiesta
+@Composable
+private fun RequestDetailsSection(request: AbsenceUi) {
+    Column {
+        // Date range
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = Icons.Default.DateRange,
+                contentDescription = null,
+                tint = Color.Gray,
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = request.formattedDateRange,
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray
+            )
+        }
+
+        // Hours if available
+        request.formattedHours?.let { hours ->
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.Schedule,
+                    contentDescription = null,
+                    tint = Color.Gray,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = hours,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray
+                )
+            }
+        }
+
+        // Total duration
+        Spacer(modifier = Modifier.height(4.dp))
+        val totalText = when (request.typeUi.type) {
+            AbsenceType.ROL -> request.formattedTotalHours ?: "0 ore"
+            else -> request.formattedTotalDays
+        }
+        Text(
+            text = "Durata: $totalText",
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium
+        )
+
+        // Reason
+        if (request.reason.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Motivo: ${request.reason}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray
+            )
+        }
+    }
+}
+
+// NUOVO: Componente per mostrare l'impatto sul contratto
+@Composable
+private fun ContractImpactSection(
+    request: AbsenceUi,
+    contract: Contratto
+) {
+    // Calcola l'impatto in base al tipo di richiesta
+    val impactInfo = when (request.typeUi.type) {
+        AbsenceType.VACATION -> {
+            val requestedDays = request.totalDays ?: 0
+            val currentUsed = contract.ferieUsate
+            val maxAllowed = contract.ccnlInfo.ferieAnnue
+            val totalAfterRequest = currentUsed + requestedDays
+            ContractImpact(
+                type = "Ferie",
+                currentUsed = currentUsed,
+                maxAllowed = maxAllowed,
+                requestedAmount = requestedDays,
+                totalAfterRequest = totalAfterRequest,
+                unit = "giorni",
+                exceedsLimit = totalAfterRequest > maxAllowed
+            )
+        }
+
+        AbsenceType.ROL -> {
+            val requestedHours = request.totalHours ?: 0
+            val currentUsed = contract.rolUsate
+            val maxAllowed = contract.ccnlInfo.rolAnnui
+            val totalAfterRequest = currentUsed + requestedHours
+            ContractImpact(
+                type = "Permessi ROL",
+                currentUsed = currentUsed,
+                maxAllowed = maxAllowed,
+                requestedAmount = requestedHours,
+                totalAfterRequest = totalAfterRequest,
+                unit = "ore",
+                exceedsLimit = totalAfterRequest > maxAllowed
+            )
+        }
+
+        AbsenceType.SICK_LEAVE -> {
+            val requestedDays = request.totalDays ?: 0
+            val currentUsed = contract.malattiaUsata
+            val maxAllowed = contract.ccnlInfo.malattiaRetribuita
+            val totalAfterRequest = currentUsed + requestedDays
+            ContractImpact(
+                type = "Malattia",
+                currentUsed = currentUsed,
+                maxAllowed = maxAllowed,
+                requestedAmount = requestedDays,
+                totalAfterRequest = totalAfterRequest,
+                unit = "giorni",
+                exceedsLimit = totalAfterRequest > maxAllowed
+            )
+        }
+
+        else -> null // PERSONAL_LEAVE, UNPAID_LEAVE, STRIKE non hanno limiti
+    }
+
+    impactInfo?.let { impact ->
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = if (impact.exceedsLimit) {
+                    Color(0xFFFFEBEE)
+                } else {
+                    Color(0xFFE8F5E8)
+                }
+            ),
+            border = BorderStroke(
+                1.dp,
+                if (impact.exceedsLimit) Color(0xFFD32F2F) else Color(0xFF4CAF50)
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(12.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = if (impact.exceedsLimit) Icons.Default.Warning else Icons.Default.Info,
+                        contentDescription = null,
+                        tint = if (impact.exceedsLimit) Color(0xFFD32F2F) else Color(0xFF4CAF50),
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Impatto su ${impact.type}",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Medium,
+                        color = if (impact.exceedsLimit) Color(0xFFD32F2F) else Color(0xFF4CAF50)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Già utilizzate:",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFF424242)
+                    )
+                    Text(
+                        text = "${impact.currentUsed} ${impact.unit}",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Questa richiesta:",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFF424242)
+                    )
+                    Text(
+                        text = "+${impact.requestedAmount} ${impact.unit}",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Totale dopo approvazione:",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "${impact.totalAfterRequest} / ${impact.maxAllowed} ${impact.unit}",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                        color = if (impact.exceedsLimit) Color(0xFFD32F2F) else Color(0xFF4CAF50)
+                    )
+                }
+
+                if (impact.exceedsLimit) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "⚠️ Attenzione: Questa richiesta supererà il limite contrattuale di ${impact.maxAllowed} ${impact.unit}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFFD32F2F),
+                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                    )
+                }
+            }
+        }
+    }
+}
+
+// Data class per l'impatto sul contratto
+data class ContractImpact(
+    val type: String,
+    val currentUsed: Int,
+    val maxAllowed: Int,
+    val requestedAmount: Int,
+    val totalAfterRequest: Int,
+    val unit: String,
+    val exceedsLimit: Boolean
+)

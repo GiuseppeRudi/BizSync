@@ -16,13 +16,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -32,8 +29,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -44,10 +39,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.bizsync.app.navigation.LocalScaffoldViewModel
+import com.bizsync.domain.constants.enumClass.AbsenceTimeType
 import com.bizsync.domain.constants.enumClass.AbsenceType
 import com.bizsync.ui.components.AbsenceLimitWarning
 import com.bizsync.ui.components.AbsenceTypeSelector
@@ -56,19 +51,15 @@ import com.bizsync.ui.components.DatePickerDialog
 import com.bizsync.ui.components.DialogStatusType
 import com.bizsync.ui.components.SingleDayTimeRangePicker
 import com.bizsync.ui.components.StatusDialog
-import com.bizsync.ui.components.TimePickerField
 import com.bizsync.ui.components.calculateRequestedHours
-import com.bizsync.ui.model.AbsenceTimeType
 import com.bizsync.ui.model.AbsenceUi
 import com.bizsync.ui.viewmodels.AbsenceViewModel
 import com.bizsync.ui.viewmodels.UserViewModel
 import java.time.Duration
 import java.time.Instant
-import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 
 
 // Funzione helper per calcolare ore
@@ -105,6 +96,13 @@ fun NewAbsenceRequestScreen(
             onSubmit()
         }
     }
+
+//    LaunchedEffect(uiState.contract) {
+//        val contract = uiState.contract // ← Copia in variabile locale
+//        if (contract != null) {
+//            userVM.changeContract(contract) // ← Ora può fare smart cast
+//        }
+//    }
 
     LaunchedEffect(Unit) {
         scaffoldVM.onFullScreenChanged(false)
@@ -218,7 +216,7 @@ fun NewAbsenceRequestScreen(
                 actions = {
                     TextButton(
                         onClick = {
-                            absenceVM.saveAbsence(fullName,idAzienda, idUser)
+                            absenceVM.saveAbsence(fullName,idAzienda, idUser, contratto)
                         },
                         enabled = isValidSubmission
                     ) {

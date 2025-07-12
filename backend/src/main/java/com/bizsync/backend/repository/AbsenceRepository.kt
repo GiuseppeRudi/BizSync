@@ -4,17 +4,61 @@ package com.bizsync.backend.repository
 import android.util.Log
 import com.bizsync.backend.dto.AbsenceDto
 import com.bizsync.backend.mapper.toDomain
+import com.bizsync.backend.mapper.toDomainList
 import com.bizsync.backend.mapper.toDto
 import com.bizsync.backend.remote.AbsencesFirestore
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.Absence
+import com.bizsync.domain.utils.DateUtils.toFirebaseTimestamp
+import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
+import java.util.Date
 import javax.inject.Inject
 
 class AbsenceRepository @Inject constructor(
     private val db: FirebaseFirestore
 ) {
+
+
+    suspend fun checkAbsenceChangesInWindow(
+        idAzienda: String,
+        startDate: LocalDate,
+        endDate: LocalDate
+    ): Resource<List<Absence>> {
+        return try {
+            Log.d("ABSENCE_CHECK", "🔍 Check completo assenze dal $startDate al $endDate")
+
+            val startTimestamp = startDate.toFirebaseTimestamp()
+            val endTimestamp = endDate.atTime(LocalTime.MAX).toFirebaseTimestamp()
+
+            val querySnapshot = db.collection(AbsencesFirestore.COLLECTION)
+                .whereEqualTo(AbsencesFirestore.Fields.IDAZIENDA, idAzienda)
+                .whereGreaterThanOrEqualTo(AbsencesFirestore.Fields.START_DATE_TIME, startTimestamp)
+                .whereLessThanOrEqualTo(AbsencesFirestore.Fields.END_DATE_TIME, endTimestamp)
+                .get()
+                .await()
+
+            val absencesDto = querySnapshot.documents
+                .mapNotNull { it.toObject(AbsenceDto::class.java) }
+
+            val absences = absencesDto.toDomainList()
+
+            if (absences.isNotEmpty()) {
+                Resource.Success(absences)
+            } else {
+                Resource.Empty
+            }
+
+        } catch (e: Exception) {
+            Log.e("ABSENCE_CHECK", "❌ Errore check completo: ${e.message}")
+            Resource.Error(e.message ?: "Errore sconosciuto")
+        }
+    }
+
 
     suspend fun salvaAbsence(absence: Absence): Resource<String> {
         return try {
@@ -44,14 +88,18 @@ class AbsenceRepository @Inject constructor(
                 doc.toObject(AbsenceDto::class.java)?.copy(id = doc.id)?.toDomain()
             }
 
-            if (absences.isNotEmpty()) Resource.Success(absences)
-            else Resource.Empty
+            if (absences.isNotEmpty()) {
+                Resource.Success(absences)
+            } else {
+                Resource.Empty
+            }
 
         } catch (e: Exception) {
             Log.e("ABSENCE_DEBUG", "Errore durante il recupero delle assenze", e)
             Resource.Error(e.message ?: "Errore sconosciuto")
         }
     }
+
 
     suspend fun getAllAbsencesByAzienda(idAzienda: String): Resource<List<Absence>> {
         return try {

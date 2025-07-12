@@ -8,6 +8,7 @@ import com.bizsync.ui.mapper.toUiData
 import java.time.LocalTime
 
 data class AbsenceUi(
+
     val id: String = "",
     val idUser: String = "",
     val idAzienda : String = "",
@@ -16,7 +17,6 @@ data class AbsenceUi(
 
     val submittedName: String = "",
     val submittedDate: LocalDate?= null,
-
 
     val startDate: LocalDate? = null,
     val endDate: LocalDate? = null,
@@ -34,6 +34,7 @@ data class AbsenceUi(
 
     val approver: String? = null,
     val approvedDate: LocalDate? = null
+
 ) {
     val formattedDateRange: String
         get() = if (startDate != null && endDate != null) {

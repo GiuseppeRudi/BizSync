@@ -19,6 +19,43 @@ class ContrattoOrchestrator @Inject constructor(
     private val syncContrattoManager: SyncContrattoManager
 ) {
 
+    // APPROCCIO SEMPLICE: Update Firebase + Force Sync
+    suspend fun updateContratto(contratto: Contratto): Resource<String> {
+        return try {
+            Log.d("CONTRATTO_UPDATE", "🔄 Aggiornamento contratto ID: ${contratto.id}")
+
+            // 1. Aggiorna SOLO Firebase
+            when (val firebaseResult = contrattoRepository.updateContratto(contratto)) {
+                is Resource.Success -> {
+                    Log.d("CONTRATTO_UPDATE", "✅ Firebase aggiornato, ora forzo sync")
+
+                    // 2. Forza sync completo che aggiorna automaticamente DAO + Hash
+                    when (getContratti(contratto.idAzienda, forceRefresh = true)) {
+                        is Resource.Success -> {
+                            Log.d("CONTRATTO_UPDATE", "✅ Sync completato, tutto allineato!")
+                            Resource.Success(firebaseResult.data)
+                        }
+                        is Resource.Error -> {
+                            Log.w("CONTRATTO_UPDATE", "⚠️ Sync fallito ma Firebase è aggiornato")
+                            Resource.Success(firebaseResult.data) // Firebase comunque ok
+                        }
+                        else -> Resource.Success(firebaseResult.data)
+                    }
+                }
+                is Resource.Error -> {
+                    Log.e("CONTRATTO_UPDATE", "❌ Errore Firebase: ${firebaseResult.message}")
+                    Resource.Error(firebaseResult.message)
+                }
+                else -> {
+                    Resource.Error("Errore imprevisto nell'aggiornamento")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("CONTRATTO_UPDATE", "🚨 Errore imprevisto: ${e.message}")
+            Resource.Error(e.message ?: "Errore nell'aggiornamento contratto")
+        }
+    }
+
     suspend fun getContratti(idAzienda: String, forceRefresh: Boolean = false): Resource<List<Contratto>> {
         return try {
             if (forceRefresh) {
@@ -57,7 +94,5 @@ class ContrattoOrchestrator @Inject constructor(
             Resource.Error(e.message ?: "Errore nel recupero contratti")
         }
     }
-    suspend fun forceSync(idAzienda: String): Resource<Unit> {
-        return syncContrattoManager.forceSync(idAzienda)
-    }
+
 }

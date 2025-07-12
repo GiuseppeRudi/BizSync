@@ -45,6 +45,7 @@ fun RequestManagementScreen(
     LaunchedEffect(Unit) {
         scaffoldVM.onFullScreenChanged(false)
         requestVM.fetchAllRequests(idAzienda)
+        requestVM.fetchAllContract(idAzienda)
     }
 
 
@@ -97,7 +98,6 @@ fun RequestManagementScreen(
             }
         }
 
-        // Content based on selected tab
         when (selectedTab) {
             0 -> PendingRequestsContent(requestVM,approver)
             1 -> HistoryContent(requestVM)

@@ -21,5 +21,7 @@ data class Absence(
     val submittedDate: LocalDate,
     val approvedBy: String? = null,
     val approvedDate: LocalDate? = null,
-    val comments: String? = null
+    val comments: String? = null,
+    val totalDays: Int? = null,
+    val totalHours: Int? = null,
 )

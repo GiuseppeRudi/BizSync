@@ -26,11 +26,18 @@ fun Absence.toDto(): AbsenceDto {
         approvedBy = approvedBy,
         approvedDate = approvedDate?.atStartOfDay()?.toTimestamp(),
         comments = comments,
-        submittedName = submittedName
+        submittedName = submittedName,
+        totalHours = totalHours,
+        totalDays = totalDays
 
     )
 }
 
+// Estende List<Absence> per convertirla in List<AbsenceDto>
+fun List<Absence>.toDtoList(): List<AbsenceDto> = this.map { it.toDto() }
+
+// Estende List<AbsenceDto> per convertirla in List<Absence>
+fun List<AbsenceDto>.toDomainList(): List<Absence> = this.map { it.toDomain() }
 
 fun AbsenceDto.toDomain(): Absence {
     return Absence(
@@ -48,7 +55,9 @@ fun AbsenceDto.toDomain(): Absence {
         approvedBy = approvedBy,
         approvedDate = approvedDate?.toLocalDate(),
         comments = comments,
-        submittedName = submittedName
+        submittedName = submittedName,
+        totalHours = totalHours,
+        totalDays = totalDays
 
     )
 }

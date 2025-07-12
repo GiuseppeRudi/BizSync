@@ -25,7 +25,6 @@ fun Absence.toUi(): AbsenceUi {
         startTime = startTime,
         endTime = endTime,
 
-        totalDays = null,
 
         reason = reason,
         statusUi = status.statusToUiData(),
@@ -34,7 +33,9 @@ fun Absence.toUi(): AbsenceUi {
         submittedDate = submittedDate,
 
         approvedDate = approvedDate,
-        comments = comments
+        comments = comments,
+        totalHours = totalHours,
+        totalDays = totalDays
     )
 }
 
@@ -61,7 +62,9 @@ fun AbsenceUi.toDomain(): Absence {
         approvedBy = approver,
         approvedDate = approvedDate,
         comments = comments,
-        submittedName = submittedName
+        submittedName = submittedName ,
+        totalHours = totalHours,
+        totalDays = totalDays
     )
 }
 

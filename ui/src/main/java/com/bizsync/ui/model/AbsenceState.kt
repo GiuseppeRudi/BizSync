@@ -1,7 +1,8 @@
 package com.bizsync.ui.model
 
+import com.bizsync.domain.constants.enumClass.AbsenceTimeType
+import com.bizsync.domain.model.Contratto
 import com.bizsync.ui.components.DialogStatusType
-import com.bizsync.ui.model.AbsenceUi
 
 // Aggiungi questo al tuo AbsenceState
 data class AbsenceState(
@@ -10,6 +11,10 @@ data class AbsenceState(
     val resultMsg: String? = null,
     val statusMsg: DialogStatusType = DialogStatusType.ERROR,
     val addAbsence: AbsenceUi = AbsenceUi(),
+
+    val contract : Contratto? = null,
+
+    val pendingStats: PendingStats = PendingStats(),
 
     // Proprietà per la UI
     val isFullDay: Boolean = true,
@@ -22,9 +27,11 @@ data class AbsenceState(
     val selectedTimeType: AbsenceTimeType = AbsenceTimeType.FULL_DAYS_ONLY,
     val isFlexibleModeFullDay: Boolean = true // Per PERSONAL_LEAVE e UNPAID_LEAVE
 )
-// Enum per i tipi di selezione temporale
-enum class AbsenceTimeType {
-    FULL_DAYS_ONLY,      // Solo giorni interi (VACATION, SICK_LEAVE, STRIKE)
-    HOURLY_SINGLE_DAY,   // Solo fascia oraria su singolo giorno (ROL)
-    FLEXIBLE             // Scelta tra giorni interi o fascia oraria (PERSONAL_LEAVE, UNPAID_LEAVE)
-}
+
+// Data class per le statistiche pending
+data class PendingStats(
+    val pendingVacationDays: Int = 0,
+    val pendingRolHours: Int = 0,
+    val pendingSickDays: Int = 0
+)
+
