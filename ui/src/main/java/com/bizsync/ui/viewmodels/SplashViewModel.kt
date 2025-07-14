@@ -47,6 +47,12 @@ class SplashViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(SplashState())
     val uiState: StateFlow<SplashState> = _uiState
 
+    fun createMockTurno()
+    {
+        viewModelScope.launch {
+            turnoOrchestrator.createMockTurno()
+        }
+    }
 
     fun getAllTurniByIdAzienda(idAzienda: String, forceRefresh: Boolean = false) {
         if (idAzienda.isEmpty()) {

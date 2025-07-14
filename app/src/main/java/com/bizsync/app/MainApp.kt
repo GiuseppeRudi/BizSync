@@ -40,10 +40,12 @@ fun MainApp(onLogout : () -> Unit) {
 
 
     LaunchedEffect(userState.azienda.idAzienda) {
+//        splashVM.createMockTurno()
         if (userState.azienda.idAzienda.isNotEmpty()) {
             splashVM.getAllUserByIdAgency(userState.azienda.idAzienda)
             splashVM.getAllContrattiByIdAzienda(userState.azienda.idAzienda)
             splashVM.getAllAbsencesByIdAzienda(userState.azienda.idAzienda)
+            splashVM.getAllTurniByIdAzienda(userState.azienda.idAzienda)
         }
     }
 

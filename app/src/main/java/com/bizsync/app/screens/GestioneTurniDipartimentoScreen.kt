@@ -56,6 +56,7 @@ fun GestioneTurniDipartimentoScreen(
     dipartimento: AreaLavoro,
     giornoSelezionato: LocalDate,
     onBack: () -> Unit,
+    weeklyIsIdentical : Boolean,
     managerVM : PianificaManagerViewModel ,
     viewModel: GestioneTurniDipartimentoViewModel = hiltViewModel()
 ) {
@@ -105,6 +106,7 @@ fun GestioneTurniDipartimentoScreen(
                 items(turniGioDip) { turno ->
                     TurnoAssegnatoCard(
                         turno = turno,
+                        isIdentical = weeklyIsIdentical,
                         onEdit = { viewModel.editTurno(turno) },
                         onDelete = { viewModel.deleteTurno(turno) }
                     )
@@ -115,13 +117,7 @@ fun GestioneTurniDipartimentoScreen(
                 }
             }
 
-            item {
-                AnalisiCoperturaCard(
-                    dipartimento = dipartimento,
-                    giornoSelezionato = giornoSelezionato,
-                    turniAssegnati = turniGioDip
-                )
-            }
+
 
 //            // Suggerimenti se disponibili
 //            if (uiState.suggerimenti.isNotEmpty()) {
@@ -143,15 +139,20 @@ fun GestioneTurniDipartimentoScreen(
             }
         }
 
-        // ✅ FAB posizionato correttamente sopra la LazyColumn
-        FloatingActionButton(
-            onClick = { viewModel.showAddTurnoDialog() },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp)
-        ) {
-            Icon(Icons.Default.Add, contentDescription = "Aggiungi Turno")
+
+        if(weeklyIsIdentical)
+        {
+            // ✅ FAB posizionato correttamente sopra la LazyColumn
+            FloatingActionButton(
+                onClick = { viewModel.showAddTurnoDialog() },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Aggiungi Turno")
+            }
         }
+
     }
 
 //    // ✅ Dialog fuori dal layout principale
@@ -169,6 +170,7 @@ fun GestioneTurniDipartimentoScreen(
 @Composable
 fun TurnoAssegnatoCard(
     turno: Turno,
+    isIdentical: Boolean,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -204,20 +206,23 @@ fun TurnoAssegnatoCard(
                 }
             }
 
-            Row {
-                IconButton(onClick = onEdit) {
-                    Icon(
-                        Icons.Default.Edit,
-                        contentDescription = "Modifica",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-                IconButton(onClick = onDelete) {
-                    Icon(
-                        Icons.Default.Delete,
-                        contentDescription = "Elimina",
-                        tint = MaterialTheme.colorScheme.error
-                    )
+            if(isIdentical)
+            {
+                Row {
+                    IconButton(onClick = onEdit) {
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = "Modifica",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    IconButton(onClick = onDelete) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "Elimina",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
                 }
             }
         }

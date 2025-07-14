@@ -34,6 +34,14 @@ interface TurnoDao {
     @Query("SELECT * FROM turni WHERE dipendente = :idDipendente ORDER BY data DESC")
     suspend fun getTurniByDipendente(idDipendente: String): List<TurnoEntity>
 
+
+    @Query("""
+        SELECT * FROM turni
+        WHERE data BETWEEN :startDate AND :endDate
+        ORDER BY data ASC
+    """)
+    suspend fun fetchTurniSettimana(startDate: LocalDate, endDate: LocalDate): List<TurnoEntity>
+
     // Recupera i turni di un dipartimento in un certo giorno
     @Query("SELECT * FROM turni WHERE dipartimentoId = :idDipartimento AND data = :giorno")
     suspend fun getTurniByDipartimentoAndData(idDipartimento: String, giorno: LocalDate): List<TurnoEntity>

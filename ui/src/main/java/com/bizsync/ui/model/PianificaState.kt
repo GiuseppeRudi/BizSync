@@ -19,7 +19,9 @@ data class PianificaState(
 
     // Stati WeeklyShift (nuovi)
     val weeklyPlanningExists: Boolean? = null,
-    val currentWeeklyShift: WeeklyShift? = null,
+    val weeklyShiftRiferimento: WeeklyShift? = null,
+    val weeklyShiftAttuale : WeeklyShift? = null,
+    val weeklyisIdentical : Boolean = false,
     val canPublish: Boolean = false,
     val publishableWeek: LocalDate? = null,
 
@@ -58,7 +60,7 @@ data class PianificaState(
      * Stato corrente della pianificazione come stringa
      */
     val currentPlanningStatusText: String
-        get() = when (currentWeeklyShift?.status) {
+        get() = when (weeklyShiftRiferimento?.status) {
             WeeklyShiftStatus.IN_PROGRESS -> "In preparazione"
             WeeklyShiftStatus.PUBLISHED -> "Pubblicata"
             WeeklyShiftStatus.FINALIZED -> "Finalizzata"
@@ -69,31 +71,31 @@ data class PianificaState(
      * Indica se la pianificazione corrente può essere modificata
      */
     val canModifyCurrentPlanning: Boolean
-        get() = currentWeeklyShift?.status == WeeklyShiftStatus.IN_PROGRESS
+        get() = weeklyShiftRiferimento?.status == WeeklyShiftStatus.IN_PROGRESS
 
     /**
      * Indica se la pianificazione corrente può essere pubblicata
      */
     val canPublishCurrentPlanning: Boolean
-        get() = currentWeeklyShift?.status == WeeklyShiftStatus.IN_PROGRESS
+        get() = weeklyShiftRiferimento?.status == WeeklyShiftStatus.IN_PROGRESS
 
     /**
      * Indica se la pianificazione corrente può essere finalizzata
      */
     val canFinalizeCurrentPlanning: Boolean
-        get() = currentWeeklyShift?.status == WeeklyShiftStatus.PUBLISHED
+        get() = weeklyShiftRiferimento?.status == WeeklyShiftStatus.PUBLISHED
 
     /**
      * Indica se la pianificazione corrente può essere eliminata
      */
     val canDeleteCurrentPlanning: Boolean
-        get() = currentWeeklyShift?.status == WeeklyShiftStatus.IN_PROGRESS
+        get() = weeklyShiftRiferimento?.status == WeeklyShiftStatus.IN_PROGRESS
 
     /**
      * Settimana corrente formattata come stringa
      */
     val currentWeekFormatted: String?
-        get() = currentWeeklyShift?.let { weeklyShift ->
+        get() = weeklyShiftRiferimento?.let { weeklyShift ->
             val start = weeklyShift.weekStart
             val end = start.plusDays(6)
             "${start.dayOfMonth}/${start.monthValue} - ${end.dayOfMonth}/${end.monthValue}/${end.year}"

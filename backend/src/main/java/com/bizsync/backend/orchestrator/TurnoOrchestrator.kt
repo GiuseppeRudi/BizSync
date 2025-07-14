@@ -9,6 +9,8 @@ import com.bizsync.cache.dao.TurnoDao
 import com.bizsync.cache.mapper.toDomainList
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.Turno
+import com.bizsync.domain.utils.AbsenceWindowCalculator
+import java.time.LocalDate
 import javax.inject.Inject
 
 class TurnoOrchestrator @Inject constructor(
@@ -53,6 +55,30 @@ class TurnoOrchestrator @Inject constructor(
         } catch (e: Exception) {
             Log.e("TURNO_UPDATE", "🚨 Errore imprevisto: ${e.message}")
             Resource.Error(e.message ?: "Errore nell'aggiornamento turno")
+        }
+    }
+
+    suspend fun createMockTurno()
+    {
+        turnoRepository.createMockTurni()
+    }
+
+    suspend fun fetchTurniSettimana(startWeek: LocalDate): Resource<List<Turno>> {
+        return try {
+            val (startDate, endDate) = AbsenceWindowCalculator.getWeekBounds(startWeek)
+            val turniEntities = turnoDao.fetchTurniSettimana(startDate, endDate)
+
+            if (turniEntities.isEmpty()) {
+                Log.d("TURNI_DEBUG", "📭 Nessun turno trovato nella settimana $startDate - $endDate")
+                Resource.Empty
+            } else {
+                val domainTurni = turniEntities.toDomainList()
+                Log.d("TURNI_DEBUG", "✅ Trovati ${domainTurni.size} turni nella settimana $startDate - $endDate")
+                Resource.Success(domainTurni)
+            }
+        } catch (e: Exception) {
+            Log.e("TURNI_DEBUG", "🚨 Errore nel recupero turni settimana: ${e.message}", e)
+            Resource.Error(e.message ?: "Errore nel recupero turni settimana")
         }
     }
 

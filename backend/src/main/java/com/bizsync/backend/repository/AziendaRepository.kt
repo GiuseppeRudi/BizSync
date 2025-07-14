@@ -132,9 +132,16 @@ class AziendaRepository @Inject constructor(private val db : FirebaseFirestore) 
             Log.e("AZIENDA_DEBUG", "ho preso l'azienda $result")
             val aziendaDto = result.toObject(AziendaDto::class.java)?.copy(id = result.id)
 
+            Log.e("AZIENDA_DEBUG", "ho preso l'azienda $aziendaDto")
+
             aziendaDto?.toDomain()?.let { azienda ->
+                Log.e("AZIENDA_DEBUG", "ho preso l'azienda $azienda")
                 Resource.Success(azienda)
             } ?: Resource.Empty
+
+
+
+
 
         } catch (e: Exception) {
             Log.e("AZIENDA_DEBUG", "Errore nel prendere l'azienda", e)

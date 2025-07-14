@@ -5,7 +5,6 @@ import com.google.firebase.firestore.Exclude
 import java.time.DayOfWeek
 
 data class AziendaDto(
-    @get:Exclude
     val id: String,
 
     val nome: String,

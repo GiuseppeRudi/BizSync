@@ -4,7 +4,6 @@ import com.bizsync.backend.hash.storage.TurniHashStorage
 
 
 import android.util.Log
-import com.bizsync.backend.hash.HashStorage
 import com.bizsync.backend.hash.extensions.generateCacheHash
 import com.bizsync.backend.hash.extensions.generateDomainHash
 import com.bizsync.backend.repository.TurnoRepository
@@ -13,6 +12,7 @@ import com.bizsync.cache.entity.TurnoEntity
 import com.bizsync.cache.mapper.toEntityList
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.Turno
+import com.bizsync.domain.utils.AbsenceWindowCalculator
 import javax.inject.Inject
 
 class SyncTurnoManager @Inject constructor(
@@ -23,10 +23,15 @@ class SyncTurnoManager @Inject constructor(
 
     suspend fun syncIfNeeded(idAzienda: String): Resource<List<TurnoEntity>> {
         return try {
+            val currentWeekStart = AbsenceWindowCalculator.getCurrentWeekStart()
+            val currentWeekKey = AbsenceWindowCalculator.getWeekKey(currentWeekStart)
+            val (startDate, endDate) = AbsenceWindowCalculator.calculateAbsenceWindow(currentWeekStart)
+
+
             val savedHash = hashStorage.getTurniHash(idAzienda)
 
             Log.d("TURNI_DEBUG", "🌐 Chiamata Firebase per turni azienda $idAzienda")
-            val firebaseResult = turnoRepository.getTurniByAzienda(idAzienda)
+            val firebaseResult = turnoRepository.getTurniRangeByAzienda(idAzienda,startDate, endDate)
 
             when (firebaseResult) {
                 is Resource.Success -> {

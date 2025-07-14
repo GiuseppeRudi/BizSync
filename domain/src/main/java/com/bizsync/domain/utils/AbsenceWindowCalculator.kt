@@ -10,6 +10,10 @@ object AbsenceWindowCalculator {
         return LocalDate.now().with(DayOfWeek.MONDAY)
     }
 
+    fun getWeekStartFromDate(selectionDate: LocalDate): LocalDate {
+        return selectionDate.with(DayOfWeek.MONDAY)
+    }
+
     fun calculateAbsenceWindow(weekStart: LocalDate): Pair<LocalDate, LocalDate> {
         // Finestra: 2 settimane indietro + 2 settimane avanti
         val startDate = weekStart.minusWeeks(2)
@@ -20,4 +24,11 @@ object AbsenceWindowCalculator {
     fun getWeekKey(weekStart: LocalDate): String {
         return weekStart.toString() // es. "2025-07-07"
     }
+
+    fun getWeekBounds(date: LocalDate): Pair<LocalDate, LocalDate> {
+        val monday = date.with(DayOfWeek.MONDAY)
+        val sunday = date.with(DayOfWeek.SUNDAY)
+        return monday to sunday
+    }
+
 }

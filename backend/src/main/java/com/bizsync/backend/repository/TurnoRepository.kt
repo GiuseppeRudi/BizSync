@@ -2,15 +2,17 @@ package com.bizsync.backend.repository
 
 import kotlinx.coroutines.tasks.await
 import android.util.Log
-import com.bizsync.backend.mapper.toFirestore
+import com.bizsync.backend.dto.TurnoDto
+import com.bizsync.backend.mapper.toDto
 import com.bizsync.backend.remote.TurniFirestore
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.Turno
+import com.bizsync.domain.utils.DateUtils.toFirebaseTimestamp
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import java.time.LocalDate
+import com.bizsync.backend.mapper.toDomainList
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import java.util.Date
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -25,7 +27,57 @@ class TurnoRepository @Inject constructor(
         private const val TAG = "TurnoRepository"
     }
 
+
     private val collection = firestore.collection(COLLECTION_NAME)
+
+    suspend fun createMockTurni(): Boolean {
+        return try {
+            val now = Timestamp.now()
+            val collection = firestore.collection("turni")
+
+            val turno1 = TurnoDto(
+                id = "", // Firestore lo assegnerà automaticamente
+                nome = "Mattina",
+                idAzienda = "azienda123",
+                idDipendenti = listOf("dip1", "dip2"),
+                orarioInizio = "08:00",
+                orarioFine = "12:00",
+                dipendente = "dip1",
+                dipartimentoId = "dipartimentoA",
+                data = now,
+                note = "Turno mattutino di esempio",
+                isConfermato = true,
+                createdAt = now,
+                updatedAt = now
+            )
+
+            val turno2 = TurnoDto(
+                id = "",
+                nome = "Pomeriggio",
+                idAzienda = "azienda123",
+                idDipendenti = listOf("dip3"),
+                orarioInizio = "14:00",
+                orarioFine = "18:00",
+                dipendente = "dip3",
+                dipartimentoId = "dipartimentoB",
+                data = now,
+                note = "Turno pomeridiano di test",
+                isConfermato = false,
+                createdAt = now,
+                updatedAt = now
+            )
+
+            collection.add(turno1).await()
+            collection.add(turno2).await()
+
+            Log.d("TURNI_DEBUG", "✅ Mock turni creati correttamente")
+            true
+        } catch (e: Exception) {
+            Log.e("TURNI_DEBUG", "❌ Errore durante la creazione dei mock turni", e)
+            false
+        }
+    }
+
 
     suspend fun updateTurno(turno: Turno): Resource<String> {
         return try {
@@ -34,7 +86,7 @@ class TurnoRepository @Inject constructor(
                 return Resource.Error("ID turno mancante, impossibile aggiornare")
             }
 
-            val turnoMap = turno.toFirestore() // se hai un mapper dedicato
+            val turnoMap = turno.toDto() // se hai un mapper dedicato
             // Oppure mappa manualmente: mapOf("nome" to turno.nome, ...)
 
             firestore.collection(TurniFirestore.COLLECTION)
@@ -67,23 +119,29 @@ class TurnoRepository @Inject constructor(
     }
 
 
-    suspend fun getTurniByAzienda(idAzienda: String): Resource<List<Turno>> {
+    suspend fun getTurniRangeByAzienda(idAzienda: String, startRange: LocalDate, endRange: LocalDate): Resource<List<Turno>> {
         return try {
+            val startTimestamp =  startRange.toFirebaseTimestamp()
+            val endTimestamp = endRange.toFirebaseTimestamp()
+
             val result = firestore.collection(TurniFirestore.COLLECTION)
                 .whereEqualTo("idAzienda", idAzienda)
+                .whereGreaterThanOrEqualTo("data", startTimestamp)
+                .whereLessThan("data", endTimestamp)
                 .get()
                 .await()
 
             val turni = result.mapNotNull { document ->
-                document.toObject(Turno::class.java)?.copy(id = document.id)
+                document.toObject(TurnoDto::class.java)?.copy(id = document.id)
             }
 
             Log.d("TURNI_DEBUG", "🔍 Recuperati ${turni.size} turni per azienda $idAzienda")
 
             if (turni.isEmpty()) {
                 Resource.Empty
-            } else {
-                Resource.Success(turni)
+            }
+            else {
+                Resource.Success(turni.toDomainList())
             }
         } catch (e: Exception) {
             Log.e("TURNI_DEBUG", "❌ Errore durante getTurniByAzienda: ${e.message}")

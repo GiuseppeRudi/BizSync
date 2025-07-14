@@ -1,70 +1,26 @@
 package com.bizsync.app.screens
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.bizsync.app.navigation.LocalScaffoldViewModel
 import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.ui.components.Calendar
-import com.bizsync.ui.components.RoundedButton
 import com.bizsync.ui.viewmodels.PianificaViewModel
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.times
+import androidx.core.app.AppLaunchChecker
 import com.bizsync.domain.constants.enumClass.PianificaScreenManager
-import com.bizsync.domain.model.AreaLavoro
-import com.bizsync.domain.model.Turno
-import com.bizsync.ui.components.EmptyDayCard
-import com.bizsync.ui.components.GiornoHeaderCard
-import com.bizsync.ui.components.RiepilogoGiornataCard
 import com.bizsync.ui.components.SelectionDataEmptyCard
-import com.bizsync.ui.components.getNomeGiorno
-import com.bizsync.ui.viewmodels.DipartimentoStatus
-import com.bizsync.ui.viewmodels.ScaffoldViewModel
-import java.time.DayOfWeek
-import java.time.LocalDate
-import com.bizsync.ui.components.StatusChip
 import com.bizsync.ui.viewmodels.PianificaManagerViewModel
-import java.time.format.DateTimeFormatter
-
+import java.time.LocalDate
 
 
 @Composable
@@ -152,20 +108,49 @@ fun PianificaCore(
     val pianificaState by pianificaVM.uistate.collectAsState()
     val selectionData = pianificaState.selectionData
 
-    val weeklyShift = pianificaState.currentWeeklyShift
+    val weeklyisIdentical = pianificaState.weeklyisIdentical
+    val weeklyShiftRiferimento = pianificaState.weeklyShiftRiferimento
+    val weeklyShiftAttuale = pianificaState.weeklyShiftAttuale
 
+    LaunchedEffect(weeklyShiftRiferimento, weeklyShiftAttuale) {
+        if(weeklyShiftRiferimento != null && weeklyShiftAttuale != null && weeklyShiftAttuale == weeklyShiftRiferimento)
+        {
+            pianificaVM.setWeeklyShiftIdentical(true)
+        }
+        else{
+            pianificaVM.setWeeklyShiftIdentical(false)
+        }
+    }
+
+    LaunchedEffect(selectionData)
+    {
+        if(selectionData!=null)
+        {
+            pianificaVM.getWeeklyShiftCorrente(selectionData)
+        }
+    }
 
     val managerVM: PianificaManagerViewModel = hiltViewModel()
 
     val managerState by managerVM.uiState.collectAsState()
 
+    var weekStart = LocalDate.now()
 
     val turniSettimanali = managerState.turniSettimanali
 
-//    LaunchedEffect(Unit) {
-//
-//        managerVM.setTurniSettimanali(weeklyShift?.weekStart)
-//    }
+    LaunchedEffect(Unit) {
+        if(weeklyShiftRiferimento != null)
+        {
+             weekStart = weeklyShiftRiferimento.weekStart
+
+        }
+
+        managerVM.setTurniSettimanali(weekStart)
+    }
+
+    LaunchedEffect(selectionData) {
+        pianificaVM.backToMain()
+    }
 
     val currentScreen by pianificaVM.currentScreen.collectAsState()
 
@@ -198,7 +183,7 @@ fun PianificaCore(
                         giornoSelezionato = selectionData,
                         managerVM = managerVM,
                         onDipartimentoClick = { pianificaVM.openGestioneTurni(it) },
-                        weeklyShift = weeklyShift
+                        weeklyShift = weeklyShiftRiferimento
                     )
                 }
 
@@ -207,6 +192,7 @@ fun PianificaCore(
                         GestioneTurniDipartimentoScreen(
                             dipartimento = dip,
                             giornoSelezionato = selectionData,
+                            weeklyIsIdentical = weeklyisIdentical,
                             managerVM = managerVM,
                             onBack = { pianificaVM.backToMain() })
                     }

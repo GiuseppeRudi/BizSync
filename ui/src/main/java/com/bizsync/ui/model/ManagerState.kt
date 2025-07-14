@@ -9,7 +9,7 @@ import java.time.LocalDate
 
 
 data class ManagerState(
-
+    val loading : Boolean = true,
     val turniSettimanali : Map<DayOfWeek,List<Turno>> = emptyMap(),
     val turniGiornalieri : Map<String , List<Turno>> = emptyMap(),
     val turniGiornalieriDip : List<Turno> = emptyList(),

@@ -1,5 +1,6 @@
 package com.bizsync.app.screens
 
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -74,18 +75,32 @@ fun PianificaGiornata(
 
     val turniGiorno = managerState.turniGiornalieri
 
-//    LaunchedEffect(Unit) {
-//        if (weeklyShift != null)
-//        managerVM.setTurniGiornalieri(dayOfWeek)
-//    }
-
-
     // Filtra dipartimenti aperti per questo giorno
     val dipartimentiDelGiorno = dipartimenti
         .filter { it.orariSettimanali.containsKey(dayOfWeek) }
         .sortedBy {
             it.orariSettimanali[dayOfWeek]?.first?.replace(":", "")?.toIntOrNull() ?: 0
         }
+
+    LaunchedEffect(giornoSelezionato) {
+        managerVM.setLoading(true)
+        if (weeklyShift != null) {
+            managerVM.setTurniGiornalieri(dayOfWeek, dipartimentiDelGiorno)
+        }
+    }
+
+
+    // Se stai ancora caricando mostra spinner o altro
+    if (managerState.loading) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
+
+
+
 
     if (dipartimentiDelGiorno.isEmpty()) {
         EmptyDayCard(dayOfWeek)
@@ -111,11 +126,17 @@ fun PianificaGiornata(
 
         // Lista dipartimenti con stato
         items(dipartimentiDelGiorno) { dipartimento ->
-            DipartimentoStatoCard(
-                dipartimento = dipartimento,
-                dayOfWeek = dayOfWeek,
-                onClick = { onDipartimentoClick(dipartimento) },
-               turniDipartimentoGiornalieri = turniGiorno.getValue(dipartimento.id))
+
+            if (dipartimento.id in turniGiorno) {
+                DipartimentoStatoCard(
+                    dipartimento = dipartimento,
+                    dayOfWeek = dayOfWeek,
+                    onClick = { onDipartimentoClick(dipartimento)
+                                managerVM.setTurniGiornalieriDipartimento(dipartimento.id)},
+                    turniDipartimentoGiornalieri = turniGiorno[dipartimento.id]!!
+                )
+            }
+
         }
 
         // Riepilogo giornata
