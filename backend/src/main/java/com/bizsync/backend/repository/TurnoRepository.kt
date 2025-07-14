@@ -1,18 +1,96 @@
 package com.bizsync.backend.repository
 
+import kotlinx.coroutines.tasks.await
 import android.util.Log
+import com.bizsync.backend.mapper.toFirestore
 import com.bizsync.backend.remote.TurniFirestore
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.Turno
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.Date
 import javax.inject.Inject
+import javax.inject.Singleton
 
-class TurnoRepository @Inject constructor(private val db: FirebaseFirestore) {
+@Singleton
+class TurnoRepository @Inject constructor(
+    private val firestore: FirebaseFirestore
+)  {
+
+    companion object {
+        private const val COLLECTION_NAME = "turni"
+        private const val TAG = "TurnoRepository"
+    }
+
+    private val collection = firestore.collection(COLLECTION_NAME)
+
+    suspend fun updateTurno(turno: Turno): Resource<String> {
+        return try {
+            if (turno.id.isEmpty()) {
+                Log.e("TURNI_DEBUG", "❌ ID turno mancante, impossibile aggiornare")
+                return Resource.Error("ID turno mancante, impossibile aggiornare")
+            }
+
+            val turnoMap = turno.toFirestore() // se hai un mapper dedicato
+            // Oppure mappa manualmente: mapOf("nome" to turno.nome, ...)
+
+            firestore.collection(TurniFirestore.COLLECTION)
+                .document(turno.id)
+                .set(turnoMap)
+                .await()
+
+            Log.d("TURNI_DEBUG", "✅ Turno con ID ${turno.id} aggiornato con successo.")
+            Resource.Success(turno.id)
+
+        } catch (e: Exception) {
+            Log.e("TURNI_DEBUG", "❌ Errore durante aggiornamento turno ID ${turno.id}", e)
+            Resource.Error("Errore durante l'aggiornamento del turno: ${e.message}")
+        }
+    }
+
+
+    suspend fun deleteTurno(turnoId: String): Resource<Boolean> {
+        return try {
+            firestore.collection(COLLECTION_NAME)
+                .document(turnoId)
+                .delete()
+                .await()
+            Log.d("TURNI_DEBUG", "Turno con id $turnoId eliminato con successo")
+            Resource.Success(true)
+        } catch (e: Exception) {
+            Log.e("TURNI_DEBUG", "Errore durante eliminazione turno $turnoId", e)
+            Resource.Error("Errore durante eliminazione turno: ${e.message}")
+        }
+    }
+
+
+    suspend fun getTurniByAzienda(idAzienda: String): Resource<List<Turno>> {
+        return try {
+            val result = firestore.collection(TurniFirestore.COLLECTION)
+                .whereEqualTo("idAzienda", idAzienda)
+                .get()
+                .await()
+
+            val turni = result.mapNotNull { document ->
+                document.toObject(Turno::class.java)?.copy(id = document.id)
+            }
+
+            Log.d("TURNI_DEBUG", "🔍 Recuperati ${turni.size} turni per azienda $idAzienda")
+
+            if (turni.isEmpty()) {
+                Resource.Empty
+            } else {
+                Resource.Success(turni)
+            }
+        } catch (e: Exception) {
+            Log.e("TURNI_DEBUG", "❌ Errore durante getTurniByAzienda: ${e.message}")
+            Resource.Error("Errore durante il recupero dei turni per l'azienda")
+        }
+    }
+
 
     suspend fun caricaTurni(giornoSelezionato : LocalDate): Resource<List<Turno>> {
         Log.d("TURNI_DEBUG", "SONO nel repository")
@@ -24,7 +102,7 @@ class TurnoRepository @Inject constructor(private val db: FirebaseFirestore) {
         val endTimestamp = Timestamp(Date.from(endOfDay))
 
         return try {
-            val result = db.collection(TurniFirestore.COLLECTION)
+            val result = firestore.collection(TurniFirestore.COLLECTION)
                 .whereGreaterThanOrEqualTo(TurniFirestore.Fields.DATA, startTimeStamp)
                 .whereLessThan(TurniFirestore.Fields.DATA,endTimestamp)
                 .get()
@@ -33,9 +111,7 @@ class TurnoRepository @Inject constructor(private val db: FirebaseFirestore) {
 
 
             val turni = result.mapNotNull { document ->
-                val turno = document.toObject(Turno::class.java)
-                turno.idDocumento = document.id
-                turno
+                document.toObject(Turno::class.java)?.copy(id = document.id)
             }
 
             Log.d("TURNI_DEBUG", "Risultati Firestore: ${result.documents.size} documenti")
@@ -54,16 +130,16 @@ class TurnoRepository @Inject constructor(private val db: FirebaseFirestore) {
 
 
     suspend fun aggiungiTurno(turno : Turno) : Boolean {
-         return try {
+        return try {
             val result =
-                db.collection(TurniFirestore.COLLECTION)
+                firestore.collection(TurniFirestore.COLLECTION)
                     .add(turno)
                     .await()
 
             val idGenerato = result.id
             Log.d("TURNI_DEBUG", "Turno aggiunto con id" + idGenerato.toString())
 
-             true
+            true
         }
         catch (e : Exception)
         {
@@ -72,5 +148,5 @@ class TurnoRepository @Inject constructor(private val db: FirebaseFirestore) {
         }
     }
 
-
 }
+

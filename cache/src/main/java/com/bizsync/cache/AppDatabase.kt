@@ -11,14 +11,15 @@ import com.bizsync.cache.entity.AbsenceEntity
 import com.bizsync.cache.entity.ContrattoEntity
 import com.bizsync.cache.entity.TurnoEntity
 import com.bizsync.cache.entity.UserEntity
-import com.bizsync.cache.utils.TimestampConverter
+import com.bizsync.cache.utils.DateConverter
+import com.bizsync.cache.utils.ListStringConverter
 
 @Database(
     entities = [UserEntity::class, ContrattoEntity::class, TurnoEntity::class, AbsenceEntity::class],
     version = 2,
     exportSchema = false
 )
-@TypeConverters(TimestampConverter::class)
+@TypeConverters(DateConverter::class, ListStringConverter::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao
     abstract fun contrattoDao(): ContrattoDao

@@ -13,7 +13,7 @@ object AbsenceWindowCalculator {
     fun calculateAbsenceWindow(weekStart: LocalDate): Pair<LocalDate, LocalDate> {
         // Finestra: 2 settimane indietro + 2 settimane avanti
         val startDate = weekStart.minusWeeks(2)
-        val endDate = weekStart.plusWeeks(2).with(DayOfWeek.SUNDAY)
+        val endDate = weekStart.plusWeeks(1).with(DayOfWeek.SUNDAY)
         return Pair(startDate, endDate)
     }
 

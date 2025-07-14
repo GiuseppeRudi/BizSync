@@ -74,24 +74,25 @@ fun ShiftsScreen(
 //        }
 //    }
 
-    val exampleShifts = listOf(
-        Turno(
-            idDocumento = "1",
-            nome = "Mattina",
-            giorno = Timestamp(Date(System.currentTimeMillis()))
-        ),
-        Turno(
-            idDocumento = "2",
-            nome = "Pomeriggio",
-            giorno = Timestamp(Date(System.currentTimeMillis() + 86400000L)) // +1 giorno
-        ),
-        Turno(
-            idDocumento = "3",
-            nome = "Notte",
-            giorno = Timestamp(Date(System.currentTimeMillis() + 2 * 86400000L)) // +2 giorni
-        )
-    )
+//    val exampleShifts = listOf(
+//        Turno(
+//            idDocumento = "1",
+//            nome = "Mattina",
+//            giorno = Timestamp(Date(System.currentTimeMillis()))
+//        ),
+//        Turno(
+//            idDocumento = "2",
+//            nome = "Pomeriggio",
+//            giorno = Timestamp(Date(System.currentTimeMillis() + 86400000L)) // +1 giorno
+//        ),
+//        Turno(
+//            idDocumento = "3",
+//            nome = "Notte",
+//            giorno = Timestamp(Date(System.currentTimeMillis() + 2 * 86400000L)) // +2 giorni
+//        )
+//    )
 
+    val exampleShifts = emptyList<Turno>()
     val shifts = exampleShifts
 
 
@@ -211,7 +212,7 @@ fun ShiftCard(
     isHistorical: Boolean
 ) {
     val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-    val formattedDate = dateFormat.format(shift.giorno.toDate())
+    val formattedDate = dateFormat.format(shift.data)
 
     Card(
         modifier = Modifier.fillMaxWidth(),

@@ -102,6 +102,7 @@ fun TurnoScreen(
 
         Scaffold(
             topBar = {
+
                 TopAppBar(
                     title = { Text("Nuovo turno") },
                     navigationIcon = {
@@ -226,20 +227,20 @@ fun TurnoScreen(
 
                 Button(
                     onClick = {
-                        if (text.isNotEmpty() && giornoSelezionato != null) {
-                            val timestamp = localDateToTimestamp(giornoSelezionato)
-                            turnoVM.aggiungiturno(
-                                pianificaVM,
-                                Turno(
-                                    idDocumento = "",
-                                    nome = text,
-                                    giorno = timestamp,
-                                    // Altri campi qui quando li abiliti
-                                )
-                            )
-                            turnoVM.onTextChanged("")
-                            onBack()
-                        }
+//                        if (text.isNotEmpty() && giornoSelezionato != null) {
+//                            val timestamp = localDateToTimestamp(giornoSelezionato)
+//                            turnoVM.aggiungiturno(
+//                                pianificaVM,
+//                                Turno(
+//                                    idDocumento = "",
+//                                    nome = text,
+//                                    giorno = timestamp,
+//                                    // Altri campi qui quando li abiliti
+//                                )
+//                            )
+//                            turnoVM.onTextChanged("")
+//                            onBack()
+//                        }
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {

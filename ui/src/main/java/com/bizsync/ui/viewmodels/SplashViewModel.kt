@@ -7,9 +7,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.orchestrator.AbsenceOrchestrator
 import com.bizsync.backend.orchestrator.ContrattoOrchestrator
+import com.bizsync.backend.orchestrator.TurnoOrchestrator
 import com.bizsync.backend.orchestrator.UserOrchestrator
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.Contratto
+import com.bizsync.domain.model.Turno
 import com.bizsync.domain.model.User
 import com.bizsync.ui.components.DialogStatusType
 import com.bizsync.ui.mapper.toUi
@@ -19,13 +21,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
 class SplashViewModel @Inject constructor(
     private val userOrchestrator: UserOrchestrator,
     private val contrattoOrchestrator: ContrattoOrchestrator,
-    private val absenceOrchestrator: AbsenceOrchestrator
+    private val absenceOrchestrator: AbsenceOrchestrator,
+    private val turnoOrchestrator: TurnoOrchestrator
 ) : ViewModel() {
 
     data class SplashState(
@@ -33,6 +37,7 @@ class SplashViewModel @Inject constructor(
         val users: List<User> = emptyList(),
         val contratti: List<Contratto> = emptyList(),
         val absence : List<AbsenceUi> = emptyList(),
+        val turni : Map<LocalDate,List<Turno>> = emptyMap(),
         val errorMsg: String? = null,
         val statusType: DialogStatusType = DialogStatusType.ERROR,
         val syncInProgress: Boolean = false,
@@ -41,6 +46,77 @@ class SplashViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(SplashState())
     val uiState: StateFlow<SplashState> = _uiState
+
+
+    fun getAllTurniByIdAzienda(idAzienda: String, forceRefresh: Boolean = false) {
+        if (idAzienda.isEmpty()) {
+            setError("ID Azienda non valido")
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, syncInProgress = true) }
+
+            try {
+                when (val result = turnoOrchestrator.getTurni(idAzienda, forceRefresh)) {
+                    is Resource.Success -> {
+                        val turniPerData = result.data.groupBy { it.data }
+
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                syncInProgress = false,
+                                turni = turniPerData,
+                                errorMsg = null,
+                                lastSyncTime = System.currentTimeMillis()
+                            )
+                        }
+
+                        Log.d("TURNI_DEBUG", "✅ Caricati ${result.data.size} turni per azienda: $idAzienda")
+                    }
+
+                    is Resource.Error -> {
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                syncInProgress = false,
+                                errorMsg = result.message,
+                                statusType = DialogStatusType.ERROR
+                            )
+                        }
+
+                        Log.e("TURNI_DEBUG", "❌ Errore nel caricamento turni: ${result.message}")
+                    }
+
+                    is Resource.Empty -> {
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                syncInProgress = false,
+                                turni = emptyMap(),
+                                errorMsg = null,
+                                lastSyncTime = System.currentTimeMillis()
+                            )
+                        }
+
+                        Log.d("TURNI_DEBUG", "📭 Nessun turno trovato per azienda: $idAzienda")
+                    }
+                }
+
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        syncInProgress = false,
+                        errorMsg = "Errore imprevisto: ${e.message}",
+                        statusType = DialogStatusType.ERROR
+                    )
+                }
+
+                Log.e("TURNI_DEBUG", "🚨 Eccezione in getAllTurniByIdAzienda: ${e.message}")
+            }
+        }
+    }
 
 
     fun getAllAbsencesByIdAzienda(idAzienda: String, forceRefresh: Boolean = false) {
