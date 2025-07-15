@@ -3,7 +3,6 @@ package com.bizsync.backend.repository
 import kotlinx.coroutines.tasks.await
 import android.util.Log
 import com.bizsync.backend.dto.TurnoDto
-import com.bizsync.backend.mapper.toDto
 import com.bizsync.backend.remote.TurniFirestore
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.Turno
@@ -12,6 +11,7 @@ import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import java.time.LocalDate
 import com.bizsync.backend.mapper.toDomainList
+import com.bizsync.backend.mapper.toDto
 import java.time.ZoneId
 import java.util.Date
 import javax.inject.Inject
@@ -31,51 +31,52 @@ class TurnoRepository @Inject constructor(
     private val collection = firestore.collection(COLLECTION_NAME)
 
     suspend fun createMockTurni(): Boolean {
-        return try {
-            val now = Timestamp.now()
-            val collection = firestore.collection("turni")
-
-            val turno1 = TurnoDto(
-                id = "", // Firestore lo assegnerà automaticamente
-                nome = "Mattina",
-                idAzienda = "azienda123",
-                idDipendenti = listOf("dip1", "dip2"),
-                orarioInizio = "08:00",
-                orarioFine = "12:00",
-                dipendente = "dip1",
-                dipartimentoId = "dipartimentoA",
-                data = now,
-                note = "Turno mattutino di esempio",
-                isConfermato = true,
-                createdAt = now,
-                updatedAt = now
-            )
-
-            val turno2 = TurnoDto(
-                id = "",
-                nome = "Pomeriggio",
-                idAzienda = "azienda123",
-                idDipendenti = listOf("dip3"),
-                orarioInizio = "14:00",
-                orarioFine = "18:00",
-                dipendente = "dip3",
-                dipartimentoId = "dipartimentoB",
-                data = now,
-                note = "Turno pomeridiano di test",
-                isConfermato = false,
-                createdAt = now,
-                updatedAt = now
-            )
-
-            collection.add(turno1).await()
-            collection.add(turno2).await()
-
-            Log.d("TURNI_DEBUG", "✅ Mock turni creati correttamente")
-            true
-        } catch (e: Exception) {
-            Log.e("TURNI_DEBUG", "❌ Errore durante la creazione dei mock turni", e)
-            false
-        }
+//        return try {
+//            val now = Timestamp.now()
+//            val collection = firestore.collection("turni")
+//
+//            val turno1 = TurnoDto(
+//                id = "", // Firestore lo assegnerà automaticamente
+//                nome = "Mattina",
+//                idAzienda = "azienda123",
+//                idDipendenti = listOf("dip1", "dip2"),
+//                orarioInizio = "08:00",
+//                orarioFine = "12:00",
+//                dipendente = "dip1",
+//                dipartimentoId = "dipartimentoA",
+//                data = now,
+//                note = "Turno mattutino di esempio",
+//                isConfermato = true,
+//                createdAt = now,
+//                updatedAt = now
+//            )
+//
+//            val turno2 = TurnoDto(
+//                id = "",
+//                nome = "Pomeriggio",
+//                idAzienda = "azienda123",
+//                idDipendenti = listOf("dip3"),
+//                orarioInizio = "14:00",
+//                orarioFine = "18:00",
+//                dipendente = "dip3",
+//                dipartimentoId = "dipartimentoB",
+//                data = now,
+//                note = "Turno pomeridiano di test",
+//                isConfermato = false,
+//                createdAt = now,
+//                updatedAt = now
+//            )
+//
+//            collection.add(turno1).await()
+//            collection.add(turno2).await()
+//
+//            Log.d("TURNI_DEBUG", "✅ Mock turni creati correttamente")
+//            true
+//        } catch (e: Exception) {
+//            Log.e("TURNI_DEBUG", "❌ Errore durante la creazione dei mock turni", e)
+//            false
+//        }
+        return true
     }
 
 

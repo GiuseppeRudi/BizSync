@@ -237,8 +237,8 @@ private fun DipartimentoCard(dipartimento: AreaLavoro) {
                 dipartimento.orariSettimanali.forEach { (giorno, orari) ->
                     OrarioGiornoRow(
                         giorno = giorno,
-                        orarioInizio = orari.first,
-                        orarioFine = orari.second
+                        orarioInizio = orari.first.toString(),
+                        orarioFine = orari.second.toString()
                     )
                 }
             } else {

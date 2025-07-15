@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
+import java.time.LocalTime
 import javax.inject.Inject
 
 
@@ -158,23 +159,23 @@ class OnBoardingPianificaViewModel @Inject constructor(private val aziendaReposi
                 val primaAreaSelezionata = state.aree.find { it.id == newSelectedAree.first() }
                 primaAreaSelezionata?.orariSettimanali?.ifEmpty {
                     mapOf(
-                        DayOfWeek.MONDAY to ("08:00" to "18:00"),
-                        DayOfWeek.TUESDAY to ("08:00" to "18:00"),
-                        DayOfWeek.WEDNESDAY to ("08:00" to "18:00"),
-                        DayOfWeek.THURSDAY to ("08:00" to "18:00"),
-                        DayOfWeek.FRIDAY to ("08:00" to "18:00")
+                        DayOfWeek.MONDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
+                        DayOfWeek.TUESDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
+                        DayOfWeek.WEDNESDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
+                        DayOfWeek.THURSDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
+                        DayOfWeek.FRIDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0))
                     )
                 } ?: mapOf(
-                    DayOfWeek.MONDAY to ("08:00" to "18:00"),
-                    DayOfWeek.TUESDAY to ("08:00" to "18:00"),
-                    DayOfWeek.WEDNESDAY to ("08:00" to "18:00"),
-                    DayOfWeek.THURSDAY to ("08:00" to "18:00"),
-                    DayOfWeek.FRIDAY to ("08:00" to "18:00")
+                    DayOfWeek.MONDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
+                    DayOfWeek.TUESDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
+                    DayOfWeek.WEDNESDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
+                    DayOfWeek.THURSDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
+                    DayOfWeek.FRIDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0))
                 )
             } else {
-                // Se non ci sono aree selezionate, resetta gli orari temporanei
                 mapOf()
             }
+
 
             state.copy(
                 selectedAree = newSelectedAree,
@@ -189,21 +190,21 @@ class OnBoardingPianificaViewModel @Inject constructor(private val aziendaReposi
 
             // Carica gli orari della prima area come template, o orari di default se vuoti
             val newOrariTemp = if (state.aree.isNotEmpty()) {
-                val primaArea = state.aree.first()
-                if (primaArea.orariSettimanali.isNotEmpty()) {
-                    primaArea.orariSettimanali
-                } else {
-                    mapOf(
-                        DayOfWeek.MONDAY to ("08:00" to "18:00"),
-                        DayOfWeek.TUESDAY to ("08:00" to "18:00"),
-                        DayOfWeek.WEDNESDAY to ("08:00" to "18:00"),
-                        DayOfWeek.THURSDAY to ("08:00" to "18:00"),
-                        DayOfWeek.FRIDAY to ("08:00" to "18:00")
-                    )
-                }
+            val primaArea = state.aree.first()
+            if (primaArea.orariSettimanali.isNotEmpty()) {
+                primaArea.orariSettimanali
             } else {
-                mapOf()
+                mapOf(
+                    DayOfWeek.MONDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
+                    DayOfWeek.TUESDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
+                    DayOfWeek.WEDNESDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
+                    DayOfWeek.THURSDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
+                    DayOfWeek.FRIDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0))
+                )
             }
+        } else {
+            mapOf()
+        }
 
             state.copy(
                 selectedAree = allAreaIds,
@@ -228,7 +229,7 @@ class OnBoardingPianificaViewModel @Inject constructor(private val aziendaReposi
                 if (state.orariTemp.containsKey(giorno)) {
                     state.orariTemp
                 } else {
-                    state.orariTemp + (giorno to ("08:00" to "18:00"))
+                    state.orariTemp + (giorno to (LocalTime.of(8, 0) to LocalTime.of(18, 0)))
                 }
             } else {
                 // Rimuovi il giorno
@@ -240,10 +241,11 @@ class OnBoardingPianificaViewModel @Inject constructor(private val aziendaReposi
     }
 
     fun onOrarioInizioChanged(giorno: DayOfWeek, orarioInizio: String) {
+        val nuovoOrarioInizio = LocalTime.parse(orarioInizio) // converto la stringa in LocalTime
         _uiState.update { state ->
             val orarioCorrente = state.orariTemp[giorno]
             if (orarioCorrente != null) {
-                val newOrariTemp = state.orariTemp + (giorno to (orarioInizio to orarioCorrente.second))
+                val newOrariTemp = state.orariTemp + (giorno to (nuovoOrarioInizio to orarioCorrente.second))
                 state.copy(orariTemp = newOrariTemp)
             } else {
                 state
@@ -252,10 +254,11 @@ class OnBoardingPianificaViewModel @Inject constructor(private val aziendaReposi
     }
 
     fun onOrarioFineChanged(giorno: DayOfWeek, orarioFine: String) {
+        val nuovoOrarioFine = LocalTime.parse(orarioFine)
         _uiState.update { state ->
             val orarioCorrente = state.orariTemp[giorno]
             if (orarioCorrente != null) {
-                val newOrariTemp = state.orariTemp + (giorno to (orarioCorrente.first to orarioFine))
+                val newOrariTemp = state.orariTemp + (giorno to (orarioCorrente.first to nuovoOrarioFine))
                 state.copy(orariTemp = newOrariTemp)
             } else {
                 state
@@ -304,39 +307,5 @@ class OnBoardingPianificaViewModel @Inject constructor(private val aziendaReposi
         }
     }
 
-    fun selectAllAreeNonConfigurate() {
-        _uiState.update { state ->
-            val areeNonConfigurate = state.aree
-                .filter { !state.areeConOrariConfigurati.contains(it.id) }
-                .map { it.id }
-
-            // Carica gli orari della prima area non configurata come template
-            val newOrariTemp = if (areeNonConfigurate.isNotEmpty()) {
-                val primaAreaNonConfigurata = state.aree.find { it.id == areeNonConfigurate.first() }
-                primaAreaNonConfigurata?.orariSettimanali?.ifEmpty {
-                    mapOf(
-                        DayOfWeek.MONDAY to ("08:00" to "18:00"),
-                        DayOfWeek.TUESDAY to ("08:00" to "18:00"),
-                        DayOfWeek.WEDNESDAY to ("08:00" to "18:00"),
-                        DayOfWeek.THURSDAY to ("08:00" to "18:00"),
-                        DayOfWeek.FRIDAY to ("08:00" to "18:00")
-                    )
-                } ?: mapOf(
-                    DayOfWeek.MONDAY to ("08:00" to "18:00"),
-                    DayOfWeek.TUESDAY to ("08:00" to "18:00"),
-                    DayOfWeek.WEDNESDAY to ("08:00" to "18:00"),
-                    DayOfWeek.THURSDAY to ("08:00" to "18:00"),
-                    DayOfWeek.FRIDAY to ("08:00" to "18:00")
-                )
-            } else {
-                mapOf()
-            }
-
-            state.copy(
-                selectedAree = areeNonConfigurate,
-                orariTemp = newOrariTemp
-            )
-        }
-    }
 
 }

@@ -5,6 +5,7 @@ import com.bizsync.domain.constants.enumClass.CompanyOperation
 import com.bizsync.domain.model.AreaLavoro
 import com.bizsync.ui.components.DialogStatusType
 import java.time.DayOfWeek
+import java.time.LocalTime
 
 data class CompanyState(
     val selectedOperation : CompanyOperation? = null,
@@ -16,12 +17,12 @@ data class CompanyState(
 
     val  areeModificate : List<AreaLavoro> = emptyList(),
 
-    val orariSettimanaliModificati: Map<String, Map<DayOfWeek, Pair<String, String>>> = emptyMap(),
+    val orariSettimanaliModificati: Map<String, Map<DayOfWeek, Pair<LocalTime, LocalTime>>> = emptyMap(),
     val editingOrariAreaId: String? = null, // ID dell'area di cui stiamo modificando gli orari
 
     val showOrariDialog: Boolean = false,
 
-    val orariTemp: Map<DayOfWeek, Pair<String, String>> = emptyMap(), // Orari temporanei durante la modifica
+    val orariTemp: Map<DayOfWeek, Pair<LocalTime, LocalTime>> = emptyMap(), // Orari temporanei durante la modifica
 
     val showAddDialog : Boolean = false,
     val editingArea : AreaLavoro? = null,

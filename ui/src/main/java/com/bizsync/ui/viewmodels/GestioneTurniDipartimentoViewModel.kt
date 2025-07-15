@@ -7,7 +7,6 @@ import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.repository.TurnoRepository
 import com.bizsync.backend.repository.WeeklyShiftRepository
 import com.bizsync.domain.constants.sealedClass.Resource
-import com.bizsync.domain.model.AreaLavoro
 import com.bizsync.domain.model.Turno
 import com.bizsync.ui.model.GestioneTurniDipartimentoState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,7 +15,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
@@ -48,7 +46,7 @@ class GestioneTurniDipartimentoViewModel @Inject constructor(
     }
 
     fun editTurno(turno: Turno) {
-        Log.d(TAG, "✏️ Modifica turno: ${turno.nome}")
+        Log.d(TAG, "✏️ Modifica turno: ${turno.titolo}")
         _uiState.update {
             it.copy(
                 showTurnoDialog = true,
@@ -60,7 +58,7 @@ class GestioneTurniDipartimentoViewModel @Inject constructor(
 
     fun deleteTurno(turno: Turno) {
         viewModelScope.launch {
-            Log.d(TAG, "🗑️ Eliminazione turno: ${turno.nome}")
+            Log.d(TAG, "🗑️ Eliminazione turno: ${turno.titolo}")
 
             _uiState.update { it.copy(isLoading = true) }
 
@@ -232,8 +230,8 @@ class GestioneTurniDipartimentoViewModel @Inject constructor(
     }
     private fun calcolaDurataTurno(turno: Turno): Int {
         return try {
-            val inizio = LocalTime.parse(turno.orarioInizio, DateTimeFormatter.ofPattern("HH:mm"))
-            val fine = LocalTime.parse(turno.orarioFine, DateTimeFormatter.ofPattern("HH:mm"))
+            val inizio = turno.orarioInizio
+            val fine = turno.orarioFine
 
             val minuti = fine.toSecondOfDay() - inizio.toSecondOfDay()
             (minuti / 3600).toInt()

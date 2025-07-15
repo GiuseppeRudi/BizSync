@@ -15,6 +15,7 @@ import com.bizsync.domain.model.AreaLavoro
 import com.bizsync.domain.model.Turno
 import com.bizsync.ui.viewmodels.DipartimentoStatus
 import java.time.LocalDate
+import java.time.LocalTime
 
 
 data class ConfirmDialogData(
@@ -131,10 +132,8 @@ fun ConfirmCompletionDialog(
 }
 
 // Funzioni utility private
-private fun calcolaOreTotali(inizio: String, fine: String): Int {
-    val inizioMinuti = inizio.split(":").let { it[0].toInt() * 60 + it[1].toInt() }
-    val fineMinuti = fine.split(":").let { it[0].toInt() * 60 + it[1].toInt() }
-    return (fineMinuti - inizioMinuti) / 60
+private fun calcolaOreTotali(inizio: LocalTime, fine: LocalTime): Int {
+    return inizio.until(fine, java.time.temporal.ChronoUnit.HOURS).toInt()
 }
 
 //private fun calcolaOreAssegnate(turni: List<Turno>): Int {

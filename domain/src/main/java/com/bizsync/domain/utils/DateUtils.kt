@@ -3,8 +3,10 @@ package com.bizsync.domain.utils
 import com.google.firebase.Timestamp
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 import java.util.Date
 
 
@@ -42,6 +44,17 @@ object DateUtils {
             LocalDate.parse(this, UI_DATE_FORMATTER)
         } catch (e: Exception) {
             null
+        }
+    }
+
+
+
+
+    fun stringToLocalTime(timeString: String): LocalTime? {
+        return try {
+            LocalTime.parse(timeString, DateTimeFormatter.ofPattern("HH:mm"))
+        } catch (e: DateTimeParseException) {
+            null // o gestisci l'errore come preferisci
         }
     }
 

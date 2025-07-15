@@ -2,7 +2,6 @@ package com.bizsync.backend.hash.extensions
 
 
 import com.bizsync.backend.hash.HashManager
-import com.bizsync.backend.mapper.toDomain
 import com.bizsync.cache.entity.TurnoEntity
 import com.bizsync.domain.model.Turno
 import com.bizsync.cache.mapper.toDomain
@@ -11,12 +10,11 @@ import com.bizsync.cache.mapper.toDomain
 fun Turno.generateTurnoHash(): String {
     val turnoString = listOf(
         id,
-        nome,
+        titolo,
         idAzienda,
         idDipendenti.joinToString(","),
         orarioInizio,
         orarioFine,
-        dipendente,
         dipartimentoId,
         data.toString(),
         note,

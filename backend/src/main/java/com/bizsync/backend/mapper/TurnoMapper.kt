@@ -1,25 +1,35 @@
 package com.bizsync.backend.mapper
 
 import com.bizsync.backend.dto.TurnoDto
+import com.bizsync.domain.model.Nota
 import com.bizsync.domain.model.Turno
 import com.bizsync.domain.utils.DateUtils.toFirebaseTimestamp
 import com.bizsync.domain.utils.DateUtils.toLocalDate
-import com.google.firebase.Timestamp
+
+import com.bizsync.domain.utils.DateUtils
+import com.bizsync.domain.utils.DateUtils.toLocalDateTime
+import java.time.LocalDateTime
 
 object TurnoMapper {
 
     fun toDomain(dto: TurnoDto): Turno {
+        // Ricava LocalDate da dto.data
+        val dataLocalDate = dto.data.toLocalDate()
+
+        // Ricava LocalTime da Timestamp orarioInizio e orarioFine
+        val orarioInizioLocalTime = dto.orarioInizio.toLocalDateTime().toLocalTime()
+        val orarioFineLocalTime = dto.orarioFine.toLocalDateTime().toLocalTime()
+
         return Turno(
             id = dto.id,
-            nome = dto.nome,
+            titolo = dto.nome,
             idAzienda = dto.idAzienda,
             idDipendenti = dto.idDipendenti,
-            orarioInizio = dto.orarioInizio,
-            orarioFine = dto.orarioFine,
-            dipendente = dto.dipendente,
+            orarioInizio = orarioInizioLocalTime,
+            orarioFine = orarioFineLocalTime,
             dipartimentoId = dto.dipartimentoId,
-            data = dto.data.toLocalDate(),
-            note = dto.note,
+            data = dataLocalDate,
+            note = parseNoteFromString(dto.note), // se serve parsare note da String
             isConfermato = dto.isConfermato,
             createdAt = dto.createdAt.toLocalDate(),
             updatedAt = dto.updatedAt.toLocalDate()
@@ -27,35 +37,43 @@ object TurnoMapper {
     }
 
     fun toDto(domain: Turno): TurnoDto {
+        val dataTimestamp = domain.data.toFirebaseTimestamp()
+
+        // Combina data + orarioInizio per creare LocalDateTime e poi Timestamp
+        val orarioInizioTimestamp = LocalDateTime.of(domain.data, domain.orarioInizio).toFirebaseTimestamp()
+        val orarioFineTimestamp = LocalDateTime.of(domain.data, domain.orarioFine).toFirebaseTimestamp()
+
         return TurnoDto(
             id = domain.id,
-            nome = domain.nome,
+            nome = domain.titolo,
             idAzienda = domain.idAzienda,
             idDipendenti = domain.idDipendenti,
-            orarioInizio = domain.orarioInizio,
-            orarioFine = domain.orarioFine,
-            dipendente = domain.dipendente,
+            orarioInizio = orarioInizioTimestamp,
+            orarioFine = orarioFineTimestamp,
             dipartimentoId = domain.dipartimentoId,
-            data = domain.data.toFirebaseTimestamp(),
-            note = domain.note,
+            data = dataTimestamp,
+            note = domain.note.joinToString(separator = ";") { it.toString() }, // esempio conversione note a String
             isConfermato = domain.isConfermato,
             createdAt = domain.createdAt.toFirebaseTimestamp(),
             updatedAt = domain.updatedAt.toFirebaseTimestamp()
         )
     }
 
-    fun toDomainList(dtoList: List<TurnoDto>): List<Turno> {
-        return dtoList.map { toDomain(it) }
+    // Aggiungi se serve una funzione per parsare le note da stringa
+    private fun parseNoteFromString(noteString: String): List<Nota> {
+        // TODO: Implementa la logica se le note vengono salvage come stringa; altrimenti cambia tipo
+        return emptyList()
     }
 
-    fun toDtoList(domainList: List<Turno>): List<TurnoDto> {
-        return domainList.map { toDto(it) }
-    }
+    fun toDomainList(dtoList: List<TurnoDto>): List<Turno> = dtoList.map { toDomain(it) }
+
+    fun toDtoList(domainList: List<Turno>): List<TurnoDto> = domainList.map { toDto(it) }
 }
 
-// Estensioni di comodità
+// Extension functions per singoli oggetti
 fun TurnoDto.toDomain(): Turno = TurnoMapper.toDomain(this)
 fun Turno.toDto(): TurnoDto = TurnoMapper.toDto(this)
 
-fun List<TurnoDto>.toDomainList(): List<Turno> = TurnoMapper.toDomainList(this)
-fun List<Turno>.toDtoList(): List<TurnoDto> = TurnoMapper.toDtoList(this)
+// Extension functions per liste
+fun List<TurnoDto>.toDomainList(): List<Turno> = this.map { it.toDomain() }
+fun List<Turno>.toDtoList(): List<TurnoDto> = this.map { it.toDto() }

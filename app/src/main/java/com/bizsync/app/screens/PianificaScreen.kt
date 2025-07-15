@@ -122,6 +122,7 @@ fun PianificaCore(
         }
     }
 
+
     LaunchedEffect(selectionData)
     {
         if(selectionData!=null)
@@ -151,6 +152,15 @@ fun PianificaCore(
     LaunchedEffect(selectionData) {
         pianificaVM.backToMain()
     }
+
+    // Carica i dipendenti
+    LaunchedEffect(userState.azienda.idAzienda) {
+        managerVM.inizializzaDatiDipendenti(userState.azienda.idAzienda)
+
+
+    }
+
+
 
     val currentScreen by pianificaVM.currentScreen.collectAsState()
 
@@ -193,10 +203,22 @@ fun PianificaCore(
                             dipartimento = dip,
                             giornoSelezionato = selectionData,
                             weeklyIsIdentical = weeklyisIdentical,
+                            onCreateShift = { pianificaVM.openCreateShift() },
                             managerVM = managerVM,
                             onBack = { pianificaVM.backToMain() })
                     }
                 }
+
+                PianificaScreenManager.CREATE_SHIFT -> {
+                    pianificaState.dipartimento?.let { dip ->
+                        TurnoScreen(
+                            giornoSelezionato= giornoSelezionato,
+                            onBack = { managerVM.setShowDialogCreateShift(false)},
+                            managerVM =  managerVM,
+                        )
+                    }
+                }
+
 
             }
         } ?: run { SelectionDataEmptyCard() }

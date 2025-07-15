@@ -72,7 +72,7 @@ fun DipartimentoOrarioCard(
                     onClick = { },
                     label = {
                         Text(
-                            text = orari.first,
+                            text = orari.first.toString(),
                             style = MaterialTheme.typography.labelSmall
                         )
                     },
@@ -93,7 +93,7 @@ fun DipartimentoOrarioCard(
                     onClick = { },
                     label = {
                         Text(
-                            text = orari.second,
+                            text = orari.second.toString(),
                             style = MaterialTheme.typography.labelSmall
                         )
                     },

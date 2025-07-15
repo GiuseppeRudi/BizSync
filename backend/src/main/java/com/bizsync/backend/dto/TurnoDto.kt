@@ -12,8 +12,8 @@ data class TurnoDto(
     val nome: String = "",
     val idAzienda: String = "",
     val idDipendenti: List<String> = emptyList(),
-    val orarioInizio: String = "",
-    val orarioFine: String = "",
+    val orarioInizio: Timestamp = Timestamp.now(),
+    val orarioFine: Timestamp = Timestamp.now(),
     val dipendente: String = "",
     val dipartimentoId: String = "",
     val data: Timestamp = Timestamp.now(),
@@ -22,5 +22,3 @@ data class TurnoDto(
     val createdAt: Timestamp = Timestamp.now(),
     val updatedAt: Timestamp = Timestamp.now()
 )
-
-

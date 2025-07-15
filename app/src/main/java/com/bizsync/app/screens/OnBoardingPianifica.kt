@@ -582,7 +582,7 @@ fun ModificaOrariStep(viewModel: OnBoardingPianificaViewModel) {
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
                                 OutlinedTextField(
-                                    value = orarioGiorno.first,
+                                    value = orarioGiorno.first.toString(),
                                     onValueChange = {
                                         viewModel.onOrarioInizioChanged(giorno, it)
                                     },
@@ -592,7 +592,7 @@ fun ModificaOrariStep(viewModel: OnBoardingPianificaViewModel) {
                                 )
 
                                 OutlinedTextField(
-                                    value = orarioGiorno.second,
+                                    value = orarioGiorno.second.toString(),
                                     onValueChange = {
                                         viewModel.onOrarioFineChanged(giorno, it)
                                     },

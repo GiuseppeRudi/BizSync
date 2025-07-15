@@ -36,6 +36,7 @@ import com.bizsync.domain.model.AreaLavoro
 import com.bizsync.domain.model.Azienda
 import com.bizsync.domain.model.TurnoFrequente
 import java.time.DayOfWeek
+import java.time.LocalTime
 
 
 @Composable
@@ -77,7 +78,7 @@ fun CompanyCore(companyVm: CompanyViewModel, azienda: AziendaUi) {
 
 
     val areeLavoro: List<AreaLavoro> =  azienda.areeLavoro// la tua lista
-    val orariSettimanali: Map<String, Map<DayOfWeek, Pair<String, String>>> =
+    val orariSettimanali: Map<String, Map<DayOfWeek, Pair<LocalTime, LocalTime>>> =
         buildOrariSettimanaliMap(areeLavoro)
 
     // Schermata di gestione specifica
@@ -118,7 +119,7 @@ fun CompanyCore(companyVm: CompanyViewModel, azienda: AziendaUi) {
 }
 
 
-fun buildOrariSettimanaliMap(aree: List<AreaLavoro>): Map<String, Map<DayOfWeek, Pair<String, String>>> {
+fun buildOrariSettimanaliMap(aree: List<AreaLavoro>): Map<String, Map<DayOfWeek, Pair<LocalTime, LocalTime>>> {
     return aree.associate { area ->
         area.id to area.orariSettimanali
     }

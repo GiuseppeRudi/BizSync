@@ -3,17 +3,25 @@ import com.bizsync.backend.dto.AreaLavoroDto
 import com.bizsync.domain.model.AreaLavoro
 import java.time.DayOfWeek
 
-// Singolo: Domain → DTO
+import java.time.LocalTime
+
+// Domain → DTO
 fun AreaLavoro.toDto(): AreaLavoroDto {
     return AreaLavoroDto(
         id = this.id,
         nomeArea = this.nomeArea,
         orariSettimanali = this.orariSettimanali.mapKeys { it.key.name }
-            .mapValues { mapOf("first" to it.value.first, "second" to it.value.second) } // CORREGGI: "first"/"second" non "start"/"end"
+            .mapValues { entry ->
+                val (start, end) = entry.value
+                mapOf(
+                    "start" to start.toString(),  // LocalTime to String "HH:mm:ss" o "HH:mm"
+                    "end" to end.toString()
+                )
+            }
     )
 }
 
-// Singolo: DTO → Domain
+// DTO → Domain
 fun AreaLavoroDto.toDomain(): AreaLavoro {
     return AreaLavoro(
         id = this.id,
@@ -22,17 +30,17 @@ fun AreaLavoroDto.toDomain(): AreaLavoro {
             try {
                 DayOfWeek.valueOf(it.key)
             } catch (e: Exception) {
-                DayOfWeek.MONDAY // Valore di fallback
+                DayOfWeek.MONDAY // fallback
             }
-        }.mapValues {
-            val orario = it.value
-            Pair(
-                orario["first"] ?: "08:00",
-                orario["second"] ?: "18:00"
-            )
+        }.mapValues { entry ->
+            val orariMap = entry.value
+            val startStr = orariMap["start"] ?: "08:00"
+            val endStr = orariMap["end"] ?: "18:00"
+            Pair(LocalTime.parse(startStr), LocalTime.parse(endStr))
         }
     )
 }
+
 
 // Lista: Domain → DTO
 fun List<AreaLavoro>.toDtoList(): List<AreaLavoroDto> {

@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
+import java.time.LocalTime
 import javax.inject.Inject
 
 @HiltViewModel
@@ -25,7 +26,7 @@ class CompanyViewModel @Inject constructor( private val aziendaRepository: Azien
     private val _uiState = MutableStateFlow(CompanyState())
     val uiState: StateFlow<CompanyState> = _uiState.asStateFlow()
 
-    fun setOrariSettimanaliModificati(orari: Map<String, Map<DayOfWeek, Pair<String, String>>>) {
+    fun setOrariSettimanaliModificati(orari: Map<String, Map<DayOfWeek, Pair<LocalTime, LocalTime>>>) {
         _uiState.update { it.copy(orariSettimanaliModificati = orari) }
     }
 
@@ -37,7 +38,7 @@ class CompanyViewModel @Inject constructor( private val aziendaRepository: Azien
         _uiState.update { it.copy(showOrariDialog = show) }
     }
 
-    fun setOrariTemp(orari: Map<DayOfWeek, Pair<String, String>>) {
+    fun setOrariTemp(orari: Map<DayOfWeek, Pair<LocalTime, LocalTime>>) {
         _uiState.update { it.copy(orariTemp = orari) }
     }
 
@@ -56,7 +57,7 @@ class CompanyViewModel @Inject constructor( private val aziendaRepository: Azien
         _uiState.update { current ->
             val nuoviOrari = current.orariTemp.toMutableMap()
             if (isChecked) {
-                nuoviOrari[giorno] = Pair("08:00", "17:00") // Valori default
+                nuoviOrari[giorno] = LocalTime.of(8, 0) to LocalTime.of(17, 0)
             } else {
                 nuoviOrari.remove(giorno)
             }
@@ -64,14 +65,17 @@ class CompanyViewModel @Inject constructor( private val aziendaRepository: Azien
         }
     }
 
-    fun onOrarioInizioChanged(giorno: DayOfWeek, orario: String) {
+    fun onOrarioInizioChanged(giorno: DayOfWeek, orario: LocalTime) {
         _uiState.update { current ->
             val nuoviOrari = current.orariTemp.toMutableMap()
-            val orarioCorrente = nuoviOrari[giorno] ?: Pair("", "")
+            // Fallback a coppia di LocalTime (esempio 08:00-18:00)
+            val orarioCorrente = nuoviOrari[giorno] ?: (LocalTime.of(8, 0) to LocalTime.of(18, 0))
+            // Aggiorna solo il "first" (orario inizio)
             nuoviOrari[giorno] = orarioCorrente.copy(first = orario)
             current.copy(orariTemp = nuoviOrari)
         }
     }
+
 
 
     fun setGiornoPublicazioneTemp(giorno: DayOfWeek) {
@@ -172,16 +176,16 @@ class CompanyViewModel @Inject constructor( private val aziendaRepository: Azien
     }
 
 
-    fun onOrarioFineChanged(giorno: DayOfWeek, orario: String) {
+    fun onOrarioFineChanged(giorno: DayOfWeek, orario: LocalTime) {
         _uiState.update { current ->
             val nuoviOrari = current.orariTemp.toMutableMap()
-            val orarioCorrente = nuoviOrari[giorno] ?: Pair("", "")
+            val orarioCorrente = nuoviOrari[giorno] ?: (LocalTime.of(8, 0) to LocalTime.of(18, 0))
             nuoviOrari[giorno] = orarioCorrente.copy(second = orario)
             current.copy(orariTemp = nuoviOrari)
         }
     }
 
-    fun onChangedOrariTemp(orari: Map<DayOfWeek, Pair<String, String>>?) {
+    fun onChangedOrariTemp(orari: Map<DayOfWeek, Pair<LocalTime, LocalTime>>?) {
         _uiState.update { current ->
             current.copy(orariTemp = orari ?: emptyMap())
         }

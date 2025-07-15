@@ -1,35 +1,39 @@
 package com.bizsync.domain.model
 
 
-import kotlinx.serialization.Serializable
 import java.time.LocalDate
-import java.util.UUID
+import java.time.LocalTime
 
 // @Serializable
 data class Turno(
     val id: String = "",
-    val nome: String = "",
+    val titolo: String = "",
     val idAzienda : String = "",
-    val idDipendenti : List<String> = emptyList(),
-    val orarioInizio: String = "", // Formato "HH:mm"
-    val orarioFine: String = "",   // Formato "HH:mm"
-    val dipendente: String = "",   // Nome o ID dipendente assegnato
-    val dipartimentoId: String = "",
+
     val data: LocalDate = LocalDate.now(),
-    val note: String = "",
+    val orarioInizio: LocalTime = LocalTime.now(),
+    val orarioFine: LocalTime = LocalTime.now(),
+
+    val idDipendenti : List<String> = emptyList(),
+    val dipartimentoId: String = "",
+
+    val note: List<Nota> = emptyList(),
+    val pause : List<Pausa> = emptyList(),
+
     val isConfermato: Boolean = false,
+
     val createdAt: LocalDate = LocalDate.now(),
     val updatedAt: LocalDate = LocalDate.now()
 ) {
-    constructor() : this("", "", "", emptyList(), "", "", "", "", LocalDate.now())
+
 
     /**
      * Calcola la durata del turno in ore
      */
     fun calcolaDurata(): Int {
         return try {
-            val inizio = java.time.LocalTime.parse(orarioInizio)
-            val fine = java.time.LocalTime.parse(orarioFine)
+            val inizio = orarioInizio
+            val fine = orarioFine
             val durataMinuti = fine.toSecondOfDay() - inizio.toSecondOfDay()
             (durataMinuti / 3600).toInt()
         } catch (e: Exception) {
@@ -46,10 +50,10 @@ data class Turno(
         }
 
         return try {
-            val inizio1 = java.time.LocalTime.parse(this.orarioInizio)
-            val fine1 = java.time.LocalTime.parse(this.orarioFine)
-            val inizio2 = java.time.LocalTime.parse(altro.orarioInizio)
-            val fine2 = java.time.LocalTime.parse(altro.orarioFine)
+            val inizio1 = orarioInizio
+            val fine1 = orarioFine
+            val inizio2 = altro.orarioInizio
+            val fine2 = altro.orarioFine
 
             !(fine1 <= inizio2 || fine2 <= inizio1)
         } catch (e: Exception) {

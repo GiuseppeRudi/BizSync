@@ -75,12 +75,10 @@ fun PianificaGiornata(
 
     val turniGiorno = managerState.turniGiornalieri
 
-    // Filtra dipartimenti aperti per questo giorno
     val dipartimentiDelGiorno = dipartimenti
         .filter { it.orariSettimanali.containsKey(dayOfWeek) }
-        .sortedBy {
-            it.orariSettimanali[dayOfWeek]?.first?.replace(":", "")?.toIntOrNull() ?: 0
-        }
+        .sortedBy { it.orariSettimanali[dayOfWeek]?.first ?: LocalTime.MIN }
+
 
     LaunchedEffect(giornoSelezionato) {
         managerVM.setLoading(true)
@@ -443,10 +441,8 @@ data class StatisticheGiornata(
 private fun calcolaStatoDipartimento(
     dipartimento: AreaLavoro,
     turniDipartimento: List<Turno>,
-    orari: Pair<String, String>
+    orari: Pair<LocalTime, LocalTime>
 ): RisultatoAnalisiDipartimento {
-
-
 
     // Calcola ore totali richieste
     val oreTotali = calcolaOreTotali(orari.first, orari.second).toDouble()
@@ -492,7 +488,7 @@ private fun calcolaStatoDipartimento(
  * Rileva i buchi nella copertura oraria
  */
 private fun rilevaBuchiOrari(
-    orari: Pair<String, String>,
+    orari: Pair<LocalTime, LocalTime>,
     turni: List<Turno>
 ): List<BucoOrario> {
     if (turni.isEmpty()) {
@@ -500,8 +496,8 @@ private fun rilevaBuchiOrari(
         val durataMinuti = calcolaMinutiTotali(orari.first, orari.second)
         return listOf(
             BucoOrario(
-                orarioInizio = orari.first,
-                orarioFine = orari.second,
+                orarioInizio = orari.first.toString(),
+                orarioFine = orari.second.toString(),
                 durataMinuti = durataMinuti
             )
         )
@@ -510,22 +506,22 @@ private fun rilevaBuchiOrari(
     val buchi = mutableListOf<BucoOrario>()
 
     try {
-        val inizioGiornata = LocalTime.parse(orari.first)
-        val fineGiornata = LocalTime.parse(orari.second)
+        val inizioGiornata = orari.first
+        val fineGiornata = orari.second
 
         // Ordina i turni per orario di inizio
         val turniOrdinati = turni.sortedBy { it.orarioInizio }
 
         // Controlla buco prima del primo turno
         val primoTurno = turniOrdinati.first()
-        val inizioPrimoTurno = LocalTime.parse(primoTurno.orarioInizio)
+        val inizioPrimoTurno = primoTurno.orarioInizio
 
         if (inizioGiornata.isBefore(inizioPrimoTurno)) {
             val durataMinuti = Duration.between(inizioGiornata, inizioPrimoTurno).toMinutes().toInt()
             buchi.add(
                 BucoOrario(
-                    orarioInizio = orari.first,
-                    orarioFine = primoTurno.orarioInizio,
+                    orarioInizio = inizioGiornata.toString(),
+                    orarioFine = inizioPrimoTurno.toString(),
                     durataMinuti = durataMinuti
                 )
             )
@@ -536,15 +532,15 @@ private fun rilevaBuchiOrari(
             val turnoCorrente = turniOrdinati[i]
             val turnoSuccessivo = turniOrdinati[i + 1]
 
-            val fineCorrente = LocalTime.parse(turnoCorrente.orarioFine)
-            val inizioSuccessivo = LocalTime.parse(turnoSuccessivo.orarioInizio)
+            val fineCorrente = turnoCorrente.orarioFine
+            val inizioSuccessivo = turnoSuccessivo.orarioInizio
 
             if (fineCorrente.isBefore(inizioSuccessivo)) {
                 val durataMinuti = Duration.between(fineCorrente, inizioSuccessivo).toMinutes().toInt()
                 buchi.add(
                     BucoOrario(
-                        orarioInizio = turnoCorrente.orarioFine,
-                        orarioFine = turnoSuccessivo.orarioInizio,
+                        orarioInizio = fineCorrente.toString(),
+                        orarioFine = inizioSuccessivo.toString(),
                         durataMinuti = durataMinuti
                     )
                 )
@@ -553,21 +549,21 @@ private fun rilevaBuchiOrari(
 
         // Controlla buco dopo l'ultimo turno
         val ultimoTurno = turniOrdinati.last()
-        val fineUltimoTurno = LocalTime.parse(ultimoTurno.orarioFine)
+        val fineUltimoTurno = ultimoTurno.orarioFine
 
         if (fineUltimoTurno.isBefore(fineGiornata)) {
             val durataMinuti = Duration.between(fineUltimoTurno, fineGiornata).toMinutes().toInt()
             buchi.add(
                 BucoOrario(
-                    orarioInizio = ultimoTurno.orarioFine,
-                    orarioFine = orari.second,
+                    orarioInizio = fineUltimoTurno.toString(),
+                    orarioFine = fineGiornata.toString(),
                     durataMinuti = durataMinuti
                 )
             )
         }
 
     } catch (e: Exception) {
-        // In caso di errore nel parsing, non restituire buchi
+        // In caso di errore, non restituire buchi
         return emptyList()
     }
 
@@ -587,10 +583,10 @@ private fun rilevaSovrapposizioni(turni: List<Turno>): List<SovrapposizioneOrari
 
             if (turno1.siSovrappongeCon(turno2)) {
                 try {
-                    val inizio1 = LocalTime.parse(turno1.orarioInizio)
-                    val fine1 = LocalTime.parse(turno1.orarioFine)
-                    val inizio2 = LocalTime.parse(turno2.orarioInizio)
-                    val fine2 = LocalTime.parse(turno2.orarioFine)
+                    val inizio1 = turno1.orarioInizio
+                    val fine1 = turno1.orarioFine
+                    val inizio2 = turno2.orarioInizio
+                    val fine2 = turno2.orarioFine
 
                     // Calcola l'intervallo di sovrapposizione
                     val inizioSovrapposizione = if (inizio1.isAfter(inizio2)) inizio1 else inizio2
@@ -656,15 +652,10 @@ private fun calcolaStatisticheGiornata(
 
 // ========== FUNZIONI UTILITY ==========
 
-private fun calcolaOreTotali(inizio: String, fine: String): Int {
-    val inizioMinuti = inizio.split(":").let { it[0].toInt() * 60 + it[1].toInt() }
-    val fineMinuti = fine.split(":").let { it[0].toInt() * 60 + it[1].toInt() }
-    return (fineMinuti - inizioMinuti) / 60
+private fun calcolaOreTotali(inizio: LocalTime, fine: LocalTime): Int {
+    return Duration.between(inizio, fine).toHours().toInt()
 }
 
-private fun calcolaMinutiTotali(inizio: String, fine: String): Int {
-    val inizioMinuti = inizio.split(":").let { it[0].toInt() * 60 + it[1].toInt() }
-    val fineMinuti = fine.split(":").let { it[0].toInt() * 60 + it[1].toInt() }
-    return fineMinuti - inizioMinuti
+private fun calcolaMinutiTotali(inizio: LocalTime, fine: LocalTime): Int {
+    return Duration.between(inizio, fine).toMinutes().toInt()
 }
-

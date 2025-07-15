@@ -4,47 +4,26 @@ import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.ui.viewmodels.GestioneTurniDipartimentoViewModel
 
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.EventNote
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.filled.EventNote
-import androidx.compose.material.icons.filled.Lightbulb
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bizsync.domain.model.AreaLavoro
 import com.bizsync.domain.model.Turno
-import com.bizsync.ui.components.AnalisiCoperturaCard
-import com.bizsync.ui.components.AzioniCompletamentoCard
 import com.bizsync.ui.components.DipartimentoHeader
 import com.bizsync.ui.components.EmptyTurniCard
-import com.bizsync.ui.components.ErrorScreen
 import com.bizsync.ui.components.SectionHeader
-import com.bizsync.ui.components.SuggerimentiCard
 import com.bizsync.ui.components.TimelineOrariaDettagliata
 import com.bizsync.ui.viewmodels.PianificaManagerViewModel
 import java.time.LocalDate
@@ -55,6 +34,7 @@ import java.time.LocalDate
 fun GestioneTurniDipartimentoScreen(
     dipartimento: AreaLavoro,
     giornoSelezionato: LocalDate,
+    onCreateShift: () -> Unit,
     onBack: () -> Unit,
     weeklyIsIdentical : Boolean,
     managerVM : PianificaManagerViewModel ,
@@ -67,6 +47,8 @@ fun GestioneTurniDipartimentoScreen(
 
     val managerState by managerVM.uiState.collectAsState()
     val turniGioDip = managerState.turniGiornalieriDip
+
+    val showDialogCreateShift = managerState.showDialogCreateShift
 
 
 //    LaunchedEffect(Unit) {
@@ -144,7 +126,7 @@ fun GestioneTurniDipartimentoScreen(
         {
             // ✅ FAB posizionato correttamente sopra la LazyColumn
             FloatingActionButton(
-                onClick = { viewModel.showAddTurnoDialog() },
+                onClick =  onCreateShift ,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(16.dp)
@@ -155,16 +137,7 @@ fun GestioneTurniDipartimentoScreen(
 
     }
 
-//    // ✅ Dialog fuori dal layout principale
-//    if (uiState.showTurnoDialog) {
-//        AddEditTurnoDialog(
-//            turno = uiState.turnoInModifica,
-//            dipartimento = dipartimento,
-//            giornoSelezionato = giornoSelezionato,
-//            onSave = { viewModel.saveTurno(it) },
-//            onDismiss = { viewModel.hideTurnoDialog() }
-//        )
-//    }
+
 }
 
 @Composable
@@ -188,7 +161,7 @@ fun TurnoAssegnatoCard(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = turno.nome,
+                    text = turno.titolo,
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Medium
                 )
@@ -197,13 +170,7 @@ fun TurnoAssegnatoCard(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                if (turno.dipendente.isNotEmpty()) {
-                    Text(
-                        text = "Assegnato a: ${turno.dipendente}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
+
             }
 
             if(isIdentical)

@@ -1,6 +1,7 @@
 package com.bizsync.backend.sync
 
 
+import android.util.Log
 import com.bizsync.backend.repository.UserRepository
 import com.bizsync.cache.dao.UserDao
 import com.bizsync.domain.constants.sealedClass.Resource
@@ -20,13 +21,16 @@ class SyncUserManager @Inject constructor(
     private val hashStorage: DipendentiHashStorage
 ) {
 
+
     suspend fun syncIfNeeded(idAzienda: String): Resource<List<UserEntity>> {
+        val TAG = "DIPENDENTI_DEBUG"
+
         return try {
             // 1. Controlla hash salvato
             val savedHash = hashStorage.getDipendentiHash(idAzienda)
 
             // 2. UNA SOLA chiamata Firebase
-            println("🌐 Chiamata Firebase per azienda $idAzienda")
+            Log.d(TAG, "🌐 Chiamata Firebase per azienda $idAzienda")
             val firebaseResult = userRepository.getDipendentiByAzienda(idAzienda)
 
             when (firebaseResult) {
@@ -37,14 +41,14 @@ class SyncUserManager @Inject constructor(
                     // 3. Confronta hash
                     if (savedHash == null || savedHash != currentHash) {
                         // SYNC NECESSARIO
-                        println("🔄 Sync necessario per azienda $idAzienda")
-                        println("   Hash salvato: $savedHash")
-                        println("   Hash corrente: $currentHash")
+                        Log.d(TAG, "🔄 Sync necessario per azienda $idAzienda")
+                        Log.d(TAG, "   Hash salvato: $savedHash")
+                        Log.d(TAG, "   Hash corrente: $currentHash")
 
                         // Esegui sync con dati già ottenuti
                         performSyncWithData(idAzienda, firebaseData, currentHash)
                     } else {
-                        println("✅ Cache aggiornata per azienda $idAzienda")
+                        Log.d(TAG, "✅ Cache aggiornata per azienda $idAzienda")
                     }
 
                     // 4. Restituisci cache aggiornata
@@ -53,7 +57,7 @@ class SyncUserManager @Inject constructor(
                 }
 
                 is Resource.Error -> {
-                    println("❌ Errore Firebase, uso cache: ${firebaseResult.message}")
+                    Log.e(TAG, "❌ Errore Firebase, uso cache: ${firebaseResult.message}")
                     // Usa cache esistente in caso di errore di rete
                     val cachedEntities = userDao.getDipendenti(idAzienda)
                     Resource.Success(cachedEntities)
@@ -61,6 +65,7 @@ class SyncUserManager @Inject constructor(
 
                 is Resource.Empty -> {
                     // Firebase vuoto → pulisci cache
+                    Log.d(TAG, "📭 Firebase vuoto, svuoto cache per azienda $idAzienda")
                     userDao.deleteByAzienda(idAzienda)
                     hashStorage.saveDipendentiHash(idAzienda, "")
                     Resource.Success(emptyList())
@@ -68,12 +73,13 @@ class SyncUserManager @Inject constructor(
             }
 
         } catch (e: Exception) {
-            println("🚨 Errore in syncIfNeeded: ${e.message}")
+            Log.e(TAG, "🚨 Errore in syncIfNeeded: ${e.message}")
             // Fallback alla cache locale
-            try {
+            return try {
                 val cachedEntities = userDao.getDipendenti(idAzienda)
                 Resource.Success(cachedEntities)
             } catch (cacheError: Exception) {
+                Log.e(TAG, "🛑 Errore nel fallback cache: ${cacheError.message}")
                 Resource.Error("Errore sync e cache: ${e.message}")
             }
         }

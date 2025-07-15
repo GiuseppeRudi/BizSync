@@ -6,6 +6,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.google.firebase.Timestamp
 import java.time.LocalDate
+import java.time.LocalTime
 
 @Entity(tableName = "turni")
 data class TurnoEntity(
@@ -14,9 +15,8 @@ data class TurnoEntity(
     val idDipendenti : List<String> ,
     val data : LocalDate,
     val nome: String,
-    val orarioInizio: String,
-    val orarioFine: String,
-    val dipendente: String,
+    val orarioInizio: LocalTime,
+    val orarioFine: LocalTime,
     val dipartimentoId: String,
     val note: String,
     val isConfermato: Boolean,

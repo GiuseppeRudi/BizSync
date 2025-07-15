@@ -7,7 +7,6 @@ object UserMapper {
 
     fun toDto(user: User): UserDto {
         return UserDto(
-            uid = user.uid ,
             email = user.email,
             nome = user.nome,
             cognome = user.cognome,

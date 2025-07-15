@@ -30,9 +30,9 @@ interface TurnoDao {
     @Query("SELECT * FROM turni WHERE idAzienda = :idAzienda ORDER BY data ASC")
     suspend fun getTurniByAzienda(idAzienda: String): List<TurnoEntity>
 
-    // Recupera tutti i turni di un determinato dipendente
-    @Query("SELECT * FROM turni WHERE dipendente = :idDipendente ORDER BY data DESC")
-    suspend fun getTurniByDipendente(idDipendente: String): List<TurnoEntity>
+//    // Recupera tutti i turni di un determinato dipendente
+//    @Query("SELECT * FROM turni WHERE dipendente = :idDipendente ORDER BY data DESC")
+//    suspend fun getTurniByDipendente(idDipendente: String): List<TurnoEntity>
 
 
     @Query("""

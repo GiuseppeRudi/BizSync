@@ -2,5 +2,7 @@ package com.bizsync.domain.constants.enumClass
 
 enum class PianificaScreenManager {
     MAIN,
-    GESTIONE_TURNI_DIPARTIMENTO
+    GESTIONE_TURNI_DIPARTIMENTO,
+
+    CREATE_SHIFT
 }

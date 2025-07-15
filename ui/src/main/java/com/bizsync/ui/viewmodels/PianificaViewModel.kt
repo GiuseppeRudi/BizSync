@@ -13,7 +13,6 @@ import com.bizsync.domain.model.Turno
 import com.bizsync.domain.model.WeeklyShift
 import com.bizsync.domain.utils.AbsenceWindowCalculator
 import com.bizsync.domain.utils.WeeklyPublicationCalculator
-import com.bizsync.ui.model.AziendaUi
 import com.bizsync.ui.model.PianificaState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -48,6 +47,10 @@ import javax.inject.Inject
         }
 
 
+        fun openCreateShift()
+        {
+            _currentScreen.update { PianificaScreenManager.CREATE_SHIFT }
+        }
         fun openGestioneTurni(dip: AreaLavoro) {
             _uistate.update { it.copy(dipartimento = dip) }
             _currentScreen.value = PianificaScreenManager.GESTIONE_TURNI_DIPARTIMENTO

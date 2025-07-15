@@ -1,17 +1,13 @@
 package com.bizsync.domain.model
 
+import com.bizsync.domain.constants.enumClass.TipoPausa
+import java.time.Duration
+import java.util.UUID
+
 data class Pausa(
-    val id: String = "",
-    val nome: String = "",
-    val durataminuti: Int = 0,
-    val isRetribuita: Boolean = false,
-    val isBreak: Boolean = false
-) {
-    fun isValid(): Boolean {
-        return if (isBreak) {
-            durataminuti >= 60 // Break deve essere almeno 1 ora
-        } else {
-            durataminuti > 0
-        }
-    }
-}
+    val id: String = UUID.randomUUID().toString(),
+    val durata: Duration,
+    val tipo: TipoPausa = TipoPausa.PAUSA_PRANZO,
+    val èRetribuita: Boolean = false,
+    val note: String? = null
+)

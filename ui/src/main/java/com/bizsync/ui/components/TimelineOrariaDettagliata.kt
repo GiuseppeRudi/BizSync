@@ -1,5 +1,6 @@
 package com.bizsync.ui.components
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,7 +27,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bizsync.domain.model.AreaLavoro
 import com.bizsync.domain.model.Turno
+import com.google.android.gms.common.util.DataUtils
 import java.time.LocalDate
+import java.time.LocalTime
 
 @Composable
 fun TimelineOrariaDettagliata(
@@ -62,14 +65,15 @@ fun TimelineOrariaDettagliata(
     }
 }
 
+@SuppressLint("DefaultLocale")
 @Composable
 private fun TimelineConSlots(
-    orarioInizio: String,
-    orarioFine: String,
+    orarioInizio: LocalTime,
+    orarioFine: LocalTime,
     turniAssegnati: List<Turno>
 ) {
-    val inizioMinuti = orarioInizio.split(":").let { it[0].toInt() * 60 + it[1].toInt() }
-    val fineMinuti = orarioFine.split(":").let { it[0].toInt() * 60 + it[1].toInt() }
+    val inizioMinuti = orarioInizio.hour * 60 + orarioInizio.minute
+    val fineMinuti = orarioFine.hour * 60 + orarioFine.minute
     val slotDurata = 60 // 1 ora per slot
 
     val slots = (inizioMinuti until fineMinuti step slotDurata).map { minuti ->
@@ -85,11 +89,11 @@ private fun TimelineConSlots(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = orarioInizio,
+                text = orarioInizio.toString().take(5), // "HH:mm"
                 style = MaterialTheme.typography.labelSmall
             )
             Text(
-                text = orarioFine,
+                text = orarioFine.toString().take(5), // "HH:mm"
                 style = MaterialTheme.typography.labelSmall
             )
         }
@@ -121,6 +125,25 @@ private fun TimelineConSlots(
         }
     }
 }
+
+// Funzioni utility aggiornate per confrontare LocalTime invece che stringhe
+
+private fun isSlotCoperto(slot: String, turni: List<Turno>): Boolean {
+    val slotTime = LocalTime.parse(slot)
+    return turni.any { turno ->
+        // slot è coperto se è >= orarioInizio e < orarioFine
+        slotTime >= turno.orarioInizio && slotTime < turno.orarioFine
+    }
+}
+
+private fun hasOverlap(slot: String, turni: List<Turno>): Boolean {
+    val slotTime = LocalTime.parse(slot)
+    val count = turni.count { turno ->
+        slotTime >= turno.orarioInizio && slotTime < turno.orarioFine
+    }
+    return count > 1
+}
+
 
 
 
@@ -172,19 +195,3 @@ private fun LegendaItem(label: String, color: Color) {
     }
 }
 
-// Funzioni utility per calcoli
-private fun isSlotCoperto(slot: String, turni: List<Turno>): Boolean {
-    // TODO: implementare logica di verifica copertura slot
-    return turni.any { turno ->
-        // Verifica se il turno copre questo slot
-        slot >= turno.orarioInizio && slot < turno.orarioFine
-    }
-}
-
-private fun hasOverlap(slot: String, turni: List<Turno>): Boolean {
-    // TODO: implementare logica di verifica sovrapposizioni
-    val coperture = turni.count { turno ->
-        slot >= turno.orarioInizio && slot < turno.orarioFine
-    }
-    return coperture > 1
-}

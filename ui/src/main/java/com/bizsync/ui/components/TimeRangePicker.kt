@@ -19,17 +19,24 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import java.time.LocalTime
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import java.time.Duration
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun TimeRangePicker(
-    startTime: String,
-    endTime: String,
-    onStartTimeSelected: (String) -> Unit,
-    onEndTimeSelected: (String) -> Unit,
+    startTime: LocalTime?,
+    endTime: LocalTime?,
+    onStartTimeSelected: (LocalTime) -> Unit,
+    onEndTimeSelected: (LocalTime) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -82,7 +89,7 @@ fun TimeRangePicker(
             }
 
             // Durata calcolata
-            if (startTime.isNotEmpty() && endTime.isNotEmpty()) {
+            if (startTime != null && endTime != null) {
                 val duration = calculateDuration(startTime, endTime)
                 if (duration.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(12.dp))
@@ -115,32 +122,206 @@ fun TimeRangePicker(
         }
     }
 }
+@Composable
+fun TimePickerField(
+    label: String,
+    time: LocalTime?,
+    onTimeSelected: (LocalTime) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var showTimePicker by remember { mutableStateOf(false) }
+    val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
+    Column(modifier = modifier) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 4.dp)
+        )
 
-private fun calculateDuration(startTime: String, endTime: String): String {
+        Surface(
+            onClick = { showTimePicker = true },
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            shape = RoundedCornerShape(8.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier.padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Schedule,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = time?.format(timeFormatter) ?: "--:--",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = if (time != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+
+    // Time Picker Dialog
+    if (showTimePicker) {
+        TimePickerDialog(
+            initialTime = time ?: if (label == "Inizio") LocalTime.of(8, 0) else LocalTime.of(17, 0),
+            onTimeSelected = { selectedTime ->
+                onTimeSelected(selectedTime)
+                showTimePicker = false
+            },
+            onDismiss = { showTimePicker = false }
+        )
+    }
+}
+
+// ========== FUNZIONI DI CALCOLO CON LOCALTIME ==========
+
+/**
+ * Calcola la durata tra due LocalTime gestendo anche i turni notturni
+ */
+private fun calculateDuration(startTime: LocalTime, endTime: LocalTime): String {
     return try {
-        val startParts = startTime.split(":")
-        val endParts = endTime.split(":")
-
-        val startHour = startParts[0].toInt()
-        val startMinute = startParts[1].toInt()
-        val endHour = endParts[0].toInt()
-        val endMinute = endParts[1].toInt()
-
-        val startTotalMinutes = startHour * 60 + startMinute
-        var endTotalMinutes = endHour * 60 + endMinute
-
-        // Gestisce il caso in cui il turno va oltre la mezzanotte
-        if (endTotalMinutes <= startTotalMinutes) {
-            endTotalMinutes += 24 * 60
+        val duration = if (endTime.isBefore(startTime) || endTime == startTime) {
+            // Turno notturno che attraversa la mezzanotte
+            val durationUntilMidnight = Duration.between(startTime, LocalTime.MAX)
+            val durationFromMidnight = Duration.between(LocalTime.MIN, endTime)
+            durationUntilMidnight.plus(durationFromMidnight).plusSeconds(1) // +1 secondo per includere la mezzanotte
+        } else {
+            // Turno normale
+            Duration.between(startTime, endTime)
         }
 
-        val durationMinutes = endTotalMinutes - startTotalMinutes
-        val hours = durationMinutes / 60
-        val minutes = durationMinutes % 60
+        val hours = duration.toHours()
+        val minutes = duration.toMinutes() % 60
 
         "${hours}h ${minutes}m"
     } catch (e: Exception) {
         ""
     }
+}
+
+// ========== FUNZIONI UTILITY PER CONVERSIONE ==========
+
+/**
+ * Converte una stringa "HH:mm" in LocalTime
+ */
+fun String.toLocalTime(): LocalTime? {
+    return try {
+        LocalTime.parse(this, DateTimeFormatter.ofPattern("HH:mm"))
+    } catch (e: Exception) {
+        null
+    }
+}
+
+/**
+ * Converte LocalTime in stringa "HH:mm"
+ */
+fun LocalTime.toTimeString(): String {
+    return this.format(DateTimeFormatter.ofPattern("HH:mm"))
+}
+
+// ========== VERSIONE CON TIME PICKER DIALOG COMPLETO ==========
+
+@Composable
+fun TimePickerFieldWithDialog(
+    label: String,
+    time: LocalTime?,
+    onTimeSelected: (LocalTime) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var showTimePicker by remember { mutableStateOf(false) }
+    val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
+    Column(modifier = modifier) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 4.dp)
+        )
+
+        Surface(
+            onClick = { showTimePicker = true },
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            shape = RoundedCornerShape(8.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier.padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Schedule,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = time?.format(timeFormatter) ?: "--:--",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = if (time != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+
+    // Time Picker Dialog
+    if (showTimePicker) {
+        TimePickerDialog(
+            initialTime = time ?: LocalTime.of(8, 0),
+            onTimeSelected = { selectedTime ->
+                onTimeSelected(selectedTime)
+                showTimePicker = false
+            },
+            onDismiss = { showTimePicker = false }
+        )
+    }
+}
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TimePickerDialog(
+    initialTime: LocalTime,
+    onTimeSelected: (LocalTime) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val timePickerState = rememberTimePickerState(
+        initialHour = initialTime.hour,
+        initialMinute = initialTime.minute,
+        is24Hour = true
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Seleziona orario") },
+        text = {
+            TimePicker(
+                state = timePickerState,
+                modifier = Modifier.padding(16.dp)
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val selectedTime = LocalTime.of(
+                        timePickerState.hour,
+                        timePickerState.minute
+                    )
+                    onTimeSelected(selectedTime)
+                }
+            ) {
+                Text("OK")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Annulla")
+            }
+        }
+    )
 }

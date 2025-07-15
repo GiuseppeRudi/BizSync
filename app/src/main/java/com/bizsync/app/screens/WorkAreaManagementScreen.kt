@@ -2,11 +2,11 @@
 package com.bizsync.app.screens
 
 import android.util.Log
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -14,13 +14,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.bizsync.app.navigation.LocalScaffoldViewModel
 import com.bizsync.domain.model.AreaLavoro
 import com.bizsync.ui.components.AreaLavoroDialog
 import com.bizsync.ui.viewmodels.CompanyViewModel
 import java.time.DayOfWeek
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.*
 
@@ -30,7 +31,7 @@ fun DipartimentiManagementScreen(
     companyVm: CompanyViewModel,
     areeLavoro: List<AreaLavoro>,
     idAzienda: String,
-    orariSettimanali: Map<String, Map<DayOfWeek, Pair<String, String>>>
+    orariSettimanali: Map<String, Map<DayOfWeek, Pair<LocalTime, LocalTime>>>
 ) {
 
     Log.d("ORARI ", orariSettimanali.toString())
@@ -338,10 +339,80 @@ private fun AreaItemEditableWithOrari(
     }
 }
 
+@Composable
+fun TimePickerField(
+    value: LocalTime,
+    onValueChange: (LocalTime) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier
+) {
+    var showTimePicker by remember { mutableStateOf(false) }
+
+    OutlinedTextField(
+        value = value.format(DateTimeFormatter.ofPattern("HH:mm")),
+        onValueChange = { },
+        label = { Text(label) },
+        modifier = modifier.clickable { showTimePicker = true },
+        readOnly = true,
+        trailingIcon = {
+            IconButton(onClick = { showTimePicker = true }) {
+                Icon(Icons.Default.Schedule, contentDescription = "Seleziona orario")
+            }
+        }
+    )
+
+    if (showTimePicker) {
+        TimePickerDialog(
+            initialTime = value,
+            onTimeSelected = { newTime ->
+                onValueChange(newTime)
+                showTimePicker = false
+            },
+            onDismiss = { showTimePicker = false }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TimePickerDialog(
+    initialTime: LocalTime,
+    onTimeSelected: (LocalTime) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val timePickerState = rememberTimePickerState(
+        initialHour = initialTime.hour,
+        initialMinute = initialTime.minute
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Seleziona orario") },
+        text = {
+            TimePicker(state = timePickerState)
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val selectedTime = LocalTime.of(timePickerState.hour, timePickerState.minute)
+                    onTimeSelected(selectedTime)
+                }
+            ) {
+                Text("OK")
+            }
+        },
+        dismissButton = {
+            OutlinedButton(onClick = onDismiss) {
+                Text("Annulla")
+            }
+        }
+    )
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrariSettimanaliDialog(
-   companyVm: CompanyViewModel
+    companyVm: CompanyViewModel
 ) {
     val giorni = listOf(
         DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY,
@@ -360,7 +431,6 @@ fun OrariSettimanaliDialog(
 
     val nomeArea = areeModificate.find { it.id == editingOrariAreaId }?.nomeArea ?: ""
 
-
     AlertDialog(
         onDismissRequest = {companyVm.closeOrariDialog()},
         title = {
@@ -373,7 +443,7 @@ fun OrariSettimanaliDialog(
             ) {
                 items(giorni) { giorno ->
                     val nomeGiorno = giorno.getDisplayName(TextStyle.FULL, Locale.ITALIAN)
-                    val orarioGiorno = orariTemp?.get(giorno)
+                    val orarioGiorno = orariTemp[giorno]
 
                     Column(
                         modifier = Modifier.fillMaxWidth()
@@ -404,20 +474,18 @@ fun OrariSettimanaliDialog(
                                     .padding(start = 40.dp, top = 8.dp),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                OutlinedTextField(
+                                TimePickerField(
                                     value = orarioGiorno.first,
                                     onValueChange = { companyVm.onOrarioInizioChanged(giorno, it) },
-                                    label = { Text("Inizio") },
-                                    modifier = Modifier.weight(1f),
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                                    label = "Inizio",
+                                    modifier = Modifier.weight(1f)
                                 )
 
-                                OutlinedTextField(
+                                TimePickerField(
                                     value = orarioGiorno.second,
                                     onValueChange = { companyVm.onOrarioFineChanged(giorno, it) },
-                                    label = { Text("Fine") },
-                                    modifier = Modifier.weight(1f),
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                                    label = "Fine",
+                                    modifier = Modifier.weight(1f)
                                 )
                             }
                         }
@@ -428,7 +496,7 @@ fun OrariSettimanaliDialog(
         confirmButton = {
             Button(
                 onClick = { companyVm.salvaOrariArea() },
-                enabled = orariTemp?.isNotEmpty() ?: false
+                enabled = orariTemp.isNotEmpty()
             ) {
                 Text("Salva")
             }

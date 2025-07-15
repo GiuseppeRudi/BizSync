@@ -86,32 +86,31 @@ class UserRepository @Inject constructor(private val db : FirebaseFirestore) {
 
     suspend fun getDipendentiByAzienda(idAzienda: String): Resource<List<User>> {
         return try {
-            Log.d("USER_DEBUG", "Recupero dipendenti per azienda: $idAzienda")
+            Log.d("DIPENDENTI_DEBUG", "Recupero dipendenti per azienda: $idAzienda")
 
             val result = db.collection(UtentiFirestore.COLLECTION)
                 .whereEqualTo(UtentiFirestore.Fields.ID_AZIENDA, idAzienda)
                 .get()
                 .await()
 
-            Log.d("USER_DEBUG", "Trovati ${result.documents.size} documenti per azienda $idAzienda")
+            Log.d("DIPENDENTI_DEBUG", "Trovati ${result.documents.size} documenti per azienda $idAzienda")
 
             val dipendenti = result.documents.mapNotNull { document ->
                 try {
                     val userDto = document.toObject(UserDto::class.java)?.copy(uid = document.id)
-                    Log.d("USER_DEBUG", "Dipendente mappato: ${userDto?.nome} ${userDto?.cognome}")
+                    Log.d("DIPENDENTI_DEBUG", "Dipendente mappato: ${userDto?.nome} ${userDto?.cognome}")
                     userDto
                 } catch (e: Exception) {
-                    Log.e("USER_DEBUG", "Errore nel mappare documento ${document.id}", e)
+                    Log.e("DIPENDENTI_DEBUG", "Errore nel mappare documento ${document.id}", e)
                     null
                 }
             }
-
-            Log.d("USER_DEBUG", "Mappati con successo ${dipendenti.size} dipendenti")
+            Log.d("DIPENDENTI_DEBUG", "Mappati con successo ${dipendenti.size} dipendenti")
 
             if (dipendenti.isNotEmpty()) {
                 Resource.Success(dipendenti.toDomainList())
             } else {
-                Log.d("USER_DEBUG", "Nessun dipendente trovato per azienda $idAzienda")
+                Log.d("DIPENDENTI_DEBUG", "Nessun dipendente trovato per azienda $idAzienda")
                 Resource.Empty
             }
 
