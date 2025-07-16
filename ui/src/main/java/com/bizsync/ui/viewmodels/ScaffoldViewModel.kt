@@ -11,12 +11,12 @@ import javax.inject.Inject
 @HiltViewModel
 class ScaffoldViewModel @Inject constructor() : ViewModel() {
 
-    private val _fullScreen = MutableStateFlow<Boolean>(true)
-    val fullScreen : StateFlow<Boolean> = _fullScreen
+    private val _isFullScreen = MutableStateFlow<Boolean>(true)
+    val isFullScreen : StateFlow<Boolean> = _isFullScreen
 
     fun onFullScreenChanged(newValue : Boolean)
     {
-        _fullScreen.value = newValue
+        _isFullScreen.value = newValue
     }
 
 }

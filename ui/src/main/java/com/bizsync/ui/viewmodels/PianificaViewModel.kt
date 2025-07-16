@@ -3,6 +3,7 @@ package com.bizsync.ui.viewmodels
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bizsync.backend.orchestrator.TurnoOrchestrator
 import com.bizsync.backend.repository.TurnoRepository
 import com.bizsync.backend.repository.WeeklyShiftRepository
 import com.bizsync.domain.constants.enumClass.PianificaScreenManager
@@ -27,7 +28,8 @@ import javax.inject.Inject
     @HiltViewModel
     class PianificaViewModel @Inject constructor(
         private val turnoRepository: TurnoRepository,
-        private val weeklyShiftRepository: WeeklyShiftRepository
+        private val weeklyShiftRepository: WeeklyShiftRepository,
+        private val turnoOrchestrator: TurnoOrchestrator,
     ) : ViewModel() {
 
 
@@ -104,6 +106,11 @@ import javax.inject.Inject
             }
         }
 
+        fun setDipartimentoScreen(dipartimento : AreaLavoro) {
+         _uistate.update { it.copy(dipartimento = dipartimento) }
+            _currentScreen.value = PianificaScreenManager.GESTIONE_TURNI_DIPARTIMENTO
+
+        }
 
         fun backToMain() {
             _uistate.update { it.copy(dipartimento = null)}
@@ -223,96 +230,102 @@ import javax.inject.Inject
             }
         }
 
-        /**
-         * Pubblica la pianificazione corrente
-         */
-        fun publishWeeklyPlanning(idAzienda: String) {
+
+        fun setHasUnsavedChanges(newValue: Boolean) {
+            _uistate.update { it.copy(hasUnsavedChanges = newValue) }
+        }
+
+        fun changeStatoWeeklyAttuale(nuovoStato: WeeklyShiftStatus) {
+            val weeklyShiftAttuale = _uistate.value.weeklyShiftAttuale ?: return
+
             viewModelScope.launch {
-                val currentShift = _uistate.value.weeklyShiftRiferimento
-                if (currentShift == null) {
-                    Log.w(TAG, "⚠️ Tentativo di pubblicare senza pianificazione corrente")
-                    _uistate.update { it.copy(errorMsg = "Nessuna pianificazione da pubblicare") }
-                    return@launch
-                }
 
-                Log.d(TAG, "📢 Pubblicazione pianificazione settimana: ${currentShift.weekStart}")
-                _uistate.update { it.copy(isLoading = true) }
+                _uistate.update { it.copy(isSyncing = true) }
 
-                when (val result = weeklyShiftRepository.updateWeeklyShiftStatus(
-                    idAzienda,
-                    currentShift.weekStart,
-                    WeeklyShiftStatus.PUBLISHED
-                )) {
-                    is Resource.Success -> {
-                        Log.d(TAG, "✅ Pianificazione pubblicata con successo")
-                        // Ricarica la pianificazione per aggiornare lo stato
-                        checkWeeklyPlanningStatus(idAzienda)
-                    }
-                    is Resource.Error -> {
-                        Log.e(TAG, "❌ Errore pubblicazione: ${result.message}")
-                        _uistate.update {
-                            it.copy(
-                                isLoading = false,
-                                errorMsg = result.message
-                            )
+                try {
+                    // Aggiorna lo stato nel database
+                    val weeklyShiftAggiornato = weeklyShiftAttuale.copy(status = nuovoStato)
+
+                    when (val result = weeklyShiftRepository.updateWeeklyShiftStatus(weeklyShiftAggiornato)) {
+                        is Resource.Success -> {
+                            _uistate.update {
+                                it.copy(
+                                    isSyncing = false,
+                                    weeklyShiftAttuale = weeklyShiftAggiornato,
+                                )
+                            }
+
+                            // Se il nuovo stato è DRAFT o PUBLISHED, sincronizza automaticamente i turni
+                            if (nuovoStato == WeeklyShiftStatus.DRAFT || nuovoStato == WeeklyShiftStatus.PUBLISHED) {
+                                syncTurni(weeklyShiftAttuale.weekStart)
+                            }
+
+                            Log.d(TAG, "Stato settimana cambiato a: $nuovoStato")
+                        }
+
+                        is Resource.Error -> {
+                            _uistate.update {
+                                it.copy(
+                                    isSyncing = false,
+                                    errorMsg = result.message
+                                )
+                            }
+                        }
+
+                        else -> {
+                            _uistate.update {
+                                it.copy(
+                                    isSyncing = false,
+                                    errorMsg = "Errore imprevisto durante il cambio di stato"
+                                )
+                            }
                         }
                     }
-                    else -> {
-                        _uistate.update {
-                            it.copy(
-                                isLoading = false,
-                                errorMsg = "Errore imprevisto durante la pubblicazione"
-                            )
-                        }
+                } catch (e: Exception) {
+
+                    _uistate.update {
+                        it.copy(
+                            isSyncing = false,
+                            errorMsg = "Errore durante il cambio di stato: ${e.message}"
+                        )
                     }
                 }
             }
         }
 
-        /**
-         * Finalizza la pianificazione corrente
-         */
-        fun finalizeWeeklyPlanning(idAzienda: String) {
-            viewModelScope.launch {
-                val currentShift = _uistate.value.weeklyShiftRiferimento
-                if (currentShift == null) {
-                    Log.w(TAG, "⚠️ Tentativo di finalizzare senza pianificazione corrente")
-                    _uistate.update { it.copy(errorMsg = "Nessuna pianificazione da finalizzare") }
-                    return@launch
-                }
 
-                Log.d(TAG, "🔒 Finalizzazione pianificazione settimana: ${currentShift.weekStart}")
-                _uistate.update { it.copy(isLoading = true) }
+        // Funzione per sincronizzare i turni
+        fun syncTurni(weekStart: LocalDate?) {
+            if (weekStart == null) return
 
-                when (val result = weeklyShiftRepository.updateWeeklyShiftStatus(
-                    idAzienda,
-                    currentShift.weekStart,
-                    WeeklyShiftStatus.FINALIZED
-                )) {
+        viewModelScope.launch {
+
+            try {
+                when (val result = turnoOrchestrator.syncTurniToFirebase(weekStart)) {
                     is Resource.Success -> {
-                        Log.d(TAG, "✅ Pianificazione finalizzata con successo")
-                        checkWeeklyPlanningStatus(idAzienda)
+                        Log.d(TAG, "Turni sincronizzati con successo")
+                        _uistate.update { it.copy(isSyncing = false, hasUnsavedChanges = false) }
                     }
                     is Resource.Error -> {
-                        Log.e(TAG, "❌ Errore finalizzazione: ${result.message}")
-                        _uistate.update {
-                            it.copy(
-                                isLoading = false,
-                                errorMsg = result.message
-                            )
-                        }
+                        Log.e(TAG, "Errore sincronizzazione: ${result.message}")
+                        _uistate.update {it.copy(errorMsg = result.message) }
                     }
-                    else -> {
-                        _uistate.update {
-                            it.copy(
-                                isLoading = false,
-                                errorMsg = "Errore imprevisto durante la finalizzazione"
-                            )
-                        }
+                    is Resource.Empty -> {
+                        Log.d(TAG, "Nessuna modifica da sincronizzare")
                     }
                 }
+            } catch (e: Exception) {
+                Log.e(TAG, "Eccezione durante sincronizzazione: ${e.message}")
+                _uistate.update {
+                    it.copy(
+                        errorMsg = "Errore durante la sincronizzazione"
+                    )
+                }
             }
+
         }
+        }
+
 
         /**
          * Elimina la pianificazione corrente
@@ -391,7 +404,7 @@ import javax.inject.Inject
                     weekStart = publishableWeek,
                     createdBy = userId,
                     createdAt = LocalDateTime.now(),
-                    status = WeeklyShiftStatus.IN_PROGRESS
+                    status = WeeklyShiftStatus.NOT_PUBLISHED
                 )
 
                 when (val result = weeklyShiftRepository.createWeeklyShift(weeklyShift)) {

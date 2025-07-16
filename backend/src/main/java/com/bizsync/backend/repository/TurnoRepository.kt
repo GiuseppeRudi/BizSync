@@ -30,6 +30,65 @@ class TurnoRepository @Inject constructor(
 
     private val collection = firestore.collection(COLLECTION_NAME)
 
+    /**
+     * Aggiunge un nuovo turno a Firebase
+     * @param turno Turno da aggiungere
+     * @return Resource<String> con l'ID del documento Firebase
+     */
+    suspend fun addTurnoToFirebase(turno: Turno): Resource<String> {
+        return try {
+            val documentRef = firestore
+                .collection("turni")
+                .add(turno.toDto())
+                .await()
+
+            Resource.Success(documentRef.id)
+        } catch (e: Exception) {
+            Resource.Error("Errore aggiunta turno a Firebase: ${e.message}")
+        }
+    }
+
+    /**
+     * Aggiorna un turno esistente su Firebase
+     * @param turno Turno da aggiornare
+     * @return Resource<Unit> risultato dell'operazione
+     */
+    suspend fun updateTurnoOnFirebase(turno: Turno): Resource<Unit> {
+        return try {
+            if (turno.idFirebase.isEmpty()) {
+                return Resource.Error("Turno non ha firebaseId")
+            }
+
+            firestore
+                .collection("turni")
+                .document(turno.idFirebase)
+                .set(turno.toDto())
+                .await()
+
+            Resource.Success(Unit)
+        } catch (e: Exception) {
+            Resource.Error("Errore aggiornamento turno su Firebase: ${e.message}")
+        }
+    }
+
+    /**
+     * Elimina un turno da Firebase
+     * @param firebaseId ID del documento Firebase
+     * @return Resource<Unit> risultato dell'operazione
+     */
+    suspend fun deleteTurnoFromFirebase(firebaseId: String): Resource<Unit> {
+        return try {
+            firestore
+                .collection("turni")
+                .document(firebaseId)
+                .delete()
+                .await()
+
+            Resource.Success(Unit)
+        } catch (e: Exception) {
+            Resource.Error("Errore eliminazione turno da Firebase: ${e.message}")
+        }
+    }
     suspend fun createMockTurni(): Boolean {
 //        return try {
 //            val now = Timestamp.now()

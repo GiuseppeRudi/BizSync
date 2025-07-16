@@ -1,26 +1,27 @@
 package com.bizsync.domain.model
 
 
+import com.bizsync.domain.constants.enumClass.EsitoTurno
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.UUID
 
 // @Serializable
 data class Turno(
-    val id: String = "",
+    val id: String = UUID.randomUUID().toString(),
     val titolo: String = "",
     val idAzienda : String = "",
+    val idDipendenti : List<String> = emptyList(),
+    val dipartimentoId: String = "",
+    val idFirebase : String = "",
 
     val data: LocalDate = LocalDate.now(),
     val orarioInizio: LocalTime = LocalTime.now(),
     val orarioFine: LocalTime = LocalTime.now(),
 
-    val idDipendenti : List<String> = emptyList(),
-    val dipartimentoId: String = "",
 
     val note: List<Nota> = emptyList(),
     val pause : List<Pausa> = emptyList(),
-
-    val isConfermato: Boolean = false,
 
     val createdAt: LocalDate = LocalDate.now(),
     val updatedAt: LocalDate = LocalDate.now()

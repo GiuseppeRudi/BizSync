@@ -34,7 +34,7 @@ fun InviteManagementScreen(
     val scaffoldVm = LocalScaffoldViewModel.current
 
     LaunchedEffect(Unit) {
-        scaffoldVm.onFullScreenChanged(false)
+        scaffoldVm.onFullScreenChanged(true)
     }
 
     val userVM = LocalUserViewModel.current

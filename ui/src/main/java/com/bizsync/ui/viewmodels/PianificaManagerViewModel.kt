@@ -8,12 +8,16 @@ import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.orchestrator.TurnoOrchestrator
 import com.bizsync.cache.dao.AbsenceDao
 import com.bizsync.cache.dao.ContrattoDao
+import com.bizsync.cache.dao.TurnoDao
 import com.bizsync.cache.dao.UserDao
 import com.bizsync.cache.mapper.toDomainList
+import com.bizsync.cache.mapper.toEntity
 import com.bizsync.domain.constants.enumClass.AbsenceStatus
 import com.bizsync.domain.constants.enumClass.TipoPausa
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.*
+import com.bizsync.domain.utils.AbsenceWindowCalculator
+import com.bizsync.ui.components.AbsenceWindowCalculatorExtension
 import com.bizsync.ui.model.ManagerState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
@@ -31,6 +35,7 @@ import javax.inject.Inject
 class PianificaManagerViewModel @Inject constructor(
     private val turnoOrchestrator: TurnoOrchestrator,
     private val userDao: UserDao,
+    private val turnoDao : TurnoDao,
     private val absenceDao: AbsenceDao,
     private val contrattiDao : ContrattoDao
 ) : ViewModel() {
@@ -46,6 +51,33 @@ class PianificaManagerViewModel @Inject constructor(
 
     fun setLoading(loading: Boolean) {
         _uiState.update { it.copy(loading = loading) }
+    }
+
+    fun setturniDipartimento(giorno: DayOfWeek, idDipartimento: String) {
+        val statoDipendentiSettiman = _uiState.value.dipendentiSettimana
+
+        statoDipendentiSettiman[giorno]?.let { dipendentiGiorno ->
+            // Filtra solo i dipendenti del dipartimento selezionato
+            Log.d("TURNO_DEBUG", "✅ Dipendenti filtrati per $giorno e dipartimento $idDipartimento: ${dipendentiGiorno}")
+
+            val utentiFiltrati = dipendentiGiorno.utenti.filter { it.dipartimento == idDipartimento }
+
+            // Ricava solo gli stati relativi ai dipendenti filtrati
+            val statiFiltrati = dipendentiGiorno.statoPerUtente
+                .filterKeys { uid -> utentiFiltrati.any { it.uid == uid } }
+
+            val nuovoDipendentiGiorno = DipendentiGiorno(
+                utenti = utentiFiltrati,
+                statoPerUtente = statiFiltrati
+            )
+
+            _uiState.update {
+                it.copy(disponibilitaMembriTurno = nuovoDipendentiGiorno)
+            }
+
+            Log.d("TURNO_DEBUG", "✅ DAIIIII per $giorno e dipartimento $idDipartimento: ${_uiState.value.disponibilitaMembriTurno }}")
+
+        }
     }
 
 
@@ -75,49 +107,6 @@ class PianificaManagerViewModel @Inject constructor(
             }
         }
     }
-
-
-    fun setDipendenti(idAzienda: String) {
-        viewModelScope.launch {
-            try {
-                val userentity = userDao.getDipendenti(idAzienda)
-                val userDomain = userentity.toDomainList()
-                _uiState.update { it.copy(dipendenti = userDomain) }
-                Log.d(TAG, " caricamento dipendenti: ${userDomain}")
-            } catch (e: Exception) {
-                Log.e(TAG, "Errore caricamento dipendenti: ${e.message}")
-            }
-        }
-    }
-
-    fun setAssenze(idAzienda: String) {
-        viewModelScope.launch {
-            try {
-                val absenceEntity = absenceDao.getAbsencesByAzienda(idAzienda, )
-                val absenceDomain = absenceEntity.toDomainList()
-                _uiState.update { it.copy(assenze = absenceDomain) }
-                Log.d(TAG, " caricamento assenze: ${absenceDomain}")
-
-            } catch (e: Exception) {
-                Log.e(TAG, "Errore caricamento assenze: ${e.message}")
-            }
-        }
-    }
-
-    fun setContratti(idAzienda: String) {
-        viewModelScope.launch {
-            try {
-                val contrattiEntity = contrattiDao.getContratti(idAzienda, )
-                val contrattiDomain = contrattiEntity.toDomainList()
-                _uiState.update { it.copy(contratti = contrattiDomain) }
-                Log.d(TAG, " caricamento contratti: ${contrattiDomain}")
-
-            } catch (e: Exception) {
-                Log.e(TAG, "Errore caricamento contratti: ${e.message}")
-            }
-        }
-    }
-
     fun setDipendentiStato()
     {
         val listaDipendenti = _uiState.value.dipendenti
@@ -226,13 +215,45 @@ class PianificaManagerViewModel @Inject constructor(
         return false
     }
 
+
+    suspend fun setTurniSettimanaliSuspend(startWeek: LocalDate) {
+        when (val result = turnoOrchestrator.fetchTurniSettimana(startWeek)) {
+            is Resource.Success -> {
+                val turni = result.data
+                val grouped = turni.groupBy { it.data.dayOfWeek }
+                val allDays = DayOfWeek.entries.associateWith { grouped[it] ?: emptyList() }
+                _uiState.update { current -> current.copy(turniSettimanali = allDays) }
+            }
+            else -> {
+                val empty = DayOfWeek.entries.associateWith { emptyList<Turno>() }
+                _uiState.update { current -> current.copy(turniSettimanali = empty) }
+            }
+        }
+    }
+
+    fun setTurniGiornalieriDipartimento(dipartimentoId: String) {
+        // Assumi che turniGiornalieri sia già stato caricato nel State
+        val turniMap = _uiState.value.turniSettimanali
+        val giornalieri = turniMap.values.flatten()
+            .filter { it.dipartimentoId == dipartimentoId }
+        _uiState.update {
+            it.copy(turniGiornalieriDip = giornalieri)
+        }
+    }
+
+
     fun setTurniSettimanali(startWeek: LocalDate) {
         viewModelScope.launch {
             when (val result = turnoOrchestrator.fetchTurniSettimana(startWeek)) {
                 is Resource.Success -> {
                     val turni = result.data
+
+                    Log.e(TAG, "❌ SONO  " + turni)
+
                     val grouped = turni.groupBy { it.data.dayOfWeek }
                     val allDays = DayOfWeek.entries.associateWith { grouped[it] ?: emptyList() }
+
+                    Log.e(TAG, "❌ SONO  " + allDays)
 
 
 
@@ -250,6 +271,16 @@ class PianificaManagerViewModel @Inject constructor(
         }
     }
 
+    fun editTurno()
+    {
+
+    }
+
+    fun deleteTurno(){
+
+    }
+
+
     fun setTurniGiornalieri(dayOfWeek: DayOfWeek, dipartimentiDelGiorno: List<AreaLavoro>) {
         viewModelScope.launch {
             val currentTurniSettimanali = _uiState.value.turniSettimanali
@@ -266,42 +297,37 @@ class PianificaManagerViewModel @Inject constructor(
         }
     }
 
-    fun setTurniGiornalieriDipartimento(dipartimentoId: String) {
-        _uiState.update {
-            it.copy(turniGiornalieriDip = _uiState.value.turniGiornalieri[dipartimentoId] ?: emptyList())
+
+    fun caricaTurniSettimanaEDipartimento(weekStart: LocalDate, dipartimentoId: String) {
+        viewModelScope.launch {
+            try {
+                setLoading(true)
+
+                // 1️⃣ sospende finché non ha caricato i turni settimanali
+                setTurniSettimanaliSuspend(weekStart)
+
+                // 2️⃣ solo dopo, carica i giornalieri
+                setTurniGiornalieriDipartimento(dipartimentoId)
+
+                _uiState.update { it.copy(hasChangeShift = false) }
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Errore durante il caricamento turni: ${e.message}")
+            } finally {
+                setLoading(false)
+            }
         }
     }
 
-    fun setShowDialogCreateShift(show: Boolean) {
-        _uiState.update { it.copy(showDialogCreateShift = show) }
-    }
 
-    // ========== GESTIONE TURNO IN MODIFICA ==========
 
-    /**
-     * Inizializza un nuovo turno per la modifica
-     */
+
+
     fun iniziaNuovoTurno(
         giornoSelezionato: LocalDate,
         dipartimentoId: String = "",
         idAzienda: String
     ) {
-        val nuovoTurno = Turno(
-            id = "",
-            titolo = "",
-            idAzienda = idAzienda,
-            data = giornoSelezionato,
-            orarioInizio = LocalTime.of(8, 0),
-            orarioFine = LocalTime.of(17, 0),
-            idDipendenti = emptyList(),
-            dipartimentoId = dipartimentoId,
-            note = emptyList(),
-            pause = emptyList(),
-            isConfermato = false,
-            createdAt = LocalDate.now(),
-            updatedAt = LocalDate.now()
-        )
-
+        val nuovoTurno = Turno()
         _uiState.update {
             it.copy(
                 turnoInModifica = nuovoTurno,
@@ -384,9 +410,7 @@ class PianificaManagerViewModel @Inject constructor(
         Log.d(TAG, "Iniziata nuova pausa")
     }
 
-    /**
-     * Carica una pausa esistente per la modifica
-     */
+
     fun caricaPausaPerModifica(pausa: Pausa) {
         _uiState.update {
             it.copy(
@@ -694,66 +718,64 @@ class PianificaManagerViewModel @Inject constructor(
     /**
      * Salva il turno corrente
      */
-    fun salvaTurno() {
-//        viewModelScope.launch {
-//            val turno = _uiState.value.turnoInModifica
-//            if (turno == null) {
-//                Log.e(TAG, "Nessun turno da salvare")
-//                return@launch
-//            }
-//
-//            // Validazione
-//            when (val validationResult = validaTurno()) {
-//                is ValidationResult.Error -> {
-//                    Log.e(TAG, "Errore validazione: ${validationResult.message}")
-//                    _uiState.update { it.copy(errorMessage = validationResult.message) }
-//                    return@launch
-//                }
-//                ValidationResult.Success -> {
-//                    // Continua con il salvataggio
-//                }
-//            }
-//
-//            setLoading(true)
-//
-//            try {
-//                val isNuovoTurno = turno.id.isEmpty()
-//
-//                val result = if (isNuovoTurno) {
-//                    turnoOrchestrator.creaTurno(turno)
-//                } else {
-//                    turnoOrchestrator.aggiornaTurno(turno)
-//                }
-//
-//                when (result) {
-//                    is Resource.Success -> {
-//                        Log.d(TAG, "Turno salvato con successo: ${turno.titolo}")
-//
-//                        // Aggiorna la lista dei turni
-//                        setTurniSettimanali(turno.data)
-//
-//                        // Pulisci il turno in modifica
-//                        pulisciTurnoInModifica()
-//
-//                        _uiState.update { it.copy(successMessage = "Turno salvato con successo") }
-//                    }
-//                    is Resource.Error -> {
-//                        Log.e(TAG, "Errore salvataggio turno: ${result.message}")
-//                        _uiState.update { it.copy(errorMessage = result.message) }
-//                    }
-//                    else -> {
-//                        Log.e(TAG, "Errore imprevisto durante il salvataggio")
-//                        _uiState.update { it.copy(errorMessage = "Errore imprevisto") }
-//                    }
-//                }
-//            } catch (e: Exception) {
-//                Log.e(TAG, "Eccezione durante il salvataggio: ${e.message}")
-//                _uiState.update { it.copy(errorMessage = "Errore durante il salvataggio: ${e.message}") }
-//            } finally {
-//                setLoading(false)
-//            }
-//        }
+    fun saveTurno( dipartimentoId : String, giornoSelezionato : LocalDate, idAzienda: String) {
+        viewModelScope.launch {
+
+            _uiState.update { it.copy(loading = true) }
+
+
+            val turno = _uiState.value.turnoInModifica
+            Log.d("SAVE_TURNO", "💾 Salvataggio turno in Room: ${turno.id}")
+
+            val isNewTurno = !turnoDao.exists(turno.id)
+
+            Log.d("SAVE_TURNO", " è NUOVO : ${isNewTurno}")
+
+
+            val turnoToSave = if (isNewTurno) {
+                turno.copy(
+                    dipartimentoId = dipartimentoId,
+                    data = giornoSelezionato,
+                    idAzienda = idAzienda
+                )
+            } else
+                turno
+
+            Log.d("SAVE_TURNO", "turno  ${turno}")
+
+            val turnoEntity = turnoToSave.toEntity()
+
+            Log.d("SAVE_TURNO", "turno entity  ${turnoEntity}")
+
+
+            try {
+                if (isNewTurno) {
+                    turnoDao.insert(turnoEntity) // Inserisci nuovo
+                } else {
+                    val turnoDaAggiornare = turnoEntity
+
+                    val turnoDaSync = turnoDaAggiornare.copy(isSynced = false)
+                    turnoDao.update(turnoDaSync)
+                }
+
+                Log.d(TAG, "✅ Turno salvato localmente in Room")
+
+                _uiState.update { it.copy(hasChangeShift = true, loading = false) }
+
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Errore salvataggio turno locale: ${e.message}")
+                _uiState.update {
+                    it.copy(
+                        loading = false,
+                        errorMessage = "Errore durante il salvataggio locale: ${e.message}"
+                    )
+                }
+            }
+        }
     }
+
+
+
 
     /**
      * Elimina un turno

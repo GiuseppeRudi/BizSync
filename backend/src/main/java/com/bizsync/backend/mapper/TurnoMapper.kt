@@ -6,7 +6,6 @@ import com.bizsync.domain.model.Turno
 import com.bizsync.domain.utils.DateUtils.toFirebaseTimestamp
 import com.bizsync.domain.utils.DateUtils.toLocalDate
 
-import com.bizsync.domain.utils.DateUtils
 import com.bizsync.domain.utils.DateUtils.toLocalDateTime
 import java.time.LocalDateTime
 
@@ -22,7 +21,7 @@ object TurnoMapper {
 
         return Turno(
             id = dto.id,
-            titolo = dto.nome,
+            titolo = dto.titolo,
             idAzienda = dto.idAzienda,
             idDipendenti = dto.idDipendenti,
             orarioInizio = orarioInizioLocalTime,
@@ -30,7 +29,6 @@ object TurnoMapper {
             dipartimentoId = dto.dipartimentoId,
             data = dataLocalDate,
             note = parseNoteFromString(dto.note), // se serve parsare note da String
-            isConfermato = dto.isConfermato,
             createdAt = dto.createdAt.toLocalDate(),
             updatedAt = dto.updatedAt.toLocalDate()
         )
@@ -45,7 +43,7 @@ object TurnoMapper {
 
         return TurnoDto(
             id = domain.id,
-            nome = domain.titolo,
+            titolo = domain.titolo,
             idAzienda = domain.idAzienda,
             idDipendenti = domain.idDipendenti,
             orarioInizio = orarioInizioTimestamp,
@@ -53,7 +51,6 @@ object TurnoMapper {
             dipartimentoId = domain.dipartimentoId,
             data = dataTimestamp,
             note = domain.note.joinToString(separator = ";") { it.toString() }, // esempio conversione note a String
-            isConfermato = domain.isConfermato,
             createdAt = domain.createdAt.toFirebaseTimestamp(),
             updatedAt = domain.updatedAt.toFirebaseTimestamp()
         )

@@ -9,7 +9,3 @@ data class StatoDipendente(
     val note: String? = null
 )
 
-data class AssenzaParziale(
-    val inizio: LocalTime,
-    val fine: LocalTime,
-)

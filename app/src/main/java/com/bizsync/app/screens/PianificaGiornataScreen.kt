@@ -44,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.bizsync.domain.constants.enumClass.DipartimentoStatus
 import com.bizsync.domain.model.AreaLavoro
 import com.bizsync.domain.model.Turno
 import com.bizsync.domain.model.WeeklyShift
@@ -51,7 +52,6 @@ import com.bizsync.ui.components.EmptyDayCard
 import com.bizsync.ui.components.GiornoHeaderCard
 import com.bizsync.ui.components.RiepilogoGiornataCard
 import com.bizsync.ui.components.SectionHeader
-import com.bizsync.ui.viewmodels.DipartimentoStatus
 import com.bizsync.ui.viewmodels.PianificaManagerViewModel
 import com.bizsync.ui.viewmodels.PianificaViewModel
 import com.bizsync.ui.viewmodels.ScaffoldViewModel
@@ -86,6 +86,7 @@ fun PianificaGiornata(
             managerVM.setTurniGiornalieri(dayOfWeek, dipartimentiDelGiorno)
         }
     }
+
 
 
     // Se stai ancora caricando mostra spinner o altro
@@ -137,23 +138,10 @@ fun PianificaGiornata(
 
         }
 
-        // Riepilogo giornata
         item {
             RiepilogoGiornataCard(dipartimentiDelGiorno)
         }
 
-//
-//    item {
-//        AzioniFinaliCard(
-//            dipartimenti = dipartimentiDelGiorno,
-//            onFinalizzaGiornata = {
-//                // Finalizza la pianificazione per questa giornata
-////                        pianificaVM.finalizzaGiornata(giornoSelezionato)
-//            },
-//            turniGiorno = TODO(),
-//            giornoSelezionato = TODO()
-//        )
-//    }
 
     }
 

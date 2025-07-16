@@ -40,7 +40,7 @@ fun SetupPianificaScreen(
     val currentStep = pianificaState.currentStep
     val scaffoldVM = LocalScaffoldViewModel.current
     LaunchedEffect(Unit) {
-        scaffoldVM.onFullScreenChanged(false)
+        scaffoldVM.onFullScreenChanged(true)
 
     }
 
@@ -662,7 +662,7 @@ fun TurniFrequentiStep(viewModel: OnBoardingPianificaViewModel, onSetupComplete:
 
     LaunchedEffect(onDone) {
         if (onDone) {
-            scaffoldVM.onFullScreenChanged(true)
+            scaffoldVM.onFullScreenChanged(false)
             viewModel.reset()
             onSetupComplete()
         }

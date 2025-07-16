@@ -17,17 +17,22 @@ import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
 import androidx.compose.runtime.getValue
+import com.bizsync.app.navigation.LocalScaffoldViewModel
 
 @Composable
 fun HomeScreen() {
     val navController = LocalNavController.current
     val userVM = LocalUserViewModel.current
-
+    val scaffoldViewModel = LocalScaffoldViewModel.current
     val userState by userVM.uiState.collectAsState()
     val giornoPubblicazione = userState.azienda.giornoPubblicazioneTurni
 
     val giorniMancanti by remember(giornoPubblicazione) {
         mutableStateOf(calcolaGiorniAlProssimoGiorno(giornoPubblicazione))
+    }
+
+    LaunchedEffect(Unit) {
+        scaffoldViewModel.onFullScreenChanged(false)
     }
 
     // Messaggio

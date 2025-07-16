@@ -43,7 +43,7 @@ fun RequestManagementScreen(
     val idAzienda = userState.azienda.idAzienda
 
     LaunchedEffect(Unit) {
-        scaffoldVM.onFullScreenChanged(false)
+        scaffoldVM.onFullScreenChanged(true)
         requestVM.fetchAllRequests(idAzienda)
         requestVM.fetchAllContract(idAzienda)
     }

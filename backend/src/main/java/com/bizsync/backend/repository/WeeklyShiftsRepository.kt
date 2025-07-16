@@ -104,34 +104,27 @@ class WeeklyShiftRepository @Inject constructor(
         }
     }
 
-     suspend fun updateWeeklyShiftStatus(
-        idAzienda: String,
-        weekStart: LocalDate,
-        status: WeeklyShiftStatus
-    ): Resource<Unit> {
+    suspend fun updateWeeklyShiftStatus(weeklyShift: WeeklyShift): Resource<WeeklyShift> {
         return try {
-            val documentId = generateDocumentId(idAzienda, weekStart)
+            Log.d("WEEKLY_SHIFT_DEBUG", "🔄 Inizio aggiornamento WeeklyShift con ID: ${weeklyShift.id}")
+            Log.d("WEEKLY_SHIFT_DEBUG", "📦 Dati da aggiornare: ${weeklyShift.toDto()}")
 
-            Log.d(TAG, "🔄 Aggiornamento stato pianificazione: $documentId → $status")
-
-            collection.document(documentId)
-                .update(
-                    mapOf(
-                        "status" to status.name,
-                        "updatedAt" to com.google.firebase.Timestamp.now()
-                    )
-                )
+            firestore.collection("weekly_shifts")
+                .document(weeklyShift.id)
+                .update("status", weeklyShift.status.name)
                 .await()
 
-            Log.d(TAG, "✅ Stato aggiornato con successo")
-            Resource.Success(Unit)
+
+            Log.d("WEEKLY_SHIFT_DEBUG", "✅ WeeklyShift aggiornato correttamente su Firebase con ID: ${weeklyShift.id}")
+            Resource.Success(weeklyShift)
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Errore aggiornamento stato: ${e.message}")
-            Resource.Error("Errore aggiornamento stato: ${e.message}")
+            Log.e("WEEKLY_SHIFT_DEBUG", "❌ Errore durante l'aggiornamento WeeklyShift: ${e.message}", e)
+            Resource.Error(e.message ?: "Errore durante l'aggiornamento")
         }
     }
 
-     suspend fun deleteWeeklyShift(
+
+    suspend fun deleteWeeklyShift(
         idAzienda: String,
         weekStart: LocalDate
     ): Resource<Unit> {

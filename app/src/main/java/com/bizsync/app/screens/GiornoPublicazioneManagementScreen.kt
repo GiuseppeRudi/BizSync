@@ -49,7 +49,7 @@ fun GiornoPublicazioneManagementScreen(
 
 
     LaunchedEffect(Unit) {
-        scaffoldVM.onFullScreenChanged(false)
+        scaffoldVM.onFullScreenChanged(true)
     }
 
     Column(modifier = Modifier.fillMaxSize()) {

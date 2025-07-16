@@ -12,6 +12,9 @@ data class PianificaState(
     val isLoading: Boolean = false,
     val errorMsg: String? = null,
 
+    val hasUnsavedChanges: Boolean = false,
+    val isSyncing: Boolean = false,
+
     // Stati onboarding (esistenti)
     val onBoardingDone: Boolean? = null,
     val showTurniDipartimento : Boolean = false,
@@ -61,9 +64,9 @@ data class PianificaState(
      */
     val currentPlanningStatusText: String
         get() = when (weeklyShiftRiferimento?.status) {
-            WeeklyShiftStatus.IN_PROGRESS -> "In preparazione"
+            WeeklyShiftStatus.NOT_PUBLISHED -> "In preparazione"
             WeeklyShiftStatus.PUBLISHED -> "Pubblicata"
-            WeeklyShiftStatus.FINALIZED -> "Finalizzata"
+            WeeklyShiftStatus.DRAFT -> "Bozza"
             null -> "Nessuna pianificazione"
         }
 
@@ -71,13 +74,13 @@ data class PianificaState(
      * Indica se la pianificazione corrente può essere modificata
      */
     val canModifyCurrentPlanning: Boolean
-        get() = weeklyShiftRiferimento?.status == WeeklyShiftStatus.IN_PROGRESS
+        get() = weeklyShiftRiferimento?.status == WeeklyShiftStatus.NOT_PUBLISHED
 
     /**
      * Indica se la pianificazione corrente può essere pubblicata
      */
     val canPublishCurrentPlanning: Boolean
-        get() = weeklyShiftRiferimento?.status == WeeklyShiftStatus.IN_PROGRESS
+        get() = weeklyShiftRiferimento?.status == WeeklyShiftStatus.NOT_PUBLISHED
 
     /**
      * Indica se la pianificazione corrente può essere finalizzata
@@ -89,7 +92,7 @@ data class PianificaState(
      * Indica se la pianificazione corrente può essere eliminata
      */
     val canDeleteCurrentPlanning: Boolean
-        get() = weeklyShiftRiferimento?.status == WeeklyShiftStatus.IN_PROGRESS
+        get() = weeklyShiftRiferimento?.status == WeeklyShiftStatus.NOT_PUBLISHED
 
     /**
      * Settimana corrente formattata come stringa

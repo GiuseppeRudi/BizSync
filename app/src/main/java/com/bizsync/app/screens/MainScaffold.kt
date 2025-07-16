@@ -16,13 +16,13 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.bizsync.app.navigation.AppNavigator
 import com.bizsync.ui.viewmodels.ScaffoldViewModel
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.bizsync.app.navigation.LocalScaffoldViewModel
 import com.bizsync.app.navigation.LocalUserViewModel
@@ -39,48 +39,48 @@ fun AppScaffold(onLogout: () -> Unit) {
     val scaffoldVM: ScaffoldViewModel = hiltViewModel()
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
     val manager = userState.user.isManager
-    val fullScreen by scaffoldVM.fullScreen.collectAsState()
+    val fullScreen by scaffoldVM.isFullScreen.collectAsState()
 
     CompositionLocalProvider(LocalScaffoldViewModel provides scaffoldVM) {
 
         Scaffold(
-            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-            topBar = {
-                if (fullScreen) {
-                    TopAppBar(
-                        title = {
-                            Text(
-                                azienda.nome,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        },
-                        navigationIcon = {
-                            IconButton(onClick = { scaffoldVM.onFullScreenChanged(false) }) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = "Back"
-                                )
-                            }
-                        },
-                        actions = {
-                            IconButton(onClick = { onLogout() }) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                                    contentDescription = "Logout"
-                                )
-                            }
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        ),
-                        scrollBehavior = scrollBehavior
-                    )
-                }
-            },
+//            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+//            topBar = {
+//                if (!fullScreen) {
+//                    TopAppBar(
+//                        title = {
+//                            Text(
+//                                azienda.nome,
+//                                maxLines = 1,
+//                                overflow = TextOverflow.Ellipsis
+//                            )
+//                        },
+//                        navigationIcon = {
+//                            IconButton(onClick = { scaffoldVM.onFullScreenChanged(false) }) {
+//                                Icon(
+//                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+//                                    contentDescription = "Back"
+//                                )
+//                            }
+//                        },
+//                        actions = {
+//                            IconButton(onClick = { onLogout() }) {
+//                                Icon(
+//                                    imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+//                                    contentDescription = "Logout"
+//                                )
+//                            }
+//                        },
+//                        colors = TopAppBarDefaults.topAppBarColors(
+//                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+//                            titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+//                        ),
+//                        scrollBehavior = scrollBehavior
+//                    )
+//                }
+//            },
             bottomBar = {
-                if (fullScreen) {
+                if (!fullScreen) {
                     BottomBar(manager)
                 }
             }

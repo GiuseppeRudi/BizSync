@@ -1,5 +1,6 @@
 package com.bizsync.domain.model
 
 data class DipendentiGiorno(
-    val utenti: List<User>,
-    val statoPerUtente: Map<String, StatoDipendente>)
+    val utenti: List<User> = emptyList(),
+    val statoPerUtente: Map<String, StatoDipendente>  = emptyMap()
+)

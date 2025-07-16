@@ -11,16 +11,16 @@ object TurnoEntityMapper {
 
     fun toDomain(entity: TurnoEntity): Turno {
         return Turno(
-            id = entity.idDocumento,
+            id = entity.id,
             idAzienda = entity.idAzienda,
             idDipendenti = entity.idDipendenti,
-            titolo = entity.nome,
+            idFirebase = entity.idFirebase,
+            titolo = entity.titolo,
             data =  entity.data,
             orarioInizio = entity.orarioInizio,
             orarioFine = entity.orarioFine,
             dipartimentoId = entity.dipartimentoId,
 //            note = entity.note,
-            isConfermato = entity.isConfermato,
             createdAt = entity.createdAt.toDate().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate(),
             updatedAt = entity.updatedAt.toDate().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate()
         )
@@ -28,8 +28,9 @@ object TurnoEntityMapper {
 
     fun toEntity(domain: Turno): TurnoEntity {
         return TurnoEntity(
-            idDocumento = domain.id,
-            nome = domain.titolo,
+            id = domain.id,
+            idFirebase = domain.idFirebase,
+            titolo = domain.titolo,
             idAzienda = domain.idAzienda,
             idDipendenti = domain.idDipendenti,
             orarioInizio = domain.orarioInizio,
@@ -37,7 +38,6 @@ object TurnoEntityMapper {
             orarioFine = domain.orarioFine,
             dipartimentoId = domain.dipartimentoId,
             note = "",
-            isConfermato = domain.isConfermato,
             createdAt = Timestamp.now(), // o da domain.createdAt se vuoi conservarlo
             updatedAt = Timestamp.now()  // oppure domain.updatedAt
         )

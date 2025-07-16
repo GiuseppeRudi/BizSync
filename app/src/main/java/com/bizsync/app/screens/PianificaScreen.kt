@@ -1,7 +1,12 @@
 package com.bizsync.app.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -16,7 +21,8 @@ import com.bizsync.ui.components.Calendar
 import com.bizsync.ui.viewmodels.PianificaViewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.core.app.AppLaunchChecker
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import com.bizsync.domain.constants.enumClass.PianificaScreenManager
 import com.bizsync.ui.components.SelectionDataEmptyCard
 import com.bizsync.ui.viewmodels.PianificaManagerViewModel
@@ -67,7 +73,7 @@ fun PianificaScreen() {
         }
 
         manager && pianificaState.weeklyPlanningExists == false -> {
-            // Schermata "Inizia Pubblicazione"
+            // Schermata "Inizia Pubblicazione" solo per manager
             IniziaPubblicazioneScreen(
                 publishableWeek = pianificaState.publishableWeek,
                 onStartPlanning = {
@@ -77,7 +83,12 @@ fun PianificaScreen() {
         }
 
         pianificaState.onBoardingDone == true -> {
-            PianificaCore(pianificaVM, manager)
+            // Distingui tra Manager e Dipendenti
+            if (manager) {
+                PianificaManagerCore(pianificaVM)
+            } else {
+                PianificaDipendentiCore(pianificaVM)
+            }
         }
 
         else -> {
@@ -91,12 +102,133 @@ fun PianificaScreen() {
     }
 }
 
-
-// pianifica core ssolo per il manager è un altro per il dipednente
 @Composable
-fun PianificaCore(
+fun PianificaDipendentiCore(
+    pianificaVM: PianificaViewModel
+) {
+    val scaffoldVM = LocalScaffoldViewModel.current
+    val userVM = LocalUserViewModel.current
+
+    val userState by userVM.uiState.collectAsState()
+    val pianificaState by pianificaVM.uistate.collectAsState()
+
+    // Per ora una struttura base
+    LaunchedEffect(Unit) {
+        scaffoldVM.onFullScreenChanged(false)
+        // Inizializza dati specifici per dipendenti
+//        pianificaVM.loadDipendentiData(userState.user.uid)
+    }
+    val selectionData = pianificaState.selectionData
+
+    val weeklyisIdentical = pianificaState.weeklyisIdentical
+    val weeklyShiftRiferimento = pianificaState.weeklyShiftRiferimento
+    val weeklyShiftAttuale = pianificaState.weeklyShiftAttuale
+
+
+    LaunchedEffect(weeklyShiftRiferimento, weeklyShiftAttuale) {
+        if(weeklyShiftRiferimento != null && weeklyShiftAttuale != null && weeklyShiftAttuale == weeklyShiftRiferimento)
+        {
+            pianificaVM.setWeeklyShiftIdentical(true)
+        }
+        else{
+            pianificaVM.setWeeklyShiftIdentical(false)
+        }
+    }
+
+
+    LaunchedEffect(selectionData)
+    {
+        if(selectionData!=null)
+        {
+            pianificaVM.getWeeklyShiftCorrente(selectionData)
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        // Header per dipendenti
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "I Miei Turni",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+
+                Text(
+                    text = "Visualizza i tuoi turni assegnati",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Calendario semplificato per dipendenti (solo visualizzazione)
+        Calendar(pianificaVM)
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Area principale per i turni del dipendente
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            )
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Schedule,
+                        contentDescription = null,
+                        modifier = Modifier.size(48.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Text(
+                        text = "Seleziona una data dal calendario",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Text(
+                        text = "Potrai visualizzare i tuoi turni assegnati",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun PianificaManagerCore(
     pianificaVM: PianificaViewModel,
-    manager: Boolean
 ) {
     val scaffoldVM = LocalScaffoldViewModel.current
     val userVM = LocalUserViewModel.current
@@ -164,29 +296,41 @@ fun PianificaCore(
 
     val currentScreen by pianificaVM.currentScreen.collectAsState()
 
+    val hasUnsavedChanges = pianificaState.hasUnsavedChanges
+    val isSyncing = pianificaState.isSyncing
+
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
-        // Header con informazioni pianificazione (solo per manager)
-        if (manager) {
-//            PlanningHeader(
-//                pianificaState = pianificaState,
-//                onPublish = { /* pianificaVM.publishWeeklyPlanning(idAzienda) */ },
-//                onFinalize = { /* pianificaVM.finalizeWeeklyPlanning(idAzienda) */ },
-//                onDelete = { /* pianificaVM.deleteWeeklyPlanning(idAzienda) */ }
-//            )
+        if(currentScreen != PianificaScreenManager.CREATE_SHIFT)
+        {
+            PlanningHeader(
+                weeklyShift = weeklyShiftRiferimento,
+                hasUnsavedChanges = hasUnsavedChanges,
+                isLoading = isSyncing,
+                onSync = {
+                    // Sincronizza le modifiche dalla cache a Firebase
+                    pianificaVM.syncTurni(weeklyShiftAttuale?.weekStart)
+                },
+                onStatoSettimana = { nuovoStato ->
+                    // Cambia lo stato della settimana
+                    // Questo attiverà automaticamente la sincronizzazione per DRAFT e PUBLISHED
+                    pianificaVM.changeStatoWeeklyAttuale(nuovoStato)
+                }
+            )
+
+
+
+            // Calendario
+            Calendar(pianificaVM)
+
+            Spacer(modifier = Modifier.height(8.dp))
         }
-
-        // Calendario
-        Calendar(pianificaVM)
-
-        Spacer(modifier = Modifier.height(8.dp))
 
         // Contenuto principale
         selectionData?.let { giornoSelezionato ->
             when (currentScreen) {
 
-                // QUI DENTRO DOBBIAMO CONTROLALRE E FARE LA DIFFERENZA TRA GLI SCREEN DEL MANAGER E DEL DIPENDENTE
                 PianificaScreenManager.MAIN -> {
                     PianificaGiornata(
                         dipartimenti = dipartimenti,
@@ -205,6 +349,7 @@ fun PianificaCore(
                             weeklyIsIdentical = weeklyisIdentical,
                             onCreateShift = { pianificaVM.openCreateShift() },
                             managerVM = managerVM,
+                            weeklyShift = weeklyShiftAttuale,
                             onBack = { pianificaVM.backToMain() })
                     }
                 }
@@ -212,8 +357,10 @@ fun PianificaCore(
                 PianificaScreenManager.CREATE_SHIFT -> {
                     pianificaState.dipartimento?.let { dip ->
                         TurnoScreen(
+                            dipartimento = dip,
                             giornoSelezionato= giornoSelezionato,
-                            onBack = { managerVM.setShowDialogCreateShift(false)},
+                            onHasUnsavedChanges = { pianificaVM.setHasUnsavedChanges(it) },
+                            onBack = { pianificaVM.setDipartimentoScreen(dip)},
                             managerVM =  managerVM,
                         )
                     }

@@ -50,7 +50,7 @@ fun DipartimentiManagementScreen(
     val isLoading = uiState.isLoading
 
     LaunchedEffect(Unit) {
-        scaffoldVM.onFullScreenChanged(false)
+        scaffoldVM.onFullScreenChanged(true)
         companyVm.setAreeModificate(areeLavoro)
         companyVm.setOrariSettimanaliModificati(orariSettimanali) // INIZIALIZZA ORARI
     }

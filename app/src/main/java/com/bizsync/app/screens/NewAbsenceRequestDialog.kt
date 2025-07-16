@@ -92,7 +92,7 @@ fun NewAbsenceRequestScreen(
 
     LaunchedEffect(status) {
         if (status == DialogStatusType.SUCCESS) {
-            scaffoldVM.onFullScreenChanged(true)
+            scaffoldVM.onFullScreenChanged(false)
             onSubmit()
         }
     }
@@ -105,7 +105,7 @@ fun NewAbsenceRequestScreen(
 //    }
 
     LaunchedEffect(Unit) {
-        scaffoldVM.onFullScreenChanged(false)
+        scaffoldVM.onFullScreenChanged(true)
     }
 
     LaunchedEffect(

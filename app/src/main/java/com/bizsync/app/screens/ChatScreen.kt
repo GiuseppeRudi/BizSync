@@ -38,7 +38,7 @@ fun ChatScreen() {
     val sscaffoldVM = LocalScaffoldViewModel.current
 
     LaunchedEffect(Unit) {
-        sscaffoldVM.onFullScreenChanged(false)
+        sscaffoldVM.onFullScreenChanged(true)
     }
 
 

@@ -22,17 +22,17 @@ data class ManagerState(
     val showDialogCreateShift: Boolean = false,
 
 
-    // dipendenti
+    // dipendentiT
     val dipendenti : List<User> = emptyList(),
-
 
     val dipendentiSettimana: Map<DayOfWeek, DipendentiGiorno> = emptyMap(),
     val statoSettimanaleDipendenti: Map<String, StatoSettimanaleDipendente> = emptyMap(),
     val assenze : List<Absence> = emptyList(),
     val contratti : List<Contratto> = emptyList(),
-
+    val disponibilitaMembriTurno : DipendentiGiorno = DipendentiGiorno(),
 
     val turnoInModifica: Turno = Turno(),
+    val hasChangeShift : Boolean = false,
     val loading: Boolean = true,
 
     // Nuove proprietà per gestione messaggi

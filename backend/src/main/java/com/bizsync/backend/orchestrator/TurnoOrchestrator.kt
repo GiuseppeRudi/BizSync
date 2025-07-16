@@ -6,6 +6,7 @@ import com.bizsync.backend.hash.HashStorage
 import com.bizsync.backend.repository.TurnoRepository
 import com.bizsync.backend.sync.SyncTurnoManager
 import com.bizsync.cache.dao.TurnoDao
+import com.bizsync.cache.mapper.toDomain
 import com.bizsync.cache.mapper.toDomainList
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.Turno
@@ -58,10 +59,116 @@ class TurnoOrchestrator @Inject constructor(
         }
     }
 
+    /**
+     * Sincronizza i turni dalla cache locale a Firebase
+     * @param weekStart Data di inizio settimana
+     * @return Resource<String> con messaggio di successo o errore
+     */
+    suspend fun syncTurniToFirebase(weekStart: LocalDate): Resource<String> {
+        return try {
+            // Calcola i bounds della settimana
+            val (startDate, endDate) = AbsenceWindowCalculator.getWeekBounds(weekStart)
+
+            // Recupera i turni non sincronizzati della settimana
+            val turni = turnoDao.getTurniSettimana(startDate, endDate, isSynced = false)
+
+            if (turni.isEmpty()) {
+                return Resource.Empty
+            }
+
+            var turniSincronizzati = 0
+            var turniEliminati = 0
+
+            // Processa ogni turno
+            for (turno in turni) {
+                when {
+                    !turno.isSynced && !turno.isDeleted -> {
+                        if (turno.idFirebase.isEmpty()) {
+                            // Nuovo turno → aggiungi su Firebase
+                            when (val result = turnoRepository.addTurnoToFirebase(turno.toDomain())) {
+                                is Resource.Success -> {
+                                    val firebaseId = result.data
+                                    turnoDao.updateTurnoSyncStatus(turno.copy(idFirebase = firebaseId, isSynced = true))
+                                    turniSincronizzati++
+                                }
+                                is Resource.Error -> {
+                                    return Resource.Error("Errore aggiunta turno: ${result.message}")
+                                }
+                                is Resource.Empty -> {
+                                    return Resource.Error("Errore: risposta vuota da Firebase")
+                                }
+                            }
+                        } else {
+                            // Turno modificato → aggiorna su Firebase
+                            when (val result = turnoRepository.updateTurnoOnFirebase(turno.toDomain())) {
+                                is Resource.Success -> {
+                                    turnoDao.updateTurnoSyncStatus(
+                                        turno.copy(isSynced = true)
+                                    )
+                                    turniSincronizzati++
+                                }
+                                is Resource.Error -> {
+                                    return Resource.Error("Errore aggiornamento turno: ${result.message}")
+                                }
+                                is Resource.Empty -> {
+                                    return Resource.Error("Errore: turno non trovato su Firebase")
+                                }
+                            }
+                        }
+                    }
+
+                    turno.isDeleted -> {
+                        // Turno eliminato → cancella da Firebase e rimuovi dalla cache
+                        turno.idFirebase?.let { firebaseId ->
+                            when (val result = turnoRepository.deleteTurnoFromFirebase(firebaseId)) {
+                                is Resource.Success -> {
+//                                    turnoRepository.deleteTurnoFromCache(turno)
+                                    turniEliminati++
+                                }
+                                is Resource.Error -> {
+                                    return Resource.Error("Errore eliminazione turno: ${result.message}")
+                                }
+                                is Resource.Empty -> {
+                                    // Turno già eliminato da Firebase, rimuovi solo dalla cache
+//                                    turnoRepository.deleteTurnoFromCache(turno)
+                                    turniEliminati++
+                                }
+                            }
+                        } ?: run {
+                            // Turno senza firebaseId, rimuovi solo dalla cache
+//                            turnoRepository.deleteTurnoFromCache(turno)
+                            turniEliminati++
+                        }
+                    }
+                }
+            }
+
+            // Messaggio di successo
+            val messaggio = buildString {
+                if (turniSincronizzati > 0) {
+                    append("$turniSincronizzati turni sincronizzati")
+                }
+                if (turniEliminati > 0) {
+                    if (turniSincronizzati > 0) append(", ")
+                    append("$turniEliminati turni eliminati")
+                }
+                if (turniSincronizzati == 0 && turniEliminati == 0) {
+                    append("Nessuna modifica da sincronizzare")
+                }
+            }
+
+            Resource.Success(messaggio)
+
+        } catch (e: Exception) {
+            Resource.Error("Errore durante la sincronizzazione: ${e.message}")
+        }
+    }
+
     suspend fun createMockTurno()
     {
         turnoRepository.createMockTurni()
     }
+
 
     suspend fun fetchTurniSettimana(startWeek: LocalDate): Resource<List<Turno>> {
         return try {

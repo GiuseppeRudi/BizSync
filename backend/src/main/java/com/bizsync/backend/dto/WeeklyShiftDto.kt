@@ -9,7 +9,7 @@ data class WeeklyShiftDto(
     val createdBy: String = "",
     val createdAt: Timestamp? = null,
     val updatedAt: Timestamp? = null,
-    val status: String = "IN_PROGRESS",
+    val status: String = "NOT_PUBLISHED",
 
     // Metadati aggiuntivi
     val weekEnd: String = "", // ISO format "2025-07-21" (domenica)
