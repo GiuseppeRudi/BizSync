@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import com.bizsync.app.navigation.GestioneNavigator
 import com.bizsync.app.navigation.LocalUserViewModel
+import com.bizsync.ui.components.ManagementTemplate
 import com.bizsync.ui.model.ManagementCard
 import com.bizsync.ui.theme.BizSyncColors
 import com.bizsync.ui.theme.BizSyncDimensions
@@ -281,7 +282,7 @@ fun ManagementCardItem(
 // Schermate per Dipendenti
 @Composable
 fun ShiftsManagementScreen(onBackClick: () -> Unit) {
-    ManagementScreenTemplate(
+    ManagementTemplate(
         title = "Turni di Lavoro",
         onBackClick = onBackClick,
         content = "Visualizza e gestisci i tuoi turni - Coming Soon"
@@ -291,7 +292,7 @@ fun ShiftsManagementScreen(onBackClick: () -> Unit) {
 
 @Composable
 fun ActivitiesManagementScreen(onBackClick: () -> Unit) {
-    ManagementScreenTemplate(
+    ManagementTemplate(
         title = "Le Tue Attività",
         onBackClick = onBackClick,
         content = "Gestisci le tue attività quotidiane - Coming Soon"
@@ -300,7 +301,7 @@ fun ActivitiesManagementScreen(onBackClick: () -> Unit) {
 
 @Composable
 fun EmployeeSettingsScreen(onBackClick: () -> Unit) {
-    ManagementScreenTemplate(
+    ManagementTemplate(
         title = "Impostazioni Profilo",
         onBackClick = onBackClick,
         content = "Modifica il tuo profilo e preferenze - Coming Soon"
@@ -309,26 +310,18 @@ fun EmployeeSettingsScreen(onBackClick: () -> Unit) {
 
 @Composable
 fun EmployeeFinanceScreen(onBackClick: () -> Unit) {
-    ManagementScreenTemplate(
+    ManagementTemplate(
         title = "Le Tue Finanze",
         onBackClick = onBackClick,
         content = "Buste paga e rimborsi - Coming Soon"
     )
 }
 
-@Composable
-fun CompanyInfoScreen(onBackClick: () -> Unit) {
-    ManagementScreenTemplate(
-        title = "Informazioni Azienda",
-        onBackClick = onBackClick,
-        content = "Dettagli e contatti aziendali - Coming Soon"
-    )
-}
 
 // Schermate Manager esistenti
 @Composable
 fun ProjectsManagementScreen(onBackClick: () -> Unit) {
-    ManagementScreenTemplate(
+    ManagementTemplate(
         title = "Gestione Progetti",
         onBackClick = onBackClick,
         content = "Sezione Progetti - Coming Soon"
@@ -337,89 +330,27 @@ fun ProjectsManagementScreen(onBackClick: () -> Unit) {
 
 @Composable
 fun FinanceManagementScreen(onBackClick: () -> Unit) {
-    ManagementScreenTemplate(
+    ManagementTemplate(
         title = "Gestione Finanze",
         onBackClick = onBackClick,
         content = "Sezione Finanze - Coming Soon"
     )
 }
-
-
-
-
-
-@Composable
-fun ReportsManagementScreen(onBackClick: () -> Unit) {
-    ManagementScreenTemplate(
-        title = "Reportistica",
-        onBackClick = onBackClick,
-        content = "Sezione Report - Coming Soon"
-    )
-}
-
-@Composable
-fun SettingsManagementScreen(onBackClick: () -> Unit) {
-    ManagementScreenTemplate(
-        title = "Impostazioni Sistema",
-        onBackClick = onBackClick,
-        content = "Configurazioni sistema - Coming Soon"
-    )
-}
+//@Composable
+//fun SettingsManagementScreen(onBackClick: () -> Unit) {
+//    ManagementTemplate(
+//        title = "Impostazioni Sistema",
+//        onBackClick = onBackClick,
+//        content = "Configurazioni sistema - Coming Soon"
+//    )
+//}
 
 @Composable
 fun SecurityManagementScreen(onBackClick: () -> Unit) {
-    ManagementScreenTemplate(
+    ManagementTemplate(
         title = "Sicurezza",
         onBackClick = onBackClick,
         content = "Sezione Sicurezza - Coming Soon"
     )
 }
 
-// Template riutilizzabile per le schermate
-@Composable
-private fun ManagementScreenTemplate(
-    title: String,
-    onBackClick: () -> Unit,
-    content: String
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(BizSyncColors.Background)
-            .padding(BizSyncDimensions.SpacingMedium)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onBackClick) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Indietro",
-                    tint = BizSyncColors.OnBackground
-                )
-            }
-
-            Text(
-                text = title,
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = BizSyncColors.OnBackground
-                ),
-                modifier = Modifier.padding(start = BizSyncDimensions.SpacingSmall)
-            )
-        }
-
-        // Content
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = content,
-                style = MaterialTheme.typography.bodyLarge,
-                color = BizSyncColors.OnSurfaceVariant
-            )
-        }
-    }
-}

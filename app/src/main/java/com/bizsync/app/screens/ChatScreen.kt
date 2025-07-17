@@ -26,20 +26,75 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.bizsync.app.navigation.LocalScaffoldViewModel
+import com.bizsync.domain.model.User
 
 @Composable
 fun ChatScreen() {
 
 
-  //  AIChatScreen(onBackClick = {})
+    // Dipendente di esempio 1
+    val dipendente1 = User(
+        uid = "user1",
+        email = "lucia.reception@example.com",
+        nome = "Lucia",
+        cognome = "Bianchi",
+        photourl = "",
+        idAzienda = "ZNTzPHOA2xyJMgymaFN7",
+        manager = false,
+        posizioneLavorativa = "Receptionist",
+        dipartimento = "c678978a-07d4-43cd-b909-08fd881e62b8" // Reception
+    )
 
-    EmployeeChatScreen(onBackClick = {})
+// Dipendente di esempio 2
+    val dipendente2 = User(
+        uid = "user2",
+        email = "marco.conta@example.com",
+        nome = "Marco",
+        cognome = "Verdi",
+        photourl = "",
+        idAzienda = "ZNTzPHOA2xyJMgymaFN7",
+        manager = false,
+        posizioneLavorativa = "Contabile",
+        dipartimento = "ddf2acb0-d62e-45f4-9d37-9f43a0f15b13" // Contabilità
+    )
 
-    val sscaffoldVM = LocalScaffoldViewModel.current
+// Dipendente di esempio 3
+    val dipendente3 = User(
+        uid = "user3",
+        email = "elisa.hr@example.com",
+        nome = "Elisa",
+        cognome = "Neri",
+        photourl = "",
+        idAzienda = "ZNTzPHOA2xyJMgymaFN7",
+        manager = false,
+        posizioneLavorativa = "Risorse Umane",
+        dipartimento = "cf1edb95-6954-4f55-9aed-449cee490cae" // Risorse Umane
+    )
 
-    LaunchedEffect(Unit) {
-        sscaffoldVM.onFullScreenChanged(true)
-    }
+// Manager
+    val managerUser = User(
+        uid = "manager1",
+        email = "franco.manager@example.com",
+        nome = "Franchino",
+        cognome = "Criminale",
+        photourl = "",
+        idAzienda = "ZNTzPHOA2xyJMgymaFN7",
+        manager = true,
+        posizioneLavorativa = "Direttore",
+        dipartimento = "a8cd75a7-dda5-4bf2-857b-0ba960994640" // Supervisione
+    )
+
+// Lista completa da passare al Composable
+    val listaDipendenti = listOf(dipendente1, dipendente2, dipendente3)
+
+    //  AIChatScreen(onBackClick = {})
+
+    EmployeeChatScreen(
+        currentUser = managerUser,
+        employees = listaDipendenti,
+        onBackClick = { /* navigazione indietro */ }
+    )
+
 
 
 }
