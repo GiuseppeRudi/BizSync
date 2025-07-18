@@ -67,12 +67,13 @@ fun GestioneTurniDipartimentoScreen(
     val showDialogCreateShift = managerState.showDialogCreateShift
 
 
+
     val hasChangeShift = managerState.hasChangeShift
 
     LaunchedEffect(Unit) {
         if (weeklyShift != null && hasChangeShift) {
             Log.d("AVVIO", "GESTIONE TURNI DIARTERNALI")
-            managerVM.caricaTurniSettimanaEDipartimento(weeklyShift.weekStart, dipartimento.id)
+            managerVM.caricaTurniSettimanaEDipartimento(weeklyShift.weekStart,  dipartimento.id)
         }
     }
 

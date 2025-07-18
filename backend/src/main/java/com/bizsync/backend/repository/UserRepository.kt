@@ -83,8 +83,7 @@ class UserRepository @Inject constructor(private val db : FirebaseFirestore) {
             Resource.Error(e.message ?: "Errore sconosciuto")
         }
     }
-
-    suspend fun getDipendentiByAzienda(idAzienda: String): Resource<List<User>> {
+    suspend fun getDipendentiByAzienda(idAzienda: String, idUser: String): Resource<List<User>> {
         return try {
             Log.d("DIPENDENTI_DEBUG", "Recupero dipendenti per azienda: $idAzienda")
 
@@ -95,16 +94,19 @@ class UserRepository @Inject constructor(private val db : FirebaseFirestore) {
 
             Log.d("DIPENDENTI_DEBUG", "Trovati ${result.documents.size} documenti per azienda $idAzienda")
 
-            val dipendenti = result.documents.mapNotNull { document ->
-                try {
-                    val userDto = document.toObject(UserDto::class.java)?.copy(uid = document.id)
-                    Log.d("DIPENDENTI_DEBUG", "Dipendente mappato: ${userDto?.nome} ${userDto?.cognome}")
-                    userDto
-                } catch (e: Exception) {
-                    Log.e("DIPENDENTI_DEBUG", "Errore nel mappare documento ${document.id}", e)
-                    null
+            val dipendenti = result.documents
+                .filter { it.id != idUser} // 🔥 filtro per escludere l'utente corrente
+                .mapNotNull { document ->
+                    try {
+                        val userDto = document.toObject(UserDto::class.java)?.copy(uid = document.id)
+                        Log.d("DIPENDENTI_DEBUG", "Dipendente mappato: ${userDto?.nome} ${userDto?.cognome}")
+                        userDto
+                    } catch (e: Exception) {
+                        Log.e("DIPENDENTI_DEBUG", "Errore nel mappare documento ${document.id}", e)
+                        null
+                    }
                 }
-            }
+
             Log.d("DIPENDENTI_DEBUG", "Mappati con successo ${dipendenti.size} dipendenti")
 
             if (dipendenti.isNotEmpty()) {
@@ -119,6 +121,7 @@ class UserRepository @Inject constructor(private val db : FirebaseFirestore) {
             Resource.Error(e.message ?: "Errore nel recupero dipendenti")
         }
     }
+
 
 
 

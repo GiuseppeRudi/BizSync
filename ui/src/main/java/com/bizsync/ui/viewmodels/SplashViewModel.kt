@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.DayOfWeek
 import java.time.LocalDate
 import javax.inject.Inject
 
@@ -47,14 +48,22 @@ class SplashViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(SplashState())
     val uiState: StateFlow<SplashState> = _uiState
 
-    fun createMockTurno()
-    {
-        viewModelScope.launch {
-            turnoOrchestrator.createMockTurno()
+
+    fun clearObsoleteCacheIfNeeded(today: LocalDate = LocalDate.now()) {
+        if (today.dayOfWeek == DayOfWeek.MONDAY) {
+            viewModelScope.launch {
+                try {
+                    turnoOrchestrator.deleteOldCachedData(today)
+                    absenceOrchestrator.deleteOldCachedData(today)
+                    Log.d("CACHE_CLEANER", "✅ Pulizia completata")
+                } catch (e: Exception) {
+                    Log.e("CACHE_CLEANER", "❌ Errore nella pulizia: ${e.message}")
+                }
+            }
         }
     }
 
-    fun getAllTurniByIdAzienda(idAzienda: String, forceRefresh: Boolean = false) {
+    fun getAllTurniByIdAzienda(idAzienda: String, idEmployee : String? = null,forceRefresh: Boolean = false) {
         if (idAzienda.isEmpty()) {
             setError("ID Azienda non valido")
             return
@@ -64,7 +73,7 @@ class SplashViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, syncInProgress = true) }
 
             try {
-                when (val result = turnoOrchestrator.getTurni(idAzienda, forceRefresh)) {
+                when (val result = turnoOrchestrator.getTurni(idAzienda,idEmployee, forceRefresh)) {
                     is Resource.Success -> {
                         val turniPerData = result.data.groupBy { it.data }
 
@@ -125,7 +134,7 @@ class SplashViewModel @Inject constructor(
     }
 
 
-    fun getAllAbsencesByIdAzienda(idAzienda: String, forceRefresh: Boolean = false) {
+    fun getAllAbsencesByIdAzienda(idAzienda: String, idEmployee : String? = null , forceRefresh: Boolean = false) {
         if (idAzienda.isEmpty()) {
             setError("ID Azienda non valido")
             return
@@ -135,7 +144,7 @@ class SplashViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, syncInProgress = true) }
 
             try {
-                when (val result = absenceOrchestrator.getAbsences(idAzienda, forceRefresh)) {
+                when (val result = absenceOrchestrator.getAbsences(idAzienda = idAzienda, idEmployee, forceRefresh = forceRefresh)) {
                     is Resource.Success -> {
                         val absenceUiList = result.data.map { it.toUi() } // Converti da Domain a UI
 
@@ -197,6 +206,7 @@ class SplashViewModel @Inject constructor(
             }
         }
     }
+
 
 
     fun getAllContrattiByIdAzienda(idAzienda: String, forceRefresh: Boolean = false) {
@@ -269,7 +279,7 @@ class SplashViewModel @Inject constructor(
     }
 
 
-    fun getAllUserByIdAgency(idAzienda: String, forceRefresh: Boolean = false) {
+    fun getAllUserByIdAgency(idAzienda: String, idUser : String, forceRefresh: Boolean = false) {
         if (idAzienda.isEmpty()) {
             setError("ID Azienda non valido")
             return
@@ -279,7 +289,7 @@ class SplashViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, syncInProgress = true) }
 
             try {
-                when (val result = userOrchestrator.getDipendenti(idAzienda, forceRefresh)) {
+                when (val result = userOrchestrator.getDipendenti(idAzienda, idUser,forceRefresh)) {
                     is Resource.Success -> {
                         _uiState.update { currentState ->
                             currentState.copy(

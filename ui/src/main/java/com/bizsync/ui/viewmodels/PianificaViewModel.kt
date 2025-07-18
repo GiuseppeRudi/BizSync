@@ -12,7 +12,7 @@ import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.AreaLavoro
 import com.bizsync.domain.model.Turno
 import com.bizsync.domain.model.WeeklyShift
-import com.bizsync.domain.utils.AbsenceWindowCalculator
+import com.bizsync.domain.utils.WeeklyWindowCalculator
 import com.bizsync.domain.utils.WeeklyPublicationCalculator
 import com.bizsync.ui.model.PianificaState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -59,51 +59,60 @@ import javax.inject.Inject
         }
 
         fun getWeeklyShiftCorrente(selectionDate: LocalDate) {
-            viewModelScope.launch {
-                val weekStart = AbsenceWindowCalculator.getWeekStartFromDate(selectionDate)
-                Log.d(TAG, "📆 Recupero turni per settimana con start: $weekStart")
+
+            val currentWeekStart = WeeklyWindowCalculator.getWeekStartFromDate(selectionDate)
+            val weeklyShiftAttuale = _uistate.value.weeklyShiftAttuale
+
+            if(weeklyShiftAttuale?.weekStart != currentWeekStart && weeklyShiftAttuale == null)
+            {
+
+                viewModelScope.launch {
+                    val weekStart = WeeklyWindowCalculator.getWeekStartFromDate(selectionDate)
+                    Log.d(TAG, "📆 Recupero turni per settimana con start: $weekStart")
 
 
-                try {
-                    when (val result = weeklyShiftRepository.getWeeklyShiftCorrente(weekStart)) {
-                        is Resource.Success -> {
-                            Log.d(TAG, "✅ Weekly shift corrente trovato: ${result.data}")
-                            _uistate.update {
-                                it.copy(
-                                    weeklyShiftAttuale = result.data
-                                )
+                    try {
+                        when (val result = weeklyShiftRepository.getWeeklyShiftCorrente(weekStart)) {
+                            is Resource.Success -> {
+                                Log.d(TAG, "✅ Weekly shift corrente trovato: ${result.data}")
+                                _uistate.update {
+                                    it.copy(
+                                        weeklyShiftAttuale = result.data
+                                    )
+                                }
+                            }
+
+                            is Resource.Empty -> {
+                                Log.d(TAG, "📭 Nessun weekly shift presente per la settimana selezionata")
+                                _uistate.update {
+                                    it.copy(
+                                        weeklyShiftAttuale = null
+                                    )
+                                }
+                            }
+
+                            is Resource.Error -> {
+                                Log.e(TAG, "❌ Errore nel recupero weekly shift corrente: ${result.message}")
+                                _uistate.update {
+                                    it.copy(
+                                        errorMsg = result.message,
+                                        weeklyShiftAttuale = null
+                                    )
+                                }
                             }
                         }
-
-                        is Resource.Empty -> {
-                            Log.d(TAG, "📭 Nessun weekly shift presente per la settimana selezionata")
-                            _uistate.update {
-                                it.copy(
-                                    weeklyShiftAttuale = null
-                                )
-                            }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "❌ Errore imprevisto nel recupero dei dati", e)
+                        _uistate.update {
+                            it.copy(
+                                errorMsg = e.message ?: "Errore sconosciuto",
+                                weeklyShiftAttuale = null
+                            )
                         }
-
-                        is Resource.Error -> {
-                            Log.e(TAG, "❌ Errore nel recupero weekly shift corrente: ${result.message}")
-                            _uistate.update {
-                                it.copy(
-                                    errorMsg = result.message,
-                                    weeklyShiftAttuale = null
-                                )
-                            }
-                        }
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "❌ Errore imprevisto nel recupero dei dati", e)
-                    _uistate.update {
-                        it.copy(
-                            errorMsg = e.message ?: "Errore sconosciuto",
-                            weeklyShiftAttuale = null
-                        )
                     }
                 }
             }
+
         }
 
         fun setDipartimentoScreen(dipartimento : AreaLavoro) {
@@ -118,11 +127,7 @@ import javax.inject.Inject
         }
 
 
-        // ========== WEEKLY SHIFT FUNCTIONS ==========
 
-        /**
-         * Controlla se esiste già una pianificazione settimanale
-         */
         fun checkWeeklyPlanningStatus(idAzienda: String) {
             viewModelScope.launch {
                 Log.d(TAG, "🔍 Controllo pianificazione per azienda: $idAzienda")

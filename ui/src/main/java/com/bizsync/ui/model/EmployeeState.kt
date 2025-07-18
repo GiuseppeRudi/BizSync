@@ -1,18 +1,52 @@
 package com.bizsync.ui.model
 
-
-import com.bizsync.domain.constants.enumClass.EmployeeSection
+import com.bizsync.domain.model.Absence
 import com.bizsync.domain.model.Contratto
 import com.bizsync.domain.model.Turno
+import com.bizsync.domain.model.User
+import com.bizsync.ui.viewmodels.DettagliGiornalieri
+import com.bizsync.ui.viewmodels.StatisticheSettimanali
+import java.time.DayOfWeek
+import java.time.LocalDate
+
 
 data class EmployeeState(
-    var currentSection  : EmployeeSection = EmployeeSection.MAIN ,
-    val selectedEmployee : UserUi? = null,
-    val employees: List<UserUi> = emptyList(),
-    val contract: Contratto? = null,
-    val shifts: List<Turno> = emptyList(),
-    val isLoading: Boolean = false,
+    // Dati utente corrente
+    val currentUser: User? = null,
+    val contrattoEmployee: Contratto? = null,
+
+    // Turni employee
+    val turniEmployee: List<Turno> = emptyList(),
+    val turniSettimanali: Map<DayOfWeek, List<Turno>> = emptyMap(),
+    val turniGiornalieri: List<Turno> = emptyList(),
+    val turnoSelezionato: Turno? = null,
+
+    // Data selezionata e dettagli
+    val dataSelezionata: LocalDate? = null,
+    val dettagliGiornalieri: DettagliGiornalieri? = null,
+    val statisticheSettimanali: StatisticheSettimanali? = null,
+
+    // Colleghi
+    val colleghiTurno: List<User> = emptyList(),
+
+    // Assenze employee
+    val assenzeEmployee: List<Absence> = emptyList(),
+
+    // Dialog states
+    val showDialogDettagliTurno: Boolean = false,
+
+    // Loading e messaggi
+    val loading: Boolean = false,
     val errorMessage: String? = null,
-    val searchQuery : String = "",
-    val selectedDepartment : String = "Tutti",
-)
+    val successMessage: String? = null,
+
+    // Validazione
+    val isFormValid: Boolean = false,
+    val validationErrors: List<String> = emptyList()
+) {
+    // Computed properties
+    val hasError: Boolean get() = errorMessage != null
+    val hasSuccess: Boolean get() = successMessage != null
+    val hasTurnoOggi: Boolean get() = turniEmployee.any { it.data == LocalDate.now() }
+    val hasTurniGiornalieri: Boolean get() = turniGiornalieri.isNotEmpty()
+}

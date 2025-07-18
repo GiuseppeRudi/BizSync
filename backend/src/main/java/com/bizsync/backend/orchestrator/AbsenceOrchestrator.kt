@@ -8,18 +8,28 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import android.util.Log
 import com.bizsync.cache.mapper.toDomainList
+import java.time.DayOfWeek
+import java.time.LocalDate
 
 @Singleton
 class AbsenceOrchestrator @Inject constructor(
     private val absenceSyncManager: AbsenceSyncManager,
     private val absenceDao: AbsenceDao
 ) {
-    suspend fun getAbsences(idAzienda: String, forceRefresh: Boolean = false): Resource<List<Absence>> {
+
+
+    suspend fun deleteOldCachedData(today: LocalDate = LocalDate.now()) {
+        val cutoffDate = today.minusDays(90)
+        val endOfWeek = cutoffDate.with(DayOfWeek.SUNDAY)
+        absenceDao.deleteOlderThanWeek( endOfWeek.toString())
+    }
+
+    suspend fun getAbsences(idAzienda: String, idEmployee : String? , forceRefresh: Boolean = false): Resource<List<Absence>> {
         return try {
             if (forceRefresh) {
                 Log.d("ABSENCE_ORCH", "🔄 Force sync attivato per azienda $idAzienda")
 
-                val syncResult = absenceSyncManager.forceSync(idAzienda)
+                val syncResult = absenceSyncManager.forceSync(idAzienda, idEmployee)
                 if (syncResult is Resource.Error) {
                     Log.e("ABSENCE_ORCH", "❌ Errore durante forceSync: ${syncResult.message}")
                 }
@@ -32,7 +42,7 @@ class AbsenceOrchestrator @Inject constructor(
             } else {
                 Log.d("ABSENCE_ORCH", "⚙️ Sync intelligente per azienda $idAzienda")
 
-                when (val result = absenceSyncManager.syncIfNeeded(idAzienda)) {
+                when (val result = absenceSyncManager.syncIfNeeded(idAzienda,idEmployee)) {
                     is Resource.Success -> {
                         // Prendi i dati direttamente dalla cache dopo il sync intelligente
                         val cachedEntities = absenceDao.getAbsencesByAzienda(idAzienda)

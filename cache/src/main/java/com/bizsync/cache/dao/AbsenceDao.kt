@@ -102,6 +102,27 @@ interface AbsenceDao {
     @Query("DELETE FROM absences WHERE idAzienda = :idAzienda")
     suspend fun deleteByAzienda(idAzienda: String)
 
+    @Query("""
+    DELETE FROM absences 
+    WHERE idAzienda = :idAzienda 
+      AND startDate >= :startDate 
+      AND endDate <= :endDate
+""")
+    suspend fun deleteByAziendaInDateRange(
+        idAzienda: String,
+        startDate: String, // formato "yyyy-MM-dd"
+        endDate: String    // formato "yyyy-MM-dd"
+    )
+
+    @Query("""
+    DELETE FROM absences
+    WHERE endDate  < :endDate
+""")
+    suspend fun deleteOlderThanWeek(endDate: String)
+
+
+
+
     @Query("DELETE FROM absences WHERE idUser = :idUser")
     suspend fun deleteByUser(idUser: String)
 

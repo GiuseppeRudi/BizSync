@@ -39,14 +39,21 @@ fun MainApp(onLogout : () -> Unit) {
     }
 
 
-    LaunchedEffect(userState.azienda.idAzienda) {
-//        splashVM.createMockTurno()
-        if (userState.azienda.idAzienda.isNotEmpty()) {
-            splashVM.getAllUserByIdAgency(userState.azienda.idAzienda)
+    LaunchedEffect(userState.azienda.idAzienda, userState.user.isManager) {
+        if (userState.azienda.idAzienda.isNotEmpty() && userState.user.isManager && userState.user.uid.isNotEmpty()) {
+            splashVM.getAllUserByIdAgency(userState.azienda.idAzienda, userState.user.uid)
             splashVM.getAllContrattiByIdAzienda(userState.azienda.idAzienda)
             splashVM.getAllAbsencesByIdAzienda(userState.azienda.idAzienda)
             splashVM.getAllTurniByIdAzienda(userState.azienda.idAzienda)
         }
+
+        if (userState.azienda.idAzienda.isNotEmpty() && !userState.user.isManager && userState.user.uid.isNotEmpty()) {
+            splashVM.getAllUserByIdAgency(userState.azienda.idAzienda, userState.user.uid)
+            splashVM.getAllAbsencesByIdAzienda(userState.azienda.idAzienda,userState.user.uid)
+            splashVM.getAllTurniByIdAzienda(userState.azienda.idAzienda,userState.user.uid)
+        }
+
+        splashVM.clearObsoleteCacheIfNeeded()
     }
 
 

@@ -1,8 +1,6 @@
 package com.bizsync.ui.viewmodels
 
-import android.os.Build
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.orchestrator.TurnoOrchestrator
@@ -16,8 +14,6 @@ import com.bizsync.domain.constants.enumClass.AbsenceStatus
 import com.bizsync.domain.constants.enumClass.TipoPausa
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.*
-import com.bizsync.domain.utils.AbsenceWindowCalculator
-import com.bizsync.ui.components.AbsenceWindowCalculatorExtension
 import com.bizsync.ui.model.ManagerState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
@@ -242,9 +238,10 @@ class PianificaManagerViewModel @Inject constructor(
     }
 
 
-    fun setTurniSettimanali(startWeek: LocalDate) {
+    fun setTurniSettimanali(startWeek: LocalDate, idAzienda: String) {
         viewModelScope.launch {
-            when (val result = turnoOrchestrator.fetchTurniSettimana(startWeek)) {
+
+            when (val result = turnoOrchestrator.fetchTurniSettimana(startWeek,idAzienda)) {
                 is Resource.Success -> {
                     val turni = result.data
 
@@ -338,23 +335,7 @@ class PianificaManagerViewModel @Inject constructor(
         Log.d(TAG, "Iniziato nuovo turno per giorno: $giornoSelezionato")
     }
 
-    /**
-     * Carica un turno esistente per la modifica
-     */
-    fun caricaTurnoPerModifica(turno: Turno) {
-        _uiState.update {
-            it.copy(
-                turnoInModifica = turno,
-                showDialogCreateShift = true
-            )
-        }
 
-        Log.d(TAG, "Caricato turno per modifica: ${turno.titolo}")
-    }
-
-    /**
-     * Pulisce il turno in modifica
-     */
     fun pulisciTurnoInModifica() {
         _uiState.update {
             it.copy(
@@ -364,16 +345,6 @@ class PianificaManagerViewModel @Inject constructor(
         }
     }
 
-
-    // ========== GESTIONE PAUSE ==========
-
-    /**
-     * Apre il dialog per gestire le pause
-     */
-    fun apriGestionePause() {
-        _uiState.update { it.copy(showPauseDialog = true) }
-        Log.d(TAG, "Aperto dialog gestione pause")
-    }
 
     /**
      * Chiude il dialog per gestire le pause
@@ -434,7 +405,6 @@ class PianificaManagerViewModel @Inject constructor(
         Log.d(TAG, "Pulita pausa in modifica")
     }
 
-// ========== AGGIORNAMENTO CAMPI PAUSA ==========
 
     /**
      * Aggiorna il tipo della pausa in modifica
@@ -576,32 +546,7 @@ class PianificaManagerViewModel @Inject constructor(
         _uiState.update { it.copy(showPauseDialog = show) }
     }
 
-// ========== UTILITY PAUSE ==========
 
-    /**
-     * Calcola la durata totale delle pause del turno corrente
-     */
-    fun calcolaDurataTotalePause(): Long {
-        val turno = _uiState.value.turnoInModifica ?: return 0L
-        return turno.pause.sumOf { it.durata.toMinutes() }
-    }
-
-    /**
-     * Verifica se esistono pause retribuite nel turno corrente
-     */
-    fun haPauseRetribuite(): Boolean {
-        val turno = _uiState.value.turnoInModifica ?: return false
-        return turno.pause.any { it.èRetribuita }
-    }
-
-    /**
-     * Ottiene le pause raggruppate per tipo
-     */
-    fun getPausePerTipo(): Map<TipoPausa, List<Pausa>> {
-        val turno = _uiState.value.turnoInModifica ?: return emptyMap()
-        return turno.pause.groupBy { it.tipo }
-    }
-    // ========== AGGIORNAMENTO CAMPI TURNO ==========
 
     fun aggiornaTitolo(nuovoTitolo: String) {
         val turnoCorrente = _uiState.value.turnoInModifica ?: return
@@ -633,15 +578,6 @@ class PianificaManagerViewModel @Inject constructor(
         Log.d(TAG, "Orario fine aggiornato: $nuovoOrario")
     }
 
-    fun aggiornaDipartimento(nuovoDipartimentoId: String) {
-        val turnoCorrente = _uiState.value.turnoInModifica ?: return
-        val turnoAggiornato = turnoCorrente.copy(
-            dipartimentoId = nuovoDipartimentoId,
-            updatedAt = LocalDate.now()
-        )
-        _uiState.update { it.copy(turnoInModifica = turnoAggiornato) }
-        Log.d(TAG, "Dipartimento aggiornato: $nuovoDipartimentoId")
-    }
 
     fun aggiornaDipendenti(nuoviDipendenti: List<String>) {
         val turnoCorrente = _uiState.value.turnoInModifica ?: return
@@ -673,47 +609,7 @@ class PianificaManagerViewModel @Inject constructor(
         Log.d(TAG, "Note aggiornate: ${nuoveNote.size} note")
     }
 
-    // ========== VALIDAZIONE TURNO ==========
 
-    /**
-     * Valida il turno corrente
-     */
-    fun validaTurno(): ValidationResult {
-        val turno = _uiState.value.turnoInModifica
-            ?: return ValidationResult.Error("Nessun turno in modifica")
-
-        val errori = mutableListOf<String>()
-
-        // Validazione titolo
-        if (turno.titolo.isBlank()) {
-            errori.add("Il titolo è obbligatorio")
-        } else if (turno.titolo.length > 50) {
-            errori.add("Il titolo non può superare i 50 caratteri")
-        }
-
-        // Validazione orari
-        if (turno.orarioInizio >= turno.orarioFine) {
-            errori.add("L'orario di inizio deve essere precedente all'orario di fine")
-        }
-
-        // Validazione dipartimento
-        if (turno.dipartimentoId.isBlank()) {
-            errori.add("Seleziona un dipartimento")
-        }
-
-        // Validazione dipendenti
-        if (turno.idDipendenti.isEmpty()) {
-            errori.add("Seleziona almeno un dipendente")
-        }
-
-        return if (errori.isEmpty()) {
-            ValidationResult.Success
-        } else {
-            ValidationResult.Error(errori.joinToString("\n"))
-        }
-    }
-
-    // ========== SALVATAGGIO TURNO ==========
 
     /**
      * Salva il turno corrente

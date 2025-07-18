@@ -63,8 +63,23 @@ interface TurnoDao {
     suspend fun getTurnoById(id: String): TurnoEntity?
 
     // Elimina tutti i turni per una certa azienda
-    @Query("DELETE FROM turni WHERE idAzienda = :idAzienda")
-    suspend fun deleteByAzienda(idAzienda: String)
+    @Query("""
+    DELETE FROM turni 
+    WHERE idAzienda = :idAzienda 
+      AND data BETWEEN :startDate AND :endDate
+""")
+    suspend fun deleteByAziendaForManager(
+        idAzienda: String,
+        startDate: LocalDate,
+        endDate: LocalDate
+    )
+
+    @Query("""
+    DELETE FROM turni 
+    WHERE data  < :endDate
+""")
+    suspend fun deleteOlderThan(endDate: LocalDate)
+
 
     // Elimina tutti i turni per un certo dipartimento
     @Query("DELETE FROM turni WHERE dipartimentoId = :dipartimentoId")

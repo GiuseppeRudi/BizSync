@@ -17,16 +17,16 @@ class UserOrchestrator @Inject constructor(
     private val syncUserManager: SyncUserManager
 ) {
 
-    suspend fun getDipendenti(idAzienda: String, forceRefresh: Boolean = false): Resource<List<User>> {
+    suspend fun getDipendenti(idAzienda: String, idUser : String , forceRefresh: Boolean = false): Resource<List<User>> {
         return try {
             if (forceRefresh) {
                 // Force sync
-                syncUserManager.forceSync(idAzienda)
+                syncUserManager.forceSync(idAzienda, idUser)
                 val cachedEntities = userDao.getDipendenti(idAzienda)
                 Resource.Success(cachedEntities.toDomainList())
             } else {
                 // Sync intelligente con UNA SOLA chiamata Firebase
-                when (val result = syncUserManager.syncIfNeeded(idAzienda)) {
+                when (val result = syncUserManager.syncIfNeeded(idAzienda, idUser)) {
                     is Resource.Success -> {
                         val domainUsers = result.data.toDomainList()
                         Resource.Success(domainUsers)
@@ -41,8 +41,4 @@ class UserOrchestrator @Inject constructor(
         }
     }
 
-
-    suspend fun forceSync(idAzienda: String): Resource<Unit> {
-        return syncUserManager.forceSync(idAzienda)
-    }
 }

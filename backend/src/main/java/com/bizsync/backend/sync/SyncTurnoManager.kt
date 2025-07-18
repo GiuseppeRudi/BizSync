@@ -12,7 +12,8 @@ import com.bizsync.cache.entity.TurnoEntity
 import com.bizsync.cache.mapper.toEntityList
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.Turno
-import com.bizsync.domain.utils.AbsenceWindowCalculator
+import com.bizsync.domain.utils.WeeklyWindowCalculator
+import java.time.LocalDate
 import javax.inject.Inject
 
 class SyncTurnoManager @Inject constructor(
@@ -21,17 +22,20 @@ class SyncTurnoManager @Inject constructor(
     private val hashStorage: TurniHashStorage
 ) {
 
-    suspend fun syncIfNeeded(idAzienda: String): Resource<List<TurnoEntity>> {
+    suspend fun syncIfNeeded(idAzienda: String, idEmployee : String?): Resource<List<TurnoEntity>> {
         return try {
-            val currentWeekStart = AbsenceWindowCalculator.getCurrentWeekStart()
-            val currentWeekKey = AbsenceWindowCalculator.getWeekKey(currentWeekStart)
-            val (startDate, endDate) = AbsenceWindowCalculator.calculateAbsenceWindow(currentWeekStart)
+            val currentWeekStart = WeeklyWindowCalculator.getCurrentWeekStart()
 
+            val (startDate, endDate) = if (idEmployee == null) {
+                WeeklyWindowCalculator.calculateWindowForManager(currentWeekStart)
+            } else {
+                WeeklyWindowCalculator.calculateWindowForEmployee(currentWeekStart)
+            }
 
             val savedHash = hashStorage.getTurniHash(idAzienda)
 
             Log.d("TURNI_DEBUG", "🌐 Chiamata Firebase per turni azienda $idAzienda")
-            val firebaseResult = turnoRepository.getTurniRangeByAzienda(idAzienda,startDate, endDate)
+            val firebaseResult = turnoRepository.getTurniRangeByAzienda(idAzienda,startDate, endDate, idEmployee)
 
             when (firebaseResult) {
                 is Resource.Success -> {
@@ -43,7 +47,7 @@ class SyncTurnoManager @Inject constructor(
                         Log.d("TURNI_DEBUG", "   Hash salvato: $savedHash")
                         Log.d("TURNI_DEBUG", "   Hash corrente: $currentHash")
 
-                        performSyncWithData(idAzienda, firebaseData, currentHash)
+                        performSyncWithData(idAzienda, firebaseData, currentHash,startDate,endDate)
                     } else {
                         Log.d("TURNI_DEBUG", "✅ Cache valida - nessun aggiornamento necessario")
                     }
@@ -59,7 +63,7 @@ class SyncTurnoManager @Inject constructor(
                 }
 
                 is Resource.Empty -> {
-                    turnoDao.deleteByAzienda(idAzienda)
+                    turnoDao.deleteByAziendaForManager(idAzienda, startDate, endDate)
                     hashStorage.saveTurniHash(idAzienda, "")
                     Resource.Success(emptyList())
                 }
@@ -75,11 +79,11 @@ class SyncTurnoManager @Inject constructor(
         }
     }
 
-    suspend fun forceSync(idAzienda: String): Resource<Unit> {
+    suspend fun forceSync(idAzienda: String, idEmployee : String?): Resource<Unit> {
         return try {
             hashStorage.deleteTurniHash(idAzienda)
 
-            when (val result = syncIfNeeded(idAzienda)) {
+            when (val result = syncIfNeeded(idAzienda,idEmployee)) {
                 is Resource.Success -> Resource.Success(Unit)
                 is Resource.Error -> Resource.Error(result.message)
                 is Resource.Empty -> Resource.Success(Unit)
@@ -93,11 +97,13 @@ class SyncTurnoManager @Inject constructor(
     private suspend fun performSyncWithData(
         idAzienda: String,
         firebaseData: List<Turno>,
-        newHash: String
+        newHash: String,
+        startDate : LocalDate,
+        endDate : LocalDate
     ) {
         try {
-            val entities = firebaseData.toEntityList()
-            turnoDao.deleteByAzienda(idAzienda)
+            val entities = firebaseData.toEntityList().map { it.copy(isSynced = true) }
+            turnoDao.deleteByAziendaForManager(idAzienda,startDate,endDate)
             turnoDao.insertAll(entities)
             hashStorage.saveTurniHash(idAzienda, newHash)
 
@@ -108,22 +114,5 @@ class SyncTurnoManager @Inject constructor(
         }
     }
 
-    suspend fun validateCacheIntegrity(idAzienda: String): Boolean {
-        return try {
-            val savedHash = hashStorage.getTurniHash(idAzienda) ?: return false
-            val cachedData = turnoDao.getTurniByAzienda(idAzienda)
-            val currentCacheHash = cachedData.generateCacheHash()
 
-            val isValid = savedHash == currentCacheHash
-            if (!isValid) {
-                Log.w("TURNI_DEBUG", "⚠️ Cache turni non valida per azienda $idAzienda")
-                Log.w("TURNI_DEBUG", "   Hash salvato: $savedHash")
-                Log.w("TURNI_DEBUG", "   Hash attuale: $currentCacheHash")
-            }
-
-            isValid
-        } catch (e: Exception) {
-            false
-        }
-    }
 }

@@ -31,7 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.bizsync.domain.utils.AbsenceWindowCalculator
+import com.bizsync.domain.utils.WeeklyWindowCalculator
 import com.bizsync.ui.viewmodels.PianificaViewModel
 import com.kizitonwose.calendar.compose.WeekCalendar
 import com.kizitonwose.calendar.compose.weekcalendar.rememberWeekCalendarState
@@ -53,7 +53,7 @@ fun Calendar(pianificaVM: PianificaViewModel) {
 
     LaunchedEffect(weeklyShift) {
         rangeSettimana = if (weeklyShift != null) {
-            AbsenceWindowCalculator.getWeekBounds(weeklyShift.weekStart)
+            WeeklyWindowCalculator.getWeekBounds(weeklyShift.weekStart)
         } else {
             null
         }
@@ -181,7 +181,7 @@ fun Day(
     }
 }
 
-// ✅ Estensione utility per AbsenceWindowCalculator se non esiste già
+// ✅ Estensione utility per WeeklyWindowCalculator se non esiste già
 object AbsenceWindowCalculatorExtension {
 
     /**

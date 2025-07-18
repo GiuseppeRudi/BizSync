@@ -22,7 +22,7 @@ class SyncUserManager @Inject constructor(
 ) {
 
 
-    suspend fun syncIfNeeded(idAzienda: String): Resource<List<UserEntity>> {
+    suspend fun syncIfNeeded(idAzienda: String, idUser : String): Resource<List<UserEntity>> {
         val TAG = "DIPENDENTI_DEBUG"
 
         return try {
@@ -31,7 +31,7 @@ class SyncUserManager @Inject constructor(
 
             // 2. UNA SOLA chiamata Firebase
             Log.d(TAG, "🌐 Chiamata Firebase per azienda $idAzienda")
-            val firebaseResult = userRepository.getDipendentiByAzienda(idAzienda)
+            val firebaseResult = userRepository.getDipendentiByAzienda(idAzienda, idUser)
 
             when (firebaseResult) {
                 is Resource.Success -> {
@@ -85,13 +85,13 @@ class SyncUserManager @Inject constructor(
         }
     }
 
-    suspend fun forceSync(idAzienda: String): Resource<Unit> {
+    suspend fun forceSync(idAzienda: String, idUser : String): Resource<Unit> {
         return try {
             // Elimina hash salvato per forzare sync
             hashStorage.deleteDipendentiHash(idAzienda)
 
             // Esegui sync
-            when (val result = syncIfNeeded(idAzienda)) {
+            when (val result = syncIfNeeded(idAzienda, idUser)) {
                 is Resource.Success -> Resource.Success(Unit)
                 is Resource.Error -> Resource.Error(result.message)
                 is Resource.Empty -> Resource.Success(Unit)

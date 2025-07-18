@@ -27,7 +27,8 @@ class AbsenceRepository @Inject constructor(
     suspend fun checkAbsenceChangesInWindow(
         idAzienda: String,
         startDate: LocalDate,
-        endDate: LocalDate
+        endDate: LocalDate,
+        idEmployee: String?
     ): Resource<List<Absence>> {
         return try {
             Log.d("ABSENCE_CHECK", "🔍 Check completo assenze dal $startDate al $endDate")
@@ -35,12 +36,17 @@ class AbsenceRepository @Inject constructor(
             val startTimestamp = startDate.toFirebaseTimestamp()
             val endTimestamp = endDate.atTime(LocalTime.MAX).toFirebaseTimestamp()
 
-            val querySnapshot = db.collection(AbsencesFirestore.COLLECTION)
+            var query = db.collection(AbsencesFirestore.COLLECTION)
                 .whereEqualTo(AbsencesFirestore.Fields.IDAZIENDA, idAzienda)
                 .whereGreaterThanOrEqualTo(AbsencesFirestore.Fields.START_DATE_TIME, startTimestamp)
                 .whereLessThanOrEqualTo(AbsencesFirestore.Fields.END_DATE_TIME, endTimestamp)
-                .get()
-                .await()
+
+            // Aggiunge il filtro per idUtente solo se idEmployee è non nullo
+            if (idEmployee != null) {
+                query = query.whereEqualTo(AbsencesFirestore.Fields.IDUSER, idEmployee)
+            }
+
+            val querySnapshot = query.get().await()
 
             val absencesDto = querySnapshot.documents
                 .mapNotNull { it.toObject(AbsenceDto::class.java) }

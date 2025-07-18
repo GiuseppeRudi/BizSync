@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.repository.UserRepository
 import com.bizsync.domain.constants.enumClass.EmployeeSection
 
-import com.bizsync.ui.model.EmployeeState
+import com.bizsync.ui.model.EmployeeManagementState
 import com.bizsync.ui.model.UserUi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,12 +16,12 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class EmployeeViewModel @Inject constructor(
+class EmployeeManagementViewModel @Inject constructor(
     private val repository: UserRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(EmployeeState())
-    val uiState: StateFlow<EmployeeState> = _uiState
+    private val _uiState = MutableStateFlow(EmployeeManagementState())
+    val uiState: StateFlow<EmployeeManagementState> = _uiState
 
     fun setCurrentSection(section: EmployeeSection) {
         _uiState.update { it.copy(currentSection = section) }
@@ -39,7 +39,7 @@ class EmployeeViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(errorMessage = "Errore nel caricamento dei dipendenti: ${e.message}")
                 }
-                Log.e("EmployeeViewModel", "Error loading employees", e)
+                Log.e("EmployeeManagementViewModel", "Error loading employees", e)
             } finally {
                 _uiState.update { it.copy(isLoading = false) }
             }
@@ -58,7 +58,7 @@ class EmployeeViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(errorMessage = "Errore nel caricamento del contratto: ${e.message}")
                 }
-                Log.e("EmployeeViewModel", "Error loading contract", e)
+                Log.e("EmployeeManagementViewModel", "Error loading contract", e)
             } finally {
                 _uiState.update { it.copy(isLoading = false) }
             }
@@ -77,7 +77,7 @@ class EmployeeViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(errorMessage = "Errore nei turni passati: ${e.message}")
                 }
-                Log.e("EmployeeViewModel", "Error loading past shifts", e)
+                Log.e("EmployeeManagementViewModel", "Error loading past shifts", e)
             } finally {
                 _uiState.update { it.copy(isLoading = false) }
             }
@@ -96,7 +96,7 @@ class EmployeeViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(errorMessage = "Errore nei turni futuri: ${e.message}")
                 }
-                Log.e("EmployeeViewModel", "Error loading future shifts", e)
+                Log.e("EmployeeManagementViewModel", "Error loading future shifts", e)
             } finally {
                 _uiState.update { it.copy(isLoading = false) }
             }
@@ -120,7 +120,7 @@ class EmployeeViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(errorMessage = "Errore nella rimozione: ${e.message}")
                 }
-                Log.e("EmployeeViewModel", "Error firing employee", e)
+                Log.e("EmployeeManagementViewModel", "Error firing employee", e)
             } finally {
                 _uiState.update { it.copy(isLoading = false) }
             }

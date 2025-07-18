@@ -44,7 +44,7 @@ import androidx.compose.ui.unit.sp
 import com.bizsync.domain.constants.enumClass.EmployeeSection
 import com.bizsync.domain.model.Turno
 import com.bizsync.ui.model.UserUi
-import com.bizsync.ui.viewmodels.EmployeeViewModel
+import com.bizsync.ui.viewmodels.EmployeeManagementViewModel
 import java.text.SimpleDateFormat
 import java.util.Locale
 import androidx.compose.runtime.getValue
@@ -53,7 +53,7 @@ import androidx.compose.runtime.getValue
 @Composable
 fun ShiftsScreen(
     employee: UserUi,
-    employeeVm : EmployeeViewModel,
+    employeeVm : EmployeeManagementViewModel,
     isHistorical: Boolean = false,
 ) {
 
