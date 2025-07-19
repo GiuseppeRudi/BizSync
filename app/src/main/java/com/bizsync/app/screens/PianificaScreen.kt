@@ -1,11 +1,13 @@
 package com.bizsync.app.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EventBusy
 import androidx.compose.material.icons.filled.Schedule
+import com.bizsync.domain.utils.WeeklyWindowCalculator
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -13,8 +15,11 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.ui.graphics.Color
+
 import androidx.compose.material3.TextButton
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.filled.Person
 
 import androidx.compose.runtime.Composable
@@ -32,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import com.bizsync.domain.constants.enumClass.PianificaScreenManager
+import com.bizsync.domain.constants.enumClass.WeeklyShiftStatus
 import com.bizsync.domain.model.Turno
 import com.bizsync.domain.model.User
 import com.bizsync.ui.components.SelectionDataEmptyCard
@@ -136,22 +142,23 @@ fun PianificaDipendentiCore(
         scaffoldVM.onFullScreenChanged(false)
     }
 
-    LaunchedEffect(userState) {
-        employeeVM.inizializzaDati(userState.user.toDomain(), userState.contratto)
-    }
-
-
     val selectionData = pianificaState.selectionData
-    val dipartimenti = userState.azienda.areeLavoro
-    val dipartimento = dipartimenti.find { it.id == userState.user.dipartimento}
+
 
     val weeklyisIdentical = pianificaState.weeklyisIdentical
     val weeklyShiftRiferimento = pianificaState.weeklyShiftRiferimento
     val weeklyShiftAttuale = pianificaState.weeklyShiftAttuale
-
+    val dipartimento = employeeState.dipartimentoEmployee
     // Inizializza i dati del dipendente
     LaunchedEffect(Unit) {
-        employeeVM.inizializzaDatiEmployee(userState.user.uid, userState.azienda.idAzienda)
+        val dipartimenti = userState.azienda.areeLavoro
+        val dipartimento = dipartimenti.find { it.id == userState.user.dipartimento}
+        if(dipartimento != null)
+        employeeVM.inizializzaDatiEmployee(userState.user.uid, userState.azienda.idAzienda, dipartimento)
+    }
+
+    LaunchedEffect(userState) {
+        employeeVM.inizializzaDati(userState.user.toDomain(), userState.contratto)
     }
 
     LaunchedEffect(weeklyShiftRiferimento, weeklyShiftAttuale) {
@@ -181,7 +188,7 @@ fun PianificaDipendentiCore(
     }
 
     LaunchedEffect(weeklyShiftAttuale) {
-        if (weeklyShiftAttuale != null && !weeklyisIdentical) {
+        if (weeklyShiftAttuale != null && !weeklyisIdentical ) {
             employeeVM.setTurniSettimanaliDipendente(weeklyShiftAttuale.weekStart, userState.azienda.idAzienda, userState.user.uid)
         }
     }
@@ -189,7 +196,6 @@ fun PianificaDipendentiCore(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
     ) {
         // Header per dipendenti
         Card(
@@ -214,22 +220,75 @@ fun PianificaDipendentiCore(
                     color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
                 )
 
-                // Mostra statistiche settimanali se disponibili
-                employeeState.statisticheSettimanali?.let { statistiche ->
+                // Mostra statistiche settimanali e info WeeklyShift se disponibili
+                if (employeeState.statisticheSettimanali != null && weeklyShiftAttuale != null) {
+                    val statistiche = employeeState.statisticheSettimanali
+                    val (weekStart, weekEnd) = WeeklyWindowCalculator.getWeekBounds(weeklyShiftAttuale.weekStart)
+
                     Spacer(modifier = Modifier.height(8.dp))
+
+                    // Prima riga: Ore
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "Ore assegnate: ${statistiche.oreAssegnate}h",
+                            text = "Ore assegnate: ${statistiche?.oreAssegnate}h",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
                         )
                         Text(
-                            text = "Ore contrattuali: ${statistiche.oreContrattuali}h",
+                            text = "Ore contrattuali: ${statistiche?.oreContrattuali}h",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // Seconda riga: Periodo settimana
+                    Text(
+                        text = "Settimana: ${weekStart.format(DateTimeFormatter.ofPattern("dd/MM"))} - ${weekEnd.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                    )
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    // Terza riga: Status e data creazione
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Status con colore
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            val (statusText, statusColor) = when (weeklyShiftAttuale.status) {
+                                WeeklyShiftStatus.PUBLISHED -> "Pubblicata" to Color(0xFF4CAF50)
+                                WeeklyShiftStatus.DRAFT -> "Bozza" to Color(0xFFFF9800)
+                                WeeklyShiftStatus.NOT_PUBLISHED -> "In lavorazione" to Color(0xFF9E9E9E)
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .background(statusColor, CircleShape)
+                            )
+
+                            Text(
+                                text = statusText,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                            )
+                        }
+
+                        Text(
+                            text = "Creata: ${weeklyShiftAttuale.createdAt.format(DateTimeFormatter.ofPattern("dd/MM/yy"))}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.6f)
                         )
                     }
                 }
@@ -269,7 +328,7 @@ fun PianificaDipendentiCore(
                     }
                 )
             } else if (selectionData != null) {
-                // Nessun turno per la data selezionata
+                // Nessun turno per la data selezionata, ma mostra info dipartimento
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -278,7 +337,7 @@ fun PianificaDipendentiCore(
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Icon(
                             Icons.Default.EventBusy,
@@ -300,6 +359,45 @@ fun PianificaDipendentiCore(
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                             textAlign = TextAlign.Center
                         )
+
+                        // Mostra informazioni dipartimento anche quando non ci sono turni
+                        if (dipartimento != null) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
+                                )
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(16.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = "Dipartimento: ${dipartimento.nomeArea}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+
+                                    val dayOfWeek = selectionData.dayOfWeek
+                                    val orariDipartimento = dipartimento.orariSettimanali[dayOfWeek]
+
+                                    if (orariDipartimento != null) {
+                                        Text(
+                                            text = "Orari: ${orariDipartimento.first.format(DateTimeFormatter.ofPattern("HH:mm"))} - ${orariDipartimento.second.format(DateTimeFormatter.ofPattern("HH:mm"))}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                                        )
+                                    } else {
+                                        Text(
+                                            text = "Dipartimento chiuso",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             } else {
@@ -379,6 +477,26 @@ fun DettagliGiornalieri(
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
 
+                    // Informazioni dipartimento
+                    if (dettagli.nomeDipartimento != null) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Dipartimento: ${dettagli.nomeDipartimento}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.9f)
+                        )
+
+                        // Orari dipartimento
+                        if (dettagli.orarioAperturaDipartimento != null && dettagli.orarioChiusuraDipartimento != null) {
+                            Text(
+                                text = "Orari dipartimento: ${dettagli.orarioAperturaDipartimento!!.format(DateTimeFormatter.ofPattern("HH:mm"))} - ${dettagli.orarioChiusuraDipartimento!!.format(DateTimeFormatter.ofPattern("HH:mm"))}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                            )
+                        }
+                    }
+
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Row(
@@ -417,7 +535,7 @@ fun DettagliGiornalieri(
                     if (dettagli.orarioInizio != null && dettagli.orarioFine != null) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Orario: ${dettagli.orarioInizio!!.format(DateTimeFormatter.ofPattern("HH:mm"))} - ${dettagli.orarioFine!!.format(DateTimeFormatter.ofPattern("HH:mm"))}",
+                            text = "Orario turni: ${dettagli.orarioInizio!!.format(DateTimeFormatter.ofPattern("HH:mm"))} - ${dettagli.orarioFine!!.format(DateTimeFormatter.ofPattern("HH:mm"))}",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                         )
@@ -564,150 +682,6 @@ fun DettagliTurnoDialog(
         }
     )
 }
-
-//@Composable
-//fun PianificaDipendentiCore(
-//    pianificaVM: PianificaViewModel
-//) {
-//    val scaffoldVM = LocalScaffoldViewModel.current
-//    val userVM = LocalUserViewModel.current
-//
-//    val userState by userVM.uiState.collectAsState()
-//    val pianificaState by pianificaVM.uistate.collectAsState()
-//
-//    // Per ora una struttura base
-//    LaunchedEffect(Unit) {
-//        scaffoldVM.onFullScreenChanged(false)
-//    }
-//
-//    val selectionData = pianificaState.selectionData
-//    val dipartimenti = userState.azienda.areeLavoro
-//    val dipartimento = dipartimenti.find { it.id == userState.user.dipartimento}
-//    val employeeVM: PianificaEmployeeViewModel = hiltViewModel()
-//
-//
-//    val weeklyisIdentical = pianificaState.weeklyisIdentical
-//    val weeklyShiftRiferimento = pianificaState.weeklyShiftRiferimento
-//    val weeklyShiftAttuale = pianificaState.weeklyShiftAttuale
-//
-//
-//    LaunchedEffect(weeklyShiftRiferimento, weeklyShiftAttuale) {
-//        if(weeklyShiftRiferimento != null && weeklyShiftAttuale != null && weeklyShiftAttuale == weeklyShiftRiferimento)
-//        {
-//            pianificaVM.setWeeklyShiftIdentical(true)
-//        }
-//        else{
-//            pianificaVM.setWeeklyShiftIdentical(false)
-//        }
-//    }
-//
-//
-//    LaunchedEffect(selectionData)
-//    {
-//        pianificaVM.backToMain()
-//
-//        if(selectionData!=null )
-//        {
-//            pianificaVM.getWeeklyShiftCorrente(selectionData)
-//        }
-//    }
-//
-//
-//    LaunchedEffect(Unit) {
-//        if(weeklyShiftRiferimento != null)
-//        {
-//            val weekStart = weeklyShiftRiferimento.weekStart
-//            employeeVM.setTurniSettimanaliDipendente(weekStart,userState.azienda.idAzienda,userState.user.uid)
-//        }
-//    }
-//
-//    LaunchedEffect(weeklyShiftAttuale) {
-//        if (weeklyShiftAttuale != null && !weeklyisIdentical) {
-//            employeeVM.setTurniSettimanaliDipendente(weeklyShiftAttuale.weekStart,userState.azienda.idAzienda,userState.user.uid)
-//        }
-//    }
-//
-//    Column(
-//        modifier = Modifier
-//            .fillMaxSize()
-//            .padding(16.dp)
-//    ) {
-//        // Header per dipendenti
-//        Card(
-//            modifier = Modifier.fillMaxWidth(),
-//            colors = CardDefaults.cardColors(
-//                containerColor = MaterialTheme.colorScheme.secondaryContainer
-//            )
-//        ) {
-//            Column(
-//                modifier = Modifier.padding(16.dp)
-//            ) {
-//                Text(
-//                    text = "I Miei Turni",
-//                    style = MaterialTheme.typography.headlineSmall,
-//                    fontWeight = FontWeight.Bold,
-//                    color = MaterialTheme.colorScheme.onSecondaryContainer
-//                )
-//
-//                Text(
-//                    text = "Visualizza i tuoi turni assegnati",
-//                    style = MaterialTheme.typography.bodyMedium,
-//                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
-//                )
-//            }
-//        }
-//
-//        Spacer(modifier = Modifier.height(16.dp))
-//
-//        Calendar(pianificaVM)
-//
-//        Spacer(modifier = Modifier.height(16.dp))
-//
-//        // Area principale per i turni del dipendente
-//        Card(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .weight(1f),
-//            colors = CardDefaults.cardColors(
-//                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-//            )
-//        ) {
-//            Box(
-//                modifier = Modifier
-//                    .fillMaxSize()
-//                    .padding(24.dp),
-//                contentAlignment = Alignment.Center
-//            ) {
-//                Column(
-//                    horizontalAlignment = Alignment.CenterHorizontally,
-//                    verticalArrangement = Arrangement.spacedBy(8.dp)
-//                ) {
-//                    Icon(
-//                        Icons.Default.Schedule,
-//                        contentDescription = null,
-//                        modifier = Modifier.size(48.dp),
-//                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-//                    )
-//
-//                    Text(
-//                        text = "Seleziona una data dal calendario",
-//                        style = MaterialTheme.typography.titleMedium,
-//                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-//                        textAlign = TextAlign.Center
-//                    )
-//
-//                    Text(
-//                        text = "Potrai visualizzare i tuoi turni assegnati",
-//                        style = MaterialTheme.typography.bodyMedium,
-//                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-//                        textAlign = TextAlign.Center
-//                    )
-//                }
-//            }
-//        }
-//    }
-//}
-
 
 
 @Composable

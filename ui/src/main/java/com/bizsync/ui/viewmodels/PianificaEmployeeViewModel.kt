@@ -46,15 +46,6 @@ class PianificaEmployeeViewModel @Inject constructor(
         _uiState.update { it.copy(loading = loading) }
     }
 
-    fun  inizializzaDati(userCurrent : User, contratti: Contratto) {
-        _uiState.update {
-            it.copy(
-                currentUser = userCurrent,
-                contrattoEmployee = contratti
-            )
-        }
-    }
-
     // ========== GESTIONE TURNI SETTIMANALI ==========
     fun setTurniSettimanaliDipendente(startWeek: LocalDate, idAzienda: String, idUser: String) {
         viewModelScope.launch {
@@ -156,7 +147,10 @@ class PianificaEmployeeViewModel @Inject constructor(
             numeroTurni = turni.size,
             colleghi = colleghiGiornata,
             pause = turni.flatMap { it.pause },
-            note = turni.flatMap { it.note }
+            note = turni.flatMap { it.note },
+            nomeDipartimento = _uiState.value.dipartimentoEmployee?.nomeArea,
+            orarioAperturaDipartimento = _uiState.value.dipartimentoEmployee?.orariSettimanali?.get(data.dayOfWeek)?.first,
+            orarioChiusuraDipartimento = _uiState.value.dipartimentoEmployee?.orariSettimanali?.get(data.dayOfWeek)?.second
         )
     }
 
@@ -186,7 +180,7 @@ class PianificaEmployeeViewModel @Inject constructor(
     }
 
     // ========== INIZIALIZZAZIONE DATI ==========
-    fun inizializzaDatiEmployee(userId: String, idAzienda: String) {
+    fun inizializzaDatiEmployee(userId: String, idAzienda: String, dipartimento : AreaLavoro) {
         viewModelScope.launch {
             try {
                 setLoading(true)
@@ -203,7 +197,8 @@ class PianificaEmployeeViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         colleghiTurno = colleghi,
-                        assenzeEmployee = assenze
+                        assenzeEmployee = assenze,
+                        dipartimentoEmployee = dipartimento
                     )
                 }
 
@@ -234,6 +229,15 @@ class PianificaEmployeeViewModel @Inject constructor(
             it.copy(
                 errorMessage = null,
                 successMessage = null
+            )
+        }
+    }
+
+    fun  inizializzaDati(userCurrent : User, contratti: Contratto) {
+        _uiState.update {
+            it.copy(
+                currentUser = userCurrent,
+                contrattoEmployee = contratti
             )
         }
     }
@@ -284,7 +288,6 @@ class PianificaEmployeeViewModel @Inject constructor(
 
 
 
-
 // ========== MODELLI DATI AGGIUNTIVI ==========
 data class DettagliGiornalieri(
     val data: LocalDate,
@@ -295,7 +298,11 @@ data class DettagliGiornalieri(
     val numeroTurni: Int,
     val colleghi: List<User>,
     val pause: List<Pausa>,
-    val note: List<Nota>
+    val note: List<Nota>,
+    // Informazioni dipartimento
+    val nomeDipartimento: String? = null,
+    val orarioAperturaDipartimento: LocalTime? = null,
+    val orarioChiusuraDipartimento: LocalTime? = null
 )
 
 data class StatisticheSettimanali(

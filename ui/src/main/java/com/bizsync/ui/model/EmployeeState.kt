@@ -1,19 +1,19 @@
 package com.bizsync.ui.model
 
-import com.bizsync.domain.model.Absence
-import com.bizsync.domain.model.Contratto
-import com.bizsync.domain.model.Turno
-import com.bizsync.domain.model.User
 import com.bizsync.ui.viewmodels.DettagliGiornalieri
 import com.bizsync.ui.viewmodels.StatisticheSettimanali
+
+
+import com.bizsync.domain.model.*
 import java.time.DayOfWeek
 import java.time.LocalDate
-
+import java.time.LocalTime
 
 data class EmployeeState(
     // Dati utente corrente
     val currentUser: User? = null,
     val contrattoEmployee: Contratto? = null,
+    val dipartimentoEmployee: AreaLavoro? = null,
 
     // Turni employee
     val turniEmployee: List<Turno> = emptyList(),

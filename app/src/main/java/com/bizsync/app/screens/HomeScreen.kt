@@ -25,40 +25,14 @@ fun HomeScreen() {
     val userVM = LocalUserViewModel.current
     val scaffoldViewModel = LocalScaffoldViewModel.current
     val userState by userVM.uiState.collectAsState()
-    val giornoPubblicazione = userState.azienda.giornoPubblicazioneTurni
 
-    val giorniMancanti by remember(giornoPubblicazione) {
-        mutableStateOf(calcolaGiorniAlProssimoGiorno(giornoPubblicazione))
-    }
+
 
     LaunchedEffect(Unit) {
         scaffoldViewModel.onFullScreenChanged(false)
     }
 
-    // Messaggio
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-            .background(Color(0xFFe0f2f1)),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = "Hai $giorniMancanti giorni per pubblicare i turni della prossima settimana.",
-            style = MaterialTheme.typography.bodyLarge,
-            color = Color(0xFF00796b),
-            modifier = Modifier.padding(16.dp)
-        )
-    }
 
-    Button(onClick = { navController.navigate("pianifica") }) {
-        Text("Vai a pianifica")
-    }
 }
 
 
-fun calcolaGiorniAlProssimoGiorno(giornoTarget: DayOfWeek): Long {
-    val oggi = LocalDate.now()
-    val prossimoTarget = oggi.with(TemporalAdjusters.next(giornoTarget))
-    return ChronoUnit.DAYS.between(oggi, prossimoTarget)
-}

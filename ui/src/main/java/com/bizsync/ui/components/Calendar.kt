@@ -7,12 +7,20 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -31,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.bizsync.domain.constants.enumClass.WeeklyShiftStatus
 import com.bizsync.domain.utils.WeeklyWindowCalculator
 import com.bizsync.ui.viewmodels.PianificaViewModel
 import com.kizitonwose.calendar.compose.WeekCalendar
@@ -51,13 +60,17 @@ fun Calendar(pianificaVM: PianificaViewModel) {
     // ✅ Stato per il range della settimana di riferimento
     var rangeSettimana by remember { mutableStateOf<Pair<LocalDate, LocalDate>?>(null) }
 
+    // ✅ Status della settimana corrente
+    var weeklyShiftStatus by remember { mutableStateOf<WeeklyShiftStatus?>(null) }
+
     LaunchedEffect(weeklyShift) {
         rangeSettimana = if (weeklyShift != null) {
             WeeklyWindowCalculator.getWeekBounds(weeklyShift.weekStart)
         } else {
             null
         }
-        Log.d("Calendar", "Range settimana aggiornato: $rangeSettimana")
+        weeklyShiftStatus = weeklyShift?.status
+        Log.d("Calendar", "Range settimana aggiornato: $rangeSettimana con status: $weeklyShiftStatus")
     }
 
     Column(
@@ -81,7 +94,10 @@ fun Calendar(pianificaVM: PianificaViewModel) {
                         selected = selectionData == day.date,
                         isInWeekRange = rangeSettimana?.let { range ->
                             day.date >= range.first && day.date <= range.second
-                        } ?: false, // ✅ Nuovo parametro per identificare i giorni nella settimana
+                        } ?: false,
+                        weeklyShiftStatus = if (rangeSettimana?.let { range ->
+                                day.date >= range.first && day.date <= range.second
+                            } == true) weeklyShiftStatus else null, // ✅ Passa lo status solo se il giorno è nella settimana
                         onClick = { pianificaVM.onSelectionDataChanged(it) }
                     )
                 },
@@ -97,23 +113,38 @@ fun Day(
     date: LocalDate,
     isCurrentDay: Boolean = false,
     selected: Boolean = false,
-    isInWeekRange: Boolean = false, // ✅ Nuovo parametro
+    isInWeekRange: Boolean = false,
+    weeklyShiftStatus: WeeklyShiftStatus? = null, // ✅ Nuovo parametro per lo status
     onClick: (LocalDate) -> Unit = {},
 ) {
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
 
-    // ✅ Logica colori aggiornata con priorità
+    // ✅ Logica colori aggiornata con status del WeeklyShift
     val backgroundColor = when {
         selected -> Color(0xFF6200EE)           // Viola - Massima priorità (giorno selezionato)
-        isInWeekRange -> Color(0xFF4CAF50)      // Verde - Giorni della settimana di riferimento
+        isInWeekRange && weeklyShiftStatus != null -> {
+            when (weeklyShiftStatus) {
+                WeeklyShiftStatus.PUBLISHED -> Color(0xFF4CAF50)     // Verde - Pubblicata
+                WeeklyShiftStatus.DRAFT -> Color(0xFFFFC107)         // Giallo - Bozza
+                WeeklyShiftStatus.NOT_PUBLISHED -> Color(0xFFF44336) // Rosso - Non pubblicata
+            }
+        }
+        isInWeekRange -> Color(0xFF4CAF50)      // Verde di default se non c'è status
         else -> Color(0xFF1E88E5)               // Blu normale - Default
     }
 
     val borderColor = when {
         selected -> Color(0xFFBB86FC)           // Bordo viola per selezionato
         isCurrentDay -> Color(0xFF002DFF)       // Bordo blu scuro per oggi
-        isInWeekRange -> Color(0xFF2E7D32)      // Bordo verde scuro per settimana
+        isInWeekRange && weeklyShiftStatus != null -> {
+            when (weeklyShiftStatus) {
+                WeeklyShiftStatus.PUBLISHED -> Color(0xFF2E7D32)     // Verde scuro
+                WeeklyShiftStatus.DRAFT -> Color(0xFFFF8F00)         // Arancione scuro
+                WeeklyShiftStatus.NOT_PUBLISHED -> Color(0xFFD32F2F) // Rosso scuro
+            }
+        }
+        isInWeekRange -> Color(0xFF2E7D32)      // Verde scuro di default
         else -> Color.Transparent
     }
 
@@ -125,7 +156,14 @@ fun Day(
 
     val dayTextColor = when {
         selected -> Color.White
-        isInWeekRange -> Color(0xFFE8F5E8)     // Verde molto chiaro per i giorni della settimana
+        isInWeekRange && weeklyShiftStatus != null -> {
+            when (weeklyShiftStatus) {
+                WeeklyShiftStatus.PUBLISHED -> Color(0xFFE8F5E8)     // Verde molto chiaro
+                WeeklyShiftStatus.DRAFT -> Color(0xFFFFF3E0)         // Giallo molto chiaro
+                WeeklyShiftStatus.NOT_PUBLISHED -> Color(0xFFFFEBEE) // Rosso molto chiaro
+            }
+        }
+        isInWeekRange -> Color(0xFFE8F5E8)     // Verde molto chiaro di default
         else -> Color.LightGray
     }
 
@@ -168,33 +206,103 @@ fun Day(
                 color = dayTextColor,
             )
 
-            // ✅ Indicatore visivo aggiuntivo per la settimana di riferimento
+            // ✅ Indicatore visivo aggiuntivo per la settimana di riferimento con colore status
             if (isInWeekRange && !selected) {
+                val indicatorColor = when (weeklyShiftStatus) {
+                    WeeklyShiftStatus.PUBLISHED -> Color.White
+                    WeeklyShiftStatus.DRAFT -> Color(0xFF333333)      // Scuro per contrasto con giallo
+                    WeeklyShiftStatus.NOT_PUBLISHED -> Color.White
+                    null -> Color.White
+                }
+
                 Box(
                     modifier = Modifier
                         .width(20.dp)
                         .height(2.dp)
-                        .background(Color.White, RoundedCornerShape(1.dp))
+                        .background(indicatorColor, RoundedCornerShape(1.dp))
                 )
             }
         }
     }
 }
 
-// ✅ Estensione utility per WeeklyWindowCalculator se non esiste già
-object AbsenceWindowCalculatorExtension {
+@Composable
+fun CalendarLegend() {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(8.dp)
+        ) {
 
-    /**
-     * Calcola i bounds di una settimana (da lunedì a domenica)
-     */
-    fun getWeekBounds(weekStart: LocalDate): Pair<LocalDate, LocalDate> {
-        val lunedi = weekStart.with(java.time.DayOfWeek.MONDAY)
-        val domenica = lunedi.plusDays(6)
-        return Pair(lunedi, domenica)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                LegendItem(
+                    color = Color(0xFF6200EE),
+                    text = "Selezionato",
+                    modifier = Modifier.weight(1f)
+                )
+
+                LegendItem(
+                    color = Color(0xFF4CAF50),
+                    text = "Pubblicata",
+                    modifier = Modifier.weight(1f)
+                )
+
+                LegendItem(
+                    color = Color(0xFFFFC107),
+                    text = "Bozza",
+                    modifier = Modifier.weight(1f)
+                )
+
+                LegendItem(
+                    color = Color(0xFFF44336),
+                    text = "Non pubblicata",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
     }
 }
 
-// ✅ Preview per testare i diversi stati
+@Composable
+fun LegendItem(
+    color: Color,
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Start
+    ) {
+        Box(
+            modifier = Modifier
+                .size(12.dp)
+                .background(color, CircleShape)
+        )
+
+        Spacer(modifier = Modifier.width(4.dp))
+
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = 10.sp
+        )
+    }
+}
+
+
+
+// ✅ Preview per testare i diversi stati con i nuovi colori
 @Preview(showBackground = true)
 @Composable
 fun DayPreview() {
@@ -220,20 +328,40 @@ fun DayPreview() {
             isInWeekRange = false
         )
 
-        Text("Giorno nella settimana di riferimento:")
+        Text("Settimana PUBBLICATA (Verde):")
         Day(
             date = today.plusDays(1),
             isCurrentDay = false,
             selected = false,
-            isInWeekRange = true
+            isInWeekRange = true,
+            weeklyShiftStatus = WeeklyShiftStatus.PUBLISHED
         )
 
-        Text("Giorno selezionato nella settimana:")
+        Text("Settimana BOZZA (Giallo):")
         Day(
             date = today.plusDays(2),
             isCurrentDay = false,
+            selected = false,
+            isInWeekRange = true,
+            weeklyShiftStatus = WeeklyShiftStatus.DRAFT
+        )
+
+        Text("Settimana NON PUBBLICATA (Rosso):")
+        Day(
+            date = today.plusDays(3),
+            isCurrentDay = false,
+            selected = false,
+            isInWeekRange = true,
+            weeklyShiftStatus = WeeklyShiftStatus.NOT_PUBLISHED
+        )
+
+        Text("Giorno selezionato nella settimana pubblicata:")
+        Day(
+            date = today.plusDays(4),
+            isCurrentDay = false,
             selected = true,
-            isInWeekRange = true
+            isInWeekRange = true,
+            weeklyShiftStatus = WeeklyShiftStatus.PUBLISHED
         )
     }
 }

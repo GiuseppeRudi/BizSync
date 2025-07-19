@@ -10,5 +10,8 @@ data class Azienda(
     val turniFrequenti: List<TurnoFrequente>,
     val numDipendentiRange : String,
     val sector : String,
-    val giornoPubblicazioneTurni: DayOfWeek = DayOfWeek.FRIDAY
+    val giornoPubblicazioneTurni: DayOfWeek = DayOfWeek.FRIDAY,
+
+
+
 )

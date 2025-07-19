@@ -63,7 +63,7 @@ import javax.inject.Inject
             val currentWeekStart = WeeklyWindowCalculator.getWeekStartFromDate(selectionDate)
             val weeklyShiftAttuale = _uistate.value.weeklyShiftAttuale
 
-            if(weeklyShiftAttuale?.weekStart != currentWeekStart && weeklyShiftAttuale == null)
+            if(weeklyShiftAttuale?.weekStart != currentWeekStart)
             {
 
                 viewModelScope.launch {
