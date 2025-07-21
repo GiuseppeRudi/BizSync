@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.bizsync.cache.AppDatabase
 import com.bizsync.cache.dao.AbsenceDao
 import com.bizsync.cache.dao.ContrattoDao
+import com.bizsync.cache.dao.TimbraturaDao
 import com.bizsync.cache.dao.TurnoDao
 import com.bizsync.cache.dao.UserDao
 import dagger.Module
@@ -39,4 +40,7 @@ object RoomModule {
 
     @Provides
     fun provideAbsenceDao(db: AppDatabase): AbsenceDao = db.absenceDao()
+
+    @Provides
+    fun provideTimbraturaDao(db: AppDatabase): TimbraturaDao = db.timbraturaDao()
 }

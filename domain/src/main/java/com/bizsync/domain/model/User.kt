@@ -9,8 +9,16 @@ data class User(
     val cognome: String,
     val photourl: String = "",
     val idAzienda: String = "",
-    val manager: Boolean = false,
-    val posizioneLavorativa: String = "",
-    val dipartimento : String = ""
-)
+    val isManager: Boolean = false,
 
+    // CAMPI GESTITI DAL MANAGER
+    val posizioneLavorativa: String = "",
+    val dipartimento: String = "",
+
+    // NUOVI CAMPI PERSONALI
+    val numeroTelefono: String = "",
+    val indirizzo: String = "",
+    val codiceFiscale: String = "",
+    val dataNascita: String = "",
+    val luogoNascita: String = ""
+)

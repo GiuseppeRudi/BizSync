@@ -138,7 +138,7 @@ fun ChatRoomListScreen(
                             fontSize = 18.sp
                         )
                         Text(
-                            text = if (currentUser.manager) "Manager" else currentUser.dipartimento,
+                            text = if (currentUser.isManager) "Manager" else currentUser.dipartimento,
                             color = Color(0xFF7F8C8D),
                             fontSize = 12.sp
                         )
@@ -201,7 +201,7 @@ fun ChatRoomListScreen(
                 }
 
                 // Sezione Chat Dipartimenti (visibile per manager o dipendenti del dipartimento)
-                val departmentChats = if (currentUser.manager) {
+                val departmentChats = if (currentUser.isManager) {
                     chats.filter { it.tipo == ChatType.DIPARTIMENTO }
                 } else {
                     chats.filter { it.tipo == ChatType.DIPARTIMENTO && it.dipartimentoId == currentUser.dipartimento }

@@ -480,8 +480,8 @@ fun PersonalWorkInfoCard(user: User, contratto: Contratto) {
 
         InfoRow(
             label = "Ruolo",
-            value = if (user.manager) "Manager" else "Dipendente",
-            icon = if (user.manager) Icons.Default.SupervisorAccount else Icons.Default.Person
+            value = if (user.isManager) "Manager" else "Dipendente",
+            icon = if (user.isManager) Icons.Default.SupervisorAccount else Icons.Default.Person
         )
 
         InfoRow(

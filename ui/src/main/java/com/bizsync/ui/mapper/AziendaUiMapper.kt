@@ -1,22 +1,9 @@
 package com.bizsync.ui.mapper
 
-
 import com.bizsync.domain.model.Azienda
 import com.bizsync.ui.model.AziendaUi
 
 object AziendaUiMapper {
-
-    fun toUiState(domain: Azienda): AziendaUi {
-        return AziendaUi(
-            idAzienda = domain.idAzienda,
-            nome = domain.nome,
-            areeLavoro = domain.areeLavoro,
-            turniFrequenti = domain.turniFrequenti,
-            sector = domain.sector,
-            numDipendentiRange = domain.numDipendentiRange,
-            giornoPubblicazioneTurni = domain.giornoPubblicazioneTurni,
-        )
-    }
 
     fun toDomain(ui: AziendaUi): Azienda {
         return Azienda(
@@ -24,18 +11,38 @@ object AziendaUiMapper {
             nome = ui.nome,
             areeLavoro = ui.areeLavoro,
             turniFrequenti = ui.turniFrequenti,
-            sector = ui.sector,
             numDipendentiRange = ui.numDipendentiRange,
-            giornoPubblicazioneTurni = ui.giornoPubblicazioneTurni
+            sector = ui.sector,
+            giornoPubblicazioneTurni = ui.giornoPubblicazioneTurni,
+            // mapping coordinate azienda
+            latitudine = ui.latitudine,
+            longitudine = ui.longitudine,
+            tolleranzaMetri = ui.tolleranzaMetri
         )
     }
 
-    fun toUiStateList(domains: List<Azienda>): List<AziendaUi> {
-        return domains.map { toUiState(it) }
+    fun toUi(domain: Azienda): AziendaUi {
+        return AziendaUi(
+            idAzienda = domain.idAzienda,
+            nome = domain.nome,
+            areeLavoro = domain.areeLavoro,
+            turniFrequenti = domain.turniFrequenti,
+            numDipendentiRange = domain.numDipendentiRange,
+            sector = domain.sector,
+            giornoPubblicazioneTurni = domain.giornoPubblicazioneTurni,
+            // mapping coordinate azienda
+            latitudine = domain.latitudine,
+            longitudine = domain.longitudine,
+            tolleranzaMetri = domain.tolleranzaMetri
+        )
     }
+
+    fun toUiList(domains: List<Azienda>): List<AziendaUi> = domains.map { toUi(it) }
+    fun toDomainList(uis: List<AziendaUi>): List<Azienda> = uis.map { toDomain(it) }
 }
 
-// Estensioni
-fun Azienda.toUiState(): AziendaUi = AziendaUiMapper.toUiState(this)
+// Extension functions for convenience
+fun Azienda.toUi(): AziendaUi = AziendaUiMapper.toUi(this)
 fun AziendaUi.toDomain(): Azienda = AziendaUiMapper.toDomain(this)
-fun List<Azienda>.toUiStateList(): List<AziendaUi> = AziendaUiMapper.toUiStateList(this)
+fun List<Azienda>.toUiList(): List<AziendaUi> = AziendaUiMapper.toUiList(this)
+fun List<AziendaUi>.toDomainList(): List<Azienda> = AziendaUiMapper.toDomainList(this)

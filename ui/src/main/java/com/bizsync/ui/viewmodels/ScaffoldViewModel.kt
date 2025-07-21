@@ -11,7 +11,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ScaffoldViewModel @Inject constructor() : ViewModel() {
 
-    private val _isFullScreen = MutableStateFlow<Boolean>(true)
+    private val _isFullScreen = MutableStateFlow<Boolean>(false)
     val isFullScreen : StateFlow<Boolean> = _isFullScreen
 
     fun onFullScreenChanged(newValue : Boolean)

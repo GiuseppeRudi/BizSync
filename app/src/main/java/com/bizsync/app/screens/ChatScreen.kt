@@ -40,7 +40,7 @@ fun ChatScreen() {
         cognome = "Bianchi",
         photourl = "",
         idAzienda = "ZNTzPHOA2xyJMgymaFN7",
-        manager = false,
+        isManager = false,
         posizioneLavorativa = "Receptionist",
         dipartimento = "c678978a-07d4-43cd-b909-08fd881e62b8" // Reception
     )
@@ -53,7 +53,7 @@ fun ChatScreen() {
         cognome = "Verdi",
         photourl = "",
         idAzienda = "ZNTzPHOA2xyJMgymaFN7",
-        manager = false,
+        isManager = false,
         posizioneLavorativa = "Contabile",
         dipartimento = "ddf2acb0-d62e-45f4-9d37-9f43a0f15b13" // Contabilità
     )
@@ -66,7 +66,7 @@ fun ChatScreen() {
         cognome = "Neri",
         photourl = "",
         idAzienda = "ZNTzPHOA2xyJMgymaFN7",
-        manager = false,
+        isManager = false,
         posizioneLavorativa = "Risorse Umane",
         dipartimento = "cf1edb95-6954-4f55-9aed-449cee490cae" // Risorse Umane
     )
@@ -79,7 +79,7 @@ fun ChatScreen() {
         cognome = "Criminale",
         photourl = "",
         idAzienda = "ZNTzPHOA2xyJMgymaFN7",
-        manager = true,
+        isManager = true,
         posizioneLavorativa = "Direttore",
         dipartimento = "a8cd75a7-dda5-4bf2-857b-0ba960994640" // Supervisione
     )

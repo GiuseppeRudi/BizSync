@@ -1,11 +1,18 @@
 package com.bizsync.ui.model
 
+import android.location.Address
+
 // Stato specifico per questo ViewModel
 data class AddAziendaState(
-    val currentStep: Int = 1,
     val azienda: AziendaUi = AziendaUi(),
-    val customSector: String = "",
+    val currentStep: Int = 1,
+    val isAgencyAdded: Boolean = false,
     val resultMsg: String? = null,
-    val isAgencyAdded: Boolean = false
-)
 
+    // NUOVI CAMPI PER GEOCODIFICA
+    val indirizzoInput: String = "",
+    val indirizziCandidati: List<Address> = emptyList(),
+    val indirizzoSelezionato: Address? = null,
+    val isGeocoding: Boolean = false,
+    val geocodingError: String? = null
+)

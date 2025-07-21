@@ -1,7 +1,6 @@
 package com.bizsync.ui.model
 
 
-// Stato specifico per questo ViewModel
 data class AddUtenteState(
     val currentStep: Int = 1,
     val uid: String = "",

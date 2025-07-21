@@ -95,8 +95,8 @@ class MainActivity : ComponentActivity() {
         val intent = AuthUI.getInstance()
             .createSignInIntentBuilder()
             .setAvailableProviders(providers)
-            // enableCredentials = true per salvare in Smart Lock
-            // enableAutoSignIn = true per auto-login senza UI
+//            .enableCredentials = true
+//             .enableAutoSignIn = true
             .setIsSmartLockEnabled(true)
             .build()
         signInLauncher.launch(intent)

@@ -7,16 +7,13 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
-import com.bizsync.cache.entity.TurnoEntity
 import java.time.LocalDate
-
-
+import com.bizsync.cache.entity.TurnoEntity
 @Dao
 interface TurnoDao {
 
     @Query("SELECT EXISTS(SELECT 1 FROM turni WHERE id = :id)")
     suspend fun exists(id: String): Boolean
-
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(turni: List<TurnoEntity>)

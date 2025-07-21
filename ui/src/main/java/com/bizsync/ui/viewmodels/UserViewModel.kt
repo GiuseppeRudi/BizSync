@@ -13,7 +13,7 @@ import com.bizsync.domain.constants.sealedClass.RuoliAzienda
 import com.bizsync.domain.model.Contratto
 import com.bizsync.domain.utils.toDomain
 import com.bizsync.ui.components.DialogStatusType
-import com.bizsync.ui.mapper.toUiState
+import com.bizsync.ui.mapper.toUi
 import com.bizsync.ui.model.InvitoUi
 import com.bizsync.ui.model.UserState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -81,7 +81,7 @@ class UserViewModel @Inject constructor(
 
             when (result) {
                 is Success -> {
-                    val userUi = result.data.toUiState()
+                    val userUi = result.data.toUi()
 
                     _uiState.update {
                         it.copy(
@@ -115,7 +115,7 @@ class UserViewModel @Inject constructor(
 
                                             _uiState.update {
                                                 it.copy(
-                                                    azienda = loaded.data.toUiState(),
+                                                    azienda = loaded.data.toUi(),
                                                     contratto = contratto, // salva se hai un campo nel UI state
                                                     hasLoadedAgency = true,
                                                     checkUser = true,
@@ -148,7 +148,7 @@ class UserViewModel @Inject constructor(
                                     {
                                         _uiState.update {
                                             it.copy(
-                                                azienda = loaded.data.toUiState(),
+                                                azienda = loaded.data.toUi(),
                                                 hasLoadedAgency = true,
                                                 checkUser = true
                                             )
@@ -215,7 +215,7 @@ class UserViewModel @Inject constructor(
                         is Success -> {
                             _uiState.update {
                                 it.copy(
-                                    azienda = azienda.data.toUiState(),
+                                    azienda = azienda.data.toUi(),
                                     hasLoadedAgency = true, resultMsg = "Invito accettato con successo. Complimenti",
                                     statusMsg = DialogStatusType.SUCCESS, checkAcceptInvite = true
                                 )

@@ -1,11 +1,12 @@
 package com.bizsync.ui.viewmodels
 
 import android.util.Log
+import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.repository.UserRepository
 import com.bizsync.ui.mapper.toDomain
-import com.bizsync.ui.mapper.toUiState
+import com.bizsync.ui.mapper.toUi
 import com.bizsync.ui.model.AddUtenteState
 import com.bizsync.ui.model.UserUi
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -13,9 +14,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-
-
 
 @HiltViewModel
 class AddUtenteViewModel @Inject constructor(
@@ -36,7 +34,12 @@ class AddUtenteViewModel @Inject constructor(
         viewModelScope.launch {
             updateState { it.copy(isLoading = true, error = null) }
 
-            Log.d("CONTROLLO_USER_FINAL", _uiState.value.uid)
+            Log.d("ADD_USER_DEBUG", "=== INIZIO CREAZIONE UTENTE ===")
+            Log.d("ADD_USER_DEBUG", "UID: ${_uiState.value.uid}")
+            Log.d("ADD_USER_DEBUG", "Dati utente:")
+            Log.d("ADD_USER_DEBUG", "  Nome: ${_uiState.value.userState.nome}")
+            Log.d("ADD_USER_DEBUG", "  Cognome: ${_uiState.value.userState.cognome}")
+            Log.d("ADD_USER_DEBUG", "  Email: ${_uiState.value.userState.email}")
 
             try {
                 val utenteCreato = _uiState.value.userState.toDomain().copy(uid = "")
@@ -45,16 +48,17 @@ class AddUtenteViewModel @Inject constructor(
                 if (success) {
                     val utenteConUid = utenteCreato.copy(uid = _uiState.value.uid)
 
+                    Log.d("ADD_USER_DEBUG", "✅ Utente creato con successo")
+
                     updateState {
                         it.copy(
-                            userState = utenteConUid.toUiState(),
+                            userState = utenteConUid.toUi(),
                             isLoading = false,
                             isUserAdded = true
                         )
                     }
-
-                }
-                else {
+                } else {
+                    Log.e("ADD_USER_DEBUG", "❌ Errore durante il salvataggio")
                     updateState {
                         it.copy(
                             isLoading = false,
@@ -63,6 +67,7 @@ class AddUtenteViewModel @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
+                Log.e("ADD_USER_DEBUG", "❌ Eccezione: ${e.message}")
                 updateState {
                     it.copy(
                         isLoading = false,
@@ -73,12 +78,12 @@ class AddUtenteViewModel @Inject constructor(
         }
     }
 
-    // Metodi per aggiornare i campi utente
+    // METODI PER AGGIORNARE I CAMPI UTENTE
+
     fun onNomeChanged(newValue: String) {
         updateUserState { it.copy(nome = newValue) }
     }
 
-    // Metodi per aggiornare i campi utente
     fun onCognomeChanged(newValue: String) {
         updateUserState { it.copy(cognome = newValue) }
     }
@@ -91,9 +96,39 @@ class AddUtenteViewModel @Inject constructor(
         updateUserState { it.copy(photourl = newValue) }
     }
 
-    // Metodi per la navigazione
+    // NUOVI METODI PER I CAMPI AGGIUNTIVI
+
+    fun onNumeroTelefonoChanged(newValue: String) {
+        updateUserState { it.copy(numeroTelefono = newValue) }
+    }
+
+    fun onIndirizzoChanged(newValue: String) {
+        updateUserState { it.copy(indirizzo = newValue) }
+    }
+
+    fun onCodiceFiscaleChanged(newValue: String) {
+        // Mantieni solo caratteri alfanumerici e limita a 16 caratteri
+        val cleanValue = newValue.filter { it.isLetterOrDigit() }.take(16)
+        updateUserState { it.copy(codiceFiscale = cleanValue) }
+    }
+
+    fun onDataNascitaChanged(newValue: String) {
+        // Semplice formattazione per data (potrebbe essere migliorata)
+        val cleanValue = newValue.filter { it.isDigit() || it == '/' }.take(10)
+        updateUserState { it.copy(dataNascita = cleanValue) }
+    }
+
+    fun onLuogoNascitaChanged(newValue: String) {
+        updateUserState { it.copy(luogoNascita = newValue) }
+    }
+
+    // METODI PER LA NAVIGAZIONE
+
     fun onCurrentStepUp() {
-        updateState { it.copy(currentStep = it.currentStep + 1) }
+        val canProceed = canProceedToNextStep(_uiState.value.currentStep)
+        if (canProceed) {
+            updateState { it.copy(currentStep = it.currentStep + 1) }
+        }
     }
 
     fun onCurrentStepDown() {
@@ -108,7 +143,35 @@ class AddUtenteViewModel @Inject constructor(
         updateState { it.copy(error = newValue) }
     }
 
-    // Utility methods
+    // FUNZIONE PER VERIFICARE SE SI PUÒ PROCEDERE AL PROSSIMO STEP
+    fun canProceedToNextStep(currentStep: Int): Boolean {
+        val userState = _uiState.value.userState
+        return when (currentStep) {
+            1 -> {
+                // Step 1: Nome e cognome obbligatori, email deve essere valida
+                userState.nome.isNotBlank() &&
+                        userState.cognome.isNotBlank() &&
+                        userState.email.isNotBlank() &&
+                        Patterns.EMAIL_ADDRESS.matcher(userState.email).matches()
+            }
+            2 -> {
+                // Step 2: Tutti i campi sono opzionali, quindi sempre true
+                true
+            }
+            3 -> {
+                // Step 3: Tutti i campi sono opzionali, quindi sempre true
+                // Ma se il codice fiscale è inserito, deve avere almeno 11 caratteri
+                userState.codiceFiscale.isEmpty() || userState.codiceFiscale.length >= 11
+            }
+            4 -> {
+                // Step 4: Riepilogo, sempre true se siamo arrivati qui
+                true
+            }
+            else -> true
+        }
+    }
+
+    // UTILITY METHODS
     private fun updateState(update: (AddUtenteState) -> AddUtenteState) {
         _uiState.value = update(_uiState.value)
     }
@@ -125,18 +188,25 @@ class AddUtenteViewModel @Inject constructor(
                 setErrore("Il nome è obbligatorio")
                 false
             }
-
             userState.cognome.isBlank() -> {
                 setErrore("Il cognome è obbligatorio")
                 false
             }
-
             userState.email.isBlank() -> {
                 setErrore("L'email è obbligatoria")
                 false
             }
-            !android.util.Patterns.EMAIL_ADDRESS.matcher(userState.email).matches() -> {
+            !Patterns.EMAIL_ADDRESS.matcher(userState.email).matches() -> {
                 setErrore("Formato email non valido")
+                false
+            }
+            // Validazioni opzionali per campi aggiuntivi
+            userState.numeroTelefono.isNotBlank() && userState.numeroTelefono.length < 8 -> {
+                setErrore("Numero di telefono non valido")
+                false
+            }
+            userState.codiceFiscale.isNotBlank() && userState.codiceFiscale.length < 11 -> {
+                setErrore("Codice fiscale non valido (minimo 11 caratteri)")
                 false
             }
             else -> {
@@ -150,4 +220,3 @@ class AddUtenteViewModel @Inject constructor(
         _uiState.value = AddUtenteState()
     }
 }
-

@@ -16,7 +16,7 @@ object UserEntityMapper {
             cognome = cognome,
             photourl = photourl,
             idAzienda = idAzienda,
-            manager = isManager,
+            isManager = isManager,
             posizioneLavorativa = posizioneLavorativa,
             dipartimento = dipartimento
         )
@@ -30,7 +30,7 @@ object UserEntityMapper {
             cognome = cognome,
             photourl = photourl,
             idAzienda = idAzienda,
-            isManager = manager,
+            isManager = isManager,
             posizioneLavorativa = posizioneLavorativa,
             dipartimento = dipartimento
         )

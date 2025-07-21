@@ -28,7 +28,6 @@ fun BottomBar(
             BottomNavItem.Turni,
             BottomNavItem.Chat,
             BottomNavItem.Gestione,
-            BottomNavItem.Grafici
         )
     } else {
         listOf(

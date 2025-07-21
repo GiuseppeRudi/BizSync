@@ -22,6 +22,8 @@ class AziendaRepository @Inject constructor(private val db : FirebaseFirestore) 
         return try {
             val aziendaDto = azienda.toDto()
 
+            Log.d("AZIENDA_DEBUG", "Azienda $aziendaDto")
+
             val result = db.collection(AziendeFirestore.COLLECTION)
                 .add(aziendaDto)
                 .await()

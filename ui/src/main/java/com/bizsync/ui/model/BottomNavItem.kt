@@ -19,5 +19,4 @@ sealed class BottomNavItem(
     object Turni : BottomNavItem("turni", "Turni", Icons.Filled.DateRange)
     object Chat : BottomNavItem("chat", "Chat", Icons.Filled.Call)
     object Gestione : BottomNavItem("gestione", "Gestione", Icons.Filled.Build)
-    object Grafici : BottomNavItem("grafici", "Grafici", Icons.Filled.Info)
 }

@@ -1,42 +1,65 @@
 package com.bizsync.backend.mapper
 
+import android.util.Log
 import com.bizsync.backend.dto.UserDto
 import com.bizsync.domain.model.User
 
 object UserMapper {
 
-    fun toDto(user: User): UserDto {
+    // Domain → DTO (per salvare su Firebase)
+    fun toDto(domain: User): UserDto {
+        Log.d("USER_MAPPER", "Mapping User → UserDto: ${domain.uid}")
+
         return UserDto(
-            email = user.email,
-            nome = user.nome,
-            cognome = user.cognome,
-            photourl = user.photourl,
-            idAzienda = user.idAzienda,
-            manager = user.manager,
-            posizioneLavorativa = user.posizioneLavorativa,
-            dipartimento = user.dipartimento
+            uid = domain.uid,
+            email = domain.email,
+            nome = domain.nome,
+            cognome = domain.cognome,
+            photourl = domain.photourl,
+            idAzienda = domain.idAzienda,
+            isManager = domain.isManager,
+            posizioneLavorativa = domain.posizioneLavorativa,
+            dipartimento = domain.dipartimento,
+            numeroTelefono = domain.numeroTelefono,
+            indirizzo = domain.indirizzo,
+            codiceFiscale = domain.codiceFiscale,
+            dataNascita = domain.dataNascita,
+            luogoNascita = domain.luogoNascita
         )
     }
 
-    fun toDomain(userDto: UserDto): User {
+    // DTO → Domain (per leggere da Firebase)
+    fun toDomain(dto: UserDto): User {
+        Log.d("USER_MAPPER", "Mapping UserDto → User: ${dto.uid}")
+
         return User(
-            uid = userDto.uid,
-            email = userDto.email,
-            nome = userDto.nome,
-            cognome = userDto.cognome,
-            photourl = userDto.photourl,
-            idAzienda = userDto.idAzienda,
-            manager = userDto.manager,
-            posizioneLavorativa = userDto.posizioneLavorativa,
-            dipartimento = userDto.dipartimento
+            uid = dto.uid,
+            email = dto.email,
+            nome = dto.nome,
+            cognome = dto.cognome,
+            photourl = dto.photourl,
+            idAzienda = dto.idAzienda,
+            isManager = dto.isManager,
+            posizioneLavorativa = dto.posizioneLavorativa,
+            dipartimento = dto.dipartimento,
+            numeroTelefono = dto.numeroTelefono,
+            indirizzo = dto.indirizzo,
+            codiceFiscale = dto.codiceFiscale,
+            dataNascita = dto.dataNascita,
+            luogoNascita = dto.luogoNascita
         )
     }
+
+    fun toDtoList(domains: List<User>): List<UserDto> =
+        domains.map { toDto(it) }
+
+    fun toDomainList(dtos: List<UserDto>): List<User> =
+        dtos.map { toDomain(it) }
 }
 
-
+// Extension functions per chiamare più in modo fluido
 fun User.toDto(): UserDto = UserMapper.toDto(this)
 fun UserDto.toDomain(): User = UserMapper.toDomain(this)
 
-fun List<User>.toDtoList(): List<UserDto> = this.map { it.toDto() }
-
-fun List<UserDto>.toDomainList(): List<User> = this.map { it.toDomain() }
+fun List<User>.toDtoList(): List<UserDto> = UserMapper.toDtoList(this)
+fun List<UserDto>.toDomainList(): List<User> = UserMapper.toDomainList(this)

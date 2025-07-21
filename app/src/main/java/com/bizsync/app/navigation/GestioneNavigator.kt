@@ -35,7 +35,7 @@ fun GestioneNavigator(
         // Schermata principale con tutte le navigation functions
         composable(GestioneScreenRoute.Main.route) {
             MainManagementScreen(
-                // Manager navigation functions
+                // isManager navigation functions
                 onNavigateToEmployees = {
                     navController.navigate(GestioneScreenRoute.Employees.route)
                 },
@@ -82,7 +82,7 @@ fun GestioneNavigator(
             )
         }
 
-        // Manager Screens
+        // isManager Screens
         composable(GestioneScreenRoute.Employees.route) {
             EmployeeManagementScreen(
                 onBackClick = { navController.popBackStack() }
@@ -116,14 +116,14 @@ fun GestioneNavigator(
         composable(GestioneScreenRoute.Reports.route) {
 
             // 1. Utenti
-            val manager = User(
+            val isManager = User(
                 uid               = "u_mgr_01",
-                email             = "mario.manager@azienda.com",
+                email             = "mario.isManager@azienda.com",
                 nome              = "Mario",
                 cognome           = "Rossi",
                 photourl          = "",
                 idAzienda         = "AZ123",
-                manager           = true,
+                isManager                   = true,
                 posizioneLavorativa = "Responsabile",
                 dipartimento      = "DEP1"
             )
@@ -134,7 +134,7 @@ fun GestioneNavigator(
                 cognome           = "Bianchi",
                 photourl          = "",
                 idAzienda         = "AZ123",
-                manager           = false,
+                isManager           = false,
                 posizioneLavorativa = "Operaio",
                 dipartimento      = "DEP1"
             )
@@ -145,11 +145,11 @@ fun GestioneNavigator(
                 cognome = "Verdi",
                 photourl = "",
                 idAzienda = "AZ123",
-                manager = false,
+                isManager = false,
                 posizioneLavorativa = "Amministrativo",
                 dipartimento = "DEP2"
             )
-            val users = listOf(manager, user1, user2)
+            val users = listOf(isManager, user1, user2)
 
 // 2. Contratti
             val contratto1 = Contratto(
@@ -214,7 +214,7 @@ fun GestioneNavigator(
                 reason           = "Vacanze estive",
                 status           = AbsenceStatus.APPROVED,
                 submittedDate    = LocalDate.of(2025,6,30),
-                approvedBy       = manager.uid,
+                approvedBy       = isManager.uid,
                 approvedDate     = LocalDate.of(2025,7,1),
                 comments         = "Buone vacanze",
                 totalDays        = 3,
@@ -233,7 +233,7 @@ fun GestioneNavigator(
                 reason = "Visita medica",
                 status = AbsenceStatus.APPROVED,
                 submittedDate = LocalDate.of(2025, 7, 14),
-                approvedBy = manager.uid,
+                approvedBy = isManager.uid,
                 approvedDate = LocalDate.of(2025, 7, 14),
                 comments = null,
                 totalDays = null,
@@ -245,7 +245,7 @@ fun GestioneNavigator(
             val turno1 = Turno(
                 id                 = "T1",
                 titolo             = "Turno Mattina",
-                idAzienda          = manager.idAzienda,
+                idAzienda          = isManager.idAzienda,
                 idDipendenti       = listOf(user1.uid),
                 dipartimentoId     = user1.dipartimento,
                 idFirebase         = "",
@@ -260,7 +260,7 @@ fun GestioneNavigator(
             val turno2 = Turno(
                 id = "T2",
                 titolo = "Turno Pomeriggio",
-                idAzienda = manager.idAzienda,
+                idAzienda = isManager.idAzienda,
                 idDipendenti = listOf(user2.uid),
                 dipartimentoId = user2.dipartimento,
                 idFirebase = "",
@@ -329,8 +329,8 @@ fun GestioneNavigator(
         composable(GestioneScreenRoute.CompanyInfo.route) {
             // --- 1. dummy data di esempio ---
             val allUsers = listOf(
-                User("u1", "luca@azienda.com", "Luca", "Bianchi", idAzienda = "AZ1", manager = false, posizioneLavorativa = "Operaio", dipartimento = "DEP1"),
-                User("u2", "mario@azienda.com", "Mario", "Rossi", idAzienda = "AZ1", manager = true, posizioneLavorativa = "Manager", dipartimento = "DEP1")
+                User("u1", "luca@azienda.com", "Luca", "Bianchi", idAzienda = "AZ1", isManager = false, posizioneLavorativa = "Operaio", dipartimento = "DEP1"),
+                User("u2", "mario@azienda.com", "Mario", "Rossi", idAzienda = "AZ1", isManager = true, posizioneLavorativa = "isManager", dipartimento = "DEP1")
             )
             val allAziende = listOf(
                 Azienda(
@@ -367,7 +367,7 @@ fun GestioneNavigator(
                     idDipendente = "u2",
                     idAzienda = "AZ1",
                     emailDipendente = "mario@azienda.com",
-                    posizioneLavorativa = "Manager",
+                    posizioneLavorativa = "isManager",
                     dipartimento = "DEP1",
                     tipoContratto = "Tempo Pieno",
                     oreSettimanali = "40",

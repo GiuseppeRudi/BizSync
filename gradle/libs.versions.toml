@@ -1,5 +1,5 @@
 [versions]
-accompanistPlaceholderMaterial3 = "0.31.5-beta"
+accompanist = "0.36.0"
 agp = "8.10.1"
 hiltNavigationCompose = "1.2.0"
 kotlin = "2.1.20"
@@ -22,9 +22,15 @@ lifecycleViewModel = "2.7.0"
 calendarCompose = "2.6.2"
 room = "2.7.2"
 googleServices = "4.4.2"
+zxingVersion = "3.5.3"
+playServicesLocation = "21.0.1"
+
 
 [libraries]
-accompanist-placeholder-material3-vversion = { module = "com.google.accompanist:accompanist-placeholder-material3", version.ref = "accompanistPlaceholderMaterial3" }
+play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
+zxing  = {group = "com.google.zxing", name = "core", version.ref = "zxingVersion"}
+accompanist-permissions = { group = "com.google.accompanist", name = "accompanist-permissions", version.ref = "accompanist" }
+accompanist-placeholder-material3-vversion = { module = "com.google.accompanist:accompanist-placeholder-material3", version.ref = "accompanist" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }

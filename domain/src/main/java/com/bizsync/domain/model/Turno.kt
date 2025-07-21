@@ -2,6 +2,7 @@ package com.bizsync.domain.model
 
 
 import com.bizsync.domain.constants.enumClass.EsitoTurno
+import com.bizsync.domain.constants.enumClass.ZonaLavorativa
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.UUID
@@ -19,6 +20,8 @@ data class Turno(
     val orarioInizio: LocalTime = LocalTime.now(),
     val orarioFine: LocalTime = LocalTime.now(),
 
+    val zoneLavorative: Map<String, ZonaLavorativa> = emptyMap(),
+
 
     val note: List<Nota> = emptyList(),
     val pause : List<Pausa> = emptyList(),
@@ -27,6 +30,9 @@ data class Turno(
     val updatedAt: LocalDate = LocalDate.now()
 ) {
 
+    fun getZonaLavorativaDipendente(idDipendente: String): ZonaLavorativa {
+        return zoneLavorative[idDipendente] ?: ZonaLavorativa.IN_SEDE
+    }
 
     /**
      * Calcola la durata del turno in ore

@@ -39,7 +39,7 @@ class ChatRepository @Inject constructor(
                     // Filtra le chat in base al ruolo dell'utente
                     when {
                         // Manager vede tutto
-                        user.manager -> chatDto.toDomainModel(user.uid)
+                        user.isManager -> chatDto.toDomainModel(user.uid)
 
                         // Chat generale - tutti la vedono
                         chatDto.tipo == "generale" -> chatDto.toDomainModel(user.uid)

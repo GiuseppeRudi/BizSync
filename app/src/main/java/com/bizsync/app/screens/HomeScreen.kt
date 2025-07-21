@@ -1,38 +1,53 @@
 package com.bizsync.app.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import com.bizsync.app.navigation.LocalNavController
+import androidx.compose.runtime.Composable
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.bizsync.app.navigation.LocalUserViewModel
-import java.time.DayOfWeek
-import java.time.LocalDate
-import java.time.temporal.ChronoUnit
-import java.time.temporal.TemporalAdjusters
-import androidx.compose.runtime.getValue
-import com.bizsync.app.navigation.LocalScaffoldViewModel
+import com.bizsync.domain.constants.enumClass.HomeScreenRoute
+import com.bizsync.ui.viewmodels.HomeViewModel
 
 @Composable
-fun HomeScreen() {
-    val navController = LocalNavController.current
-    val userVM = LocalUserViewModel.current
-    val scaffoldViewModel = LocalScaffoldViewModel.current
-    val userState by userVM.uiState.collectAsState()
+fun MainHomeScreen() {
+
+    val viewModel: HomeViewModel = hiltViewModel()
 
 
+    val homeState by viewModel.uiState.collectAsState()
+    val currentScreen = homeState.currentScreen
+
+    // ViewModel creato UNA SOLA VOLTA
+    val userVm = LocalUserViewModel.current
+    val userState by userVm.uiState.collectAsState()
 
     LaunchedEffect(Unit) {
-        scaffoldViewModel.onFullScreenChanged(false)
+        viewModel.setUserAndAgency(userState.user,userState.azienda)
     }
 
+    when (val screen = currentScreen) {
+        HomeScreenRoute.Home -> HomeScreen(viewModel)
+        HomeScreenRoute.Badge -> BadgeVirtualeScreen(modifier = Modifier.fillMaxSize(), viewModel)
+        HomeScreenRoute.Timbrature -> ManagerTimbratureScreen(viewModel) }
+}
+
+
+
+
+@Composable
+fun HomeScreen(viewModel : HomeViewModel) {
+
+    val userVm = LocalUserViewModel.current
+    val userState by userVm.uiState.collectAsState()
+
+    if (userState.user.isManager) {
+        ManagerHomeScreen(userState = userState, modifier = Modifier.fillMaxSize(), viewModel)
+    } else {
+        EmployeeHomeScreen(userState = userState, modifier = Modifier.fillMaxSize(), viewModel)
+    }
 
 }
+
 
 

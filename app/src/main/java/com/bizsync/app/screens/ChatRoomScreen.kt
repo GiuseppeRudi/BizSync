@@ -229,7 +229,7 @@ fun ChatRoomScreen(
                 Spacer(modifier = Modifier.width(8.dp))
 
                 // Pulsante per annunci (solo per manager)
-                if (currentUser.manager) {
+                if (currentUser.isManager) {
                     FloatingActionButton(
                         onClick = { showMessageTypeDialog = true },
                         modifier = Modifier.size(48.dp),
@@ -269,7 +269,7 @@ fun ChatRoomScreen(
     }
 
     // Dialog per tipo di messaggio (solo per manager)
-    if (showMessageTypeDialog && currentUser.manager) {
+    if (showMessageTypeDialog && currentUser.isManager) {
         AlertDialog(
             onDismissRequest = { showMessageTypeDialog = false },
             title = { Text("Tipo di messaggio") },
