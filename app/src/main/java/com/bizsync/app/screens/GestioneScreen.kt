@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import com.bizsync.app.navigation.GestioneNavigator
+import com.bizsync.app.navigation.LocalScaffoldViewModel
 import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.ui.components.ManagementTemplate
 import com.bizsync.ui.model.ManagementCard
@@ -51,6 +52,9 @@ fun MainManagementScreen(
     val userVM = LocalUserViewModel.current
     val userState by userVM.uiState.collectAsState()
     val isManager = userState.user.isManager
+
+    val scaffoldVm = LocalScaffoldViewModel.current
+    LaunchedEffect(Unit) { scaffoldVm.onFullScreenChanged(false) }
 
     // Cards per Manager
     val managerCards = remember {

@@ -5,6 +5,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.runtime.Composable
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.bizsync.app.navigation.LocalScaffoldViewModel
 import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.domain.constants.enumClass.HomeScreenRoute
 import com.bizsync.ui.viewmodels.HomeViewModel
@@ -39,6 +40,12 @@ fun MainHomeScreen() {
 fun HomeScreen(viewModel : HomeViewModel) {
 
     val userVm = LocalUserViewModel.current
+
+    val scaffoldVm = LocalScaffoldViewModel.current
+    LaunchedEffect(Unit) {
+        scaffoldVm.onFullScreenChanged(false)
+    }
+
     val userState by userVm.uiState.collectAsState()
 
     if (userState.user.isManager) {

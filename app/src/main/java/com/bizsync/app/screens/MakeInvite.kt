@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -27,12 +28,16 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -43,6 +48,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.bizsync.app.navigation.LocalScaffoldViewModel
 import com.bizsync.domain.model.Ccnlnfo
 import com.bizsync.ui.components.ContractTypeSection
 import com.bizsync.ui.components.DepartmentSelectionCard
@@ -55,8 +61,9 @@ import com.bizsync.ui.model.AziendaUi
 import com.bizsync.ui.viewmodels.ManageInviteViewModel
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreateInviteContent(
+fun CreateInviteScreen(
     inviteVM: ManageInviteViewModel,
     azienda: AziendaUi,
     onBack: () -> Unit,
@@ -68,53 +75,63 @@ fun CreateInviteContent(
 
     val scrollState = rememberScrollState()
 
-    Column(
-        modifier = modifier
-            .verticalScroll(scrollState)
-            .padding(bottom = 16.dp), // facoltativo per spazio extra sotto
-        verticalArrangement = Arrangement.spacedBy(24.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Indietro")
-            }
-            Text(
-                text = "Nuovo Invito",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
+    val scaffoldVm = LocalScaffoldViewModel.current
+    LaunchedEffect(Unit) { scaffoldVm.onFullScreenChanged(true) }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Nuovo Invito",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Indietro"
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
             )
         }
+    ) { paddingValues ->
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .verticalScroll(scrollState)
+                .padding(16.dp),           // spazio interno
+            verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            // Progress indicator
+            StepProgressIndicator(
+                currentStep = currentStep,
+                totalSteps = totalSteps,
+                modifier = Modifier.padding(vertical = 16.dp)
+            )
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Progress indicator
-        StepProgressIndicator(
-            currentStep = currentStep,
-            totalSteps = totalSteps,
-            modifier = Modifier.padding(vertical = 16.dp)
-        )
-
-        when (currentStep) {
-            1 -> {
-                FirstStepContent(
+            when (currentStep) {
+                1 -> FirstStepContent(
                     inviteVM = inviteVM,
                     azienda = azienda,
                     onNextStep = { inviteVM.setCurrentStep(2) },
-                    modifier = Modifier
+                    modifier = Modifier.fillMaxWidth()
                 )
-            }
-            2 -> {
-                SecondStepContent(
+                2 -> SecondStepContent(
                     inviteVM = inviteVM,
                     onPreviousStep = { inviteVM.setCurrentStep(1) },
                     onComplete = {
                         inviteVM.inviaInvito(azienda)
                         onBack()
                     },
-                    modifier = Modifier
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }

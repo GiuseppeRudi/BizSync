@@ -1,9 +1,6 @@
 package com.bizsync.backend.dto
 
 
-import com.google.firebase.firestore.Exclude
-
-
 data class UserDto(
     val uid: String,
     val email: String,
@@ -11,7 +8,7 @@ data class UserDto(
     val cognome: String,
     val photourl: String,
     val idAzienda: String,
-    val isManager: Boolean,
+    val manager: Boolean,
 
     // CAMPI GESTITI DAL MANAGER
     val posizioneLavorativa: String,
@@ -32,7 +29,7 @@ data class UserDto(
         cognome = "",
         photourl = "",
         idAzienda = "",
-        isManager = false,
+        manager = false,
         posizioneLavorativa = "",
         dipartimento = "",
         numeroTelefono = "",

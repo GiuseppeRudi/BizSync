@@ -62,13 +62,14 @@ fun CompanyManagementScreen(onBackClick: () -> Unit) {
     when (onBoardingDone) {
         null  -> CircularProgressIndicator()
         false -> SetupPianificaScreen(onSetupComplete = { companyVm.setOnBoardingDone(true) })
-        true  ->  CompanyCore(companyVm, azienda)
+        true  ->  CompanyCore(companyVm, azienda,onBackClick)
 
     }
 }
 
 @Composable
-fun CompanyCore(companyVm: CompanyViewModel, azienda: AziendaUi) {
+fun CompanyCore(companyVm: CompanyViewModel, azienda: AziendaUi
+                 ,onBackClick: () -> Unit) {
     val userViewModel = LocalUserViewModel.current
     val userState by userViewModel.uiState.collectAsState()
     val companyState by companyVm.uiState.collectAsState()
@@ -112,8 +113,8 @@ fun CompanyCore(companyVm: CompanyViewModel, azienda: AziendaUi) {
 
         null -> OperationSelectorScreen(
             onOperationSelected = { operation ->
-                companyVm.setSelectedOperation(operation)
-            }
+                companyVm.setSelectedOperation(operation)},
+            onBackClick = onBackClick
         )
     }
 }

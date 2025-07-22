@@ -42,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.bizsync.app.navigation.LocalScaffoldViewModel
 import com.bizsync.domain.model.TurnoFrequente
 import com.bizsync.ui.components.TurnoFrequenteDialog
 
@@ -63,6 +64,9 @@ fun TurniFrequentiManagementScreen(
     LaunchedEffect(turniModificati) {
         hasChanges = turniModificati != currentTurni
     }
+
+    val scaffoldVm = LocalScaffoldViewModel.current
+    LaunchedEffect(Unit) { scaffoldVm.onFullScreenChanged(true) }
 
     Column(
         modifier = Modifier.fillMaxSize()

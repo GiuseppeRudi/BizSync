@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.bizsync.app.navigation.LocalScaffoldViewModel
 
 @Composable
 fun ChooseAzienda(
@@ -22,6 +23,11 @@ fun ChooseAzienda(
 ) {
     var visible by remember { mutableStateOf(false) }
 
+
+    val scaffoldVm = LocalScaffoldViewModel.current
+    LaunchedEffect(Unit) {
+        scaffoldVm.onFullScreenChanged(false)
+    }
 
     LaunchedEffect(Unit) {
         visible = true

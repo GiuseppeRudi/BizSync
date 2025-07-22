@@ -12,7 +12,7 @@ object UtentiFirestore {
         const val COGNOME             = "cognome"
         const val PHOTO_URL           = "photourl"
         const val ID_AZIENDA          = "idAzienda"
-        const val MANAGER             = "isManager"
+        const val MANAGER             = "manager"
         const val RUOLO               = "ruolo"
         const val CODICE_FISCALE      = "codiceFiscale"
         const val DATA_NASCITA        = "dataNascita"

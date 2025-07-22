@@ -52,7 +52,7 @@ fun DipartimentiManagementScreen(
     LaunchedEffect(Unit) {
         scaffoldVM.onFullScreenChanged(true)
         companyVm.setAreeModificate(areeLavoro)
-        companyVm.setOrariSettimanaliModificati(orariSettimanali) // INIZIALIZZA ORARI
+        companyVm.setOrariSettimanaliModificati(orariSettimanali)
     }
 
     LaunchedEffect(areeModificate, orariModificati) {

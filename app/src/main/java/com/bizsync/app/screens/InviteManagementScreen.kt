@@ -34,7 +34,7 @@ fun InviteManagementScreen(
     val scaffoldVm = LocalScaffoldViewModel.current
 
     LaunchedEffect(Unit) {
-        scaffoldVm.onFullScreenChanged(true)
+        scaffoldVm.onFullScreenChanged(false)
     }
 
     val userVM = LocalUserViewModel.current
@@ -46,23 +46,26 @@ fun InviteManagementScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "Gestione Inviti",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
+            if(inviteState.currentView == InviteView.SELECTION)
+            {
+                TopAppBar(
+                    title = {
+                        Text(
+                            "Gestione Inviti",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = { companyVM.setSelectedOperation(null) }) {
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Indietro")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface
                     )
-                },
-                navigationIcon = {
-                    IconButton(onClick = { companyVM.setSelectedOperation(null) }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Indietro")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
                 )
-            )
+            }
         }
     ) { paddingValues ->
         // FIXED: Removed verticalScroll() from the outer Column
@@ -80,15 +83,15 @@ fun InviteManagementScreen(
                     )
                 }
                 InviteView.VIEW_INVITES -> {
-                    ViewInvitesContent(
+                    ViewInvitesScreen(
                         inviteVM = inviteVM,
-                        Idazienda = azienda.idAzienda,
+                        idAzienda = azienda.idAzienda,
                         onBack = { inviteVM.setCurrentView(InviteView.SELECTION) },
                         modifier = Modifier.padding(horizontal = 24.dp)
                     )
                 }
                 InviteView.CREATE_INVITE -> {
-                    CreateInviteContent(
+                    CreateInviteScreen(
                         inviteVM = inviteVM,
                         azienda = azienda,
                         onBack = { inviteVM.setCurrentView(InviteView.SELECTION) },
@@ -208,81 +211,101 @@ fun SelectionContent(
         }
     }
 }
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ViewInvitesContent(
+fun ViewInvitesScreen(
     inviteVM: ManageInviteViewModel,
-    Idazienda: String,
+    idAzienda: String,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val inviteState by inviteVM.uiState.collectAsState()
 
-    LaunchedEffect(Unit) {
-        inviteVM.loadInvites(Idazienda)
+    LaunchedEffect(idAzienda) {
+        inviteVM.loadInvites(idAzienda)
     }
 
-    Column(modifier = modifier.fillMaxSize()) {
+    val scaffoldVm = LocalScaffoldViewModel.current
+    LaunchedEffect(Unit) { scaffoldVm.onFullScreenChanged(false) }
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Indietro")
-            }
-            Text(
-                text = "Inviti Inviati",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Inviti Inviati",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Indietro"
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
             )
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Lista inviti
-        if (inviteState.isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-
-        } else if (inviteState.invites.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Email,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.outline
-                    )
-                    Text(
-                        text = "Nessun invito inviato",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.outline
-                    )
+    ) { paddingValues ->
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp)
+        ) {
+            when {
+                inviteState.isLoading -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
                 }
-            }
-        } else {
-            // FIXED: LazyColumn now has proper constraints
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(inviteState.invites) { invite ->
-                    InviteItem(invite = invite)
+                inviteState.invites.isEmpty() -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Email,
+                                contentDescription = null,
+                                modifier = Modifier.size(64.dp),
+                                tint = MaterialTheme.colorScheme.outline
+                            )
+                            Text(
+                                text = "Nessun invito inviato",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                        }
+                    }
+                }
+                else -> {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(inviteState.invites) { invite ->
+                            InviteItem(invite = invite)
+                        }
+                    }
                 }
             }
         }
     }
 }
+
 
 @Composable
 fun InviteItem(
@@ -323,7 +346,7 @@ fun InviteItem(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            if (invite.acceptedDate != null) {
+            if (invite.acceptedDate.isNotEmpty()) {
                 Text(
                     text = "Accettato: ${invite.acceptedDate}",
                     style = MaterialTheme.typography.bodyMedium,
