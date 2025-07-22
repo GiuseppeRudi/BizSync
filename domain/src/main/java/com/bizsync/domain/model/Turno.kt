@@ -3,6 +3,7 @@ package com.bizsync.domain.model
 
 import com.bizsync.domain.constants.enumClass.EsitoTurno
 import com.bizsync.domain.constants.enumClass.ZonaLavorativa
+import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.UUID
@@ -29,7 +30,6 @@ data class Turno(
     val createdAt: LocalDate = LocalDate.now(),
     val updatedAt: LocalDate = LocalDate.now()
 ) {
-
     fun getZonaLavorativaDipendente(idDipendente: String): ZonaLavorativa {
         return zoneLavorative[idDipendente] ?: ZonaLavorativa.IN_SEDE
     }

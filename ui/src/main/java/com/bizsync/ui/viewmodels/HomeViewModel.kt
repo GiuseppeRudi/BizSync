@@ -38,34 +38,7 @@ class HomeViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(currentScreen = newScreen)
     }
 
-    fun generateMatricolaRandom(idDipendente: String, nome: String): String {
-        // Prendi i primi 2 caratteri del nome (in maiuscolo), per personalizzare la matricola
-        val nomePart = nome.take(2).uppercase().padEnd(2, 'X')
-
-        // Rimuoviamo spazi o caratteri non alfanumerici da idDipendente (se serve)
-        val cleanId = idDipendente.filter { it.isLetterOrDigit() }.uppercase()
-
-        // Se idDipendente è corto, aggiungiamo un fallback
-        if (cleanId.length < 5) {
-            // Se troppo corto, riempi con '0'
-            return nomePart + cleanId.padEnd(5, '0')
-        }
-
-        // Prendi 5 caratteri casuali da cleanId
-        val randomChars = mutableListOf<Char>()
-        val random = java.util.Random()
-
-        while (randomChars.size < 5) {
-            val c = cleanId[random.nextInt(cleanId.length)]
-            // Evitiamo caratteri ripetuti (opzionale)
-            if (!randomChars.contains(c)) {
-                randomChars.add(c)
-            }
-        }
-
-        // Combina nome + 5 caratteri random
-        return nomePart + randomChars.joinToString("")
-    }
+  
 
     fun setUserAndAgency(user: UserUi, agency: AziendaUi) {
         _uiState.value = _uiState.value.copy(

@@ -19,6 +19,34 @@ class UserRepository @Inject constructor(private val db : FirebaseFirestore) {
 
 
 
+    suspend fun updateUser(user: User, uid: String): Boolean {
+        return try {
+            Log.d("USER_DEBUG", "Aggiornamento utente con UID: $uid")
+            Log.d("USER_DEBUG", "Dati utente da aggiornare: $user")
+
+            // Mappa solo i campi che possono essere aggiornati dal dipendente
+            val updates = mapOf(
+                UtentiFirestore.Fields.NUMERO_TELEFONO to user.numeroTelefono,
+                UtentiFirestore.Fields.INDIRIZZO to user.indirizzo,
+                UtentiFirestore.Fields.CODICE_FISCALE to user.codiceFiscale,
+                UtentiFirestore.Fields.DATA_NASCITA to user.dataNascita,
+                UtentiFirestore.Fields.LUOGO_NASCITA to user.luogoNascita,
+            )
+
+            db.collection(UtentiFirestore.COLLECTION)
+                .document(uid)
+                .update(updates)
+                .await()
+
+            Log.d("USER_DEBUG", "Aggiornamento utente completato con successo")
+            true
+
+        } catch (e: Exception) {
+            Log.e("USER_DEBUG", "Errore nell'aggiornamento dell'utente", e)
+            false
+        }
+    }
+
     suspend fun getUserById(userId: String): Resource<User> {
         return try {
             val result = db.collection(UtentiFirestore.COLLECTION)

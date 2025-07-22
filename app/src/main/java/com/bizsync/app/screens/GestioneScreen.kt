@@ -287,15 +287,7 @@ fun ManagementCardItem(
     }
 }
 
-// Schermate per Dipendenti
-@Composable
-fun ShiftsManagementScreen(onBackClick: () -> Unit) {
-    ManagementTemplate(
-        title = "Turni di Lavoro",
-        onBackClick = onBackClick,
-        content = "Visualizza e gestisci i tuoi turni - Coming Soon"
-    )
-}
+
 
 
 @Composable
@@ -304,15 +296,6 @@ fun ActivitiesManagementScreen(onBackClick: () -> Unit) {
         title = "Le Tue Attività",
         onBackClick = onBackClick,
         content = "Gestisci le tue attività quotidiane - Coming Soon"
-    )
-}
-
-@Composable
-fun EmployeeSettingsScreen(onBackClick: () -> Unit) {
-    ManagementTemplate(
-        title = "Impostazioni Profilo",
-        onBackClick = onBackClick,
-        content = "Modifica il tuo profilo e preferenze - Coming Soon"
     )
 }
 
@@ -344,14 +327,4 @@ fun FinanceManagementScreen(onBackClick: () -> Unit) {
         content = "Sezione Finanze - Coming Soon"
     )
 }
-//@Composable
-//fun SettingsManagementScreen(onBackClick: () -> Unit) {
-//    ManagementTemplate(
-//        title = "Impostazioni Sistema",
-//        onBackClick = onBackClick,
-//        content = "Configurazioni sistema - Coming Soon"
-//    )
-//}
-
-
 

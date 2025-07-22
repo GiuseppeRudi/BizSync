@@ -137,6 +137,59 @@ class TurnoRepository @Inject constructor(
         }
     }
 
+    suspend fun syncTurniForUserInRange(
+        userId: String,
+        aziendaId: String,
+        startDate: LocalDate,
+        endDate: LocalDate
+    ) {
+        try {
+            Log.d("TurnoRepository", "Sincronizzazione turni per utente $userId dal $startDate al $endDate")
+
+            // Query Firebase per turni dell'utente nel range di date
+            val turniFromFirebase = firestore.collection("turni")
+                .whereEqualTo("idAzienda", aziendaId)
+                .whereArrayContains("idDipendenti", userId)
+                .whereGreaterThanOrEqualTo("data", startDate.toString())
+                .whereLessThanOrEqualTo("data", endDate.toString())
+                .get()
+                .await()
+                .documents
+                .mapNotNull { doc ->
+                    try {
+                        doc.toObject<Turno>()?.copy(
+                            id = doc.id,
+                            idFirebase = doc.id
+                        )
+                    } catch (e: Exception) {
+                        Log.e("TurnoRepository", "Errore conversione turno ${doc.id}: ${e.message}")
+                        null
+                    }
+                }
+
+            Log.d("TurnoRepository", "Trovati ${turniFromFirebase.size} turni su Firebase")
+
+            // Salva tutti i turni in cache locale
+            turniFromFirebase.forEach { turno ->
+                try {
+                    turnoDao.insertTurno(turno.toEntity())
+                    Log.d("TurnoRepository", "Turno ${turno.id} salvato in cache")
+                } catch (e: Exception) {
+                    Log.e("TurnoRepository", "Errore salvataggio turno ${turno.id}: ${e.message}")
+                }
+            }
+
+            Log.d("TurnoRepository", "Sincronizzazione turni completata")
+
+        } catch (e: Exception) {
+            Log.e("TurnoRepository", "Errore nella sincronizzazione turni: ${e.message}")
+            throw Exception("Errore nel sincronizzare i turni da Firebase: ${e.message}")
+        }
+    }
+
+
+
+
 
     suspend fun getTurniRangeByAzienda(
         idAzienda: String,

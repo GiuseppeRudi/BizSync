@@ -220,12 +220,7 @@ fun GestioneNavigator(
             val contratto = allContratti.first { it.idDipendente == user.uid && it.idAzienda == azienda.idAzienda }
 
             // --- 3. il composable con i parametri corretti ---
-            CompanyInfoScreen(
-                onBackClick = { navController.popBackStack() },
-                user       = user,
-                azienda    = azienda,
-                contratto  = contratto
-            )
+            CompanyInfoScreen(onBackClick = { navController.popBackStack() },)
         }
 
     }

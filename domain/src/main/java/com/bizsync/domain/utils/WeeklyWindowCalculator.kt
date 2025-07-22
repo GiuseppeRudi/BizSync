@@ -23,7 +23,6 @@ object WeeklyWindowCalculator {
 
 
     fun calculateWindowForManager(weekStart: LocalDate): Pair<LocalDate, LocalDate> {
-        // Finestra: 2 settimane indietro + 1 settimane avanti
         val startDate = weekStart.minusWeeks(2)
         val endDate = weekStart.plusWeeks(1).with(DayOfWeek.SUNDAY)
         return Pair(startDate, endDate)

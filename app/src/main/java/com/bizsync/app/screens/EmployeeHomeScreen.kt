@@ -21,6 +21,8 @@ import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import android.provider.Settings
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,18 +30,29 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.bizsync.domain.constants.enumClass.HomeScreenRoute
 import com.bizsync.domain.constants.enumClass.StatoTimbratura
 import com.bizsync.domain.constants.enumClass.ZonaLavorativa
+import com.bizsync.domain.model.Azienda
+import com.bizsync.domain.model.User
 import com.bizsync.ui.components.TimbratureOggiCard
+import com.bizsync.ui.mapper.toDomain
 import com.bizsync.ui.model.UserState
+import com.bizsync.ui.viewmodels.EmployeeHomeState
+import com.bizsync.ui.viewmodels.EmployeeHomeViewModel
+import com.bizsync.ui.viewmodels.StatoTurno
+import com.bizsync.ui.viewmodels.TurnoWithDetails
+import com.bizsync.ui.viewmodels.UrgencyLevel
 import com.google.accompanist.permissions.*
 import com.google.android.gms.location.LocationAvailability
 import com.google.android.gms.location.LocationCallback
@@ -48,19 +61,22 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import kotlinx.coroutines.delay
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 // Sostituisci la logica nella EmployeeHomeScreen con questa versione migliorata:
 
-@OptIn(ExperimentalPermissionsApi::class)
+@OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun EmployeeHomeScreen(
     userState: UserState,
+    viewModel: EmployeeHomeViewModel = hiltViewModel(),
     modifier: Modifier = Modifier,
-    viewModel: HomeViewModel
+    onNavigate: (HomeScreenRoute) -> Unit
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val timerState by viewModel.timerState.collectAsStateWithLifecycle()
+    val homeState by viewModel.homeState.collectAsState()
+    val currentTime = remember { mutableStateOf(LocalDateTime.now()) }
 
     val locationPermissionState = rememberMultiplePermissionsState(
         permissions = listOf(
@@ -74,32 +90,38 @@ fun EmployeeHomeScreen(
     var showLocationErrorDialog by remember { mutableStateOf(false) }
     var locationErrorMessage by remember { mutableStateOf("") }
     var pendingTimbratura by remember { mutableStateOf<TipoTimbratura?>(null) }
-    var isGettingLocation by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
 
+    // Inizializza dati dipendente
     LaunchedEffect(userState) {
         viewModel.initializeEmployee(userState)
     }
 
-    // Osserva i cambiamenti dei permessi per riprovare automaticamente
+    // Aggiorna l'orario ogni minuto
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(60000)
+            currentTime.value = LocalDateTime.now()
+        }
+    }
+
+    // Gestione automatica richieste posizione
     LaunchedEffect(locationPermissionState.allPermissionsGranted) {
         if (locationPermissionState.allPermissionsGranted && pendingTimbratura != null) {
-            // Controlla se GPS è attivo
             if (isLocationEnabled(context)) {
-                // Riprova automaticamente a ottenere la posizione
                 val tipoTimbraturaTemp = pendingTimbratura!!
                 pendingTimbratura = null
 
-                isGettingLocation = true
+                viewModel.setIsGettingLocation(true)
                 getCurrentLocation(
                     context = context,
                     onLocationReceived = { lat, lon ->
-                        isGettingLocation = false
-                        viewModel.onTimbra(tipoTimbraturaTemp, lat, lon)
+                        viewModel.setIsGettingLocation(false)
+//                        viewModel.onTimbra(tipoTimbraturaTemp, lat, lon)
                     },
                     onError = { error ->
-                        isGettingLocation = false
+                        viewModel.setIsGettingLocation(false)
                         locationErrorMessage = error
                         showLocationErrorDialog = true
                     }
@@ -110,84 +132,55 @@ fun EmployeeHomeScreen(
         }
     }
 
-    // Dialog permessi posizione
-    if (showLocationDialog) {
-        LocationPermissionDialog(
-            onConfirm = {
-                locationPermissionState.launchMultiplePermissionRequest()
-                showLocationDialog = false
-            },
-            onDismiss = {
-                showLocationDialog = false
-                pendingTimbratura = null
+    // Dialog gestione errori e permessi
+    DialogsSection(
+        showLocationDialog = showLocationDialog,
+        showGpsDialog = showGpsDialog,
+        showLocationErrorDialog = showLocationErrorDialog,
+        locationErrorMessage = locationErrorMessage,
+        homeState = homeState,
+        pendingTimbratura = pendingTimbratura,
+        onLocationDialogConfirm = {
+            locationPermissionState.launchMultiplePermissionRequest()
+            showLocationDialog = false
+        },
+        onLocationDialogDismiss = {
+            showLocationDialog = false
+            pendingTimbratura = null
+        },
+        onGpsDialogOpenSettings = {
+            openLocationSettings(context)
+            showGpsDialog = false
+        },
+        onGpsDialogDismiss = {
+            showGpsDialog = false
+            pendingTimbratura = null
+        },
+        onLocationErrorRetry = {
+            showLocationErrorDialog = false
+            pendingTimbratura?.let { tipo ->
+                viewModel.setIsGettingLocation(true)
+                getCurrentLocation(
+                    context = context,
+                    onLocationReceived = { lat, lon ->
+                        viewModel.setIsGettingLocation(false)
+//                        viewModel.onTimbra(tipo, lat, lon)
+                    },
+                    onError = { error ->
+                        viewModel.setIsGettingLocation(false)
+                        locationErrorMessage = error
+                        showLocationErrorDialog = true
+                    }
+                )
             }
-        )
-    }
-
-    // Dialog GPS disattivato
-    if (showGpsDialog) {
-        GpsDisabledDialog(
-            onOpenSettings = {
-                openLocationSettings(context)
-                showGpsDialog = false
-            },
-            onDismiss = {
-                showGpsDialog = false
-                pendingTimbratura = null
-            }
-        )
-    }
-
-    // Dialog errore posizione
-    if (showLocationErrorDialog) {
-        LocationErrorDialog(
-            message = locationErrorMessage,
-            onRetry = {
-                showLocationErrorDialog = false
-                pendingTimbratura?.let { tipo ->
-                    isGettingLocation = true
-                    getCurrentLocation(
-                        context = context,
-                        onLocationReceived = { lat, lon ->
-                            isGettingLocation = false
-                            viewModel.onTimbra(tipo, lat, lon)
-                        },
-                        onError = { error ->
-                            isGettingLocation = false
-                            locationErrorMessage = error
-                            showLocationErrorDialog = true
-                        }
-                    )
-                }
-            },
-            onDismiss = {
-                showLocationErrorDialog = false
-                pendingTimbratura = null
-            }
-        )
-    }
-
-    // Dialog errore generale
-    uiState.error?.let { error ->
-        AlertDialog(
-            onDismissRequest = viewModel::dismissError,
-            title = { Text("Errore") },
-            text = { Text(error) },
-            confirmButton = {
-                TextButton(onClick = viewModel::dismissError) {
-                    Text("OK")
-                }
-            }
-        )
-    }
-
-    // Dialog successo
-    if (uiState.showSuccess) {
-        SuccessDialog(
-            message = uiState.successMessage,
-            onDismiss = viewModel::dismissSuccess
-        )
-    }
+        },
+        onLocationErrorDismiss = {
+            showLocationErrorDialog = false
+            pendingTimbratura = null
+        },
+        onErrorDismiss = viewModel::dismissError,
+        onSuccessDismiss = viewModel::dismissSuccess
+    )
 
     // Layout principale
     Box(modifier = modifier.fillMaxSize()) {
@@ -198,99 +191,123 @@ fun EmployeeHomeScreen(
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
                             MaterialTheme.colorScheme.background
                         )
                     )
                 )
         )
 
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Header con badge preview
-            BadgePreviewCard(
-                badge = uiState.badge,
-                onClick = { viewModel.changeCurrentScreen(HomeScreenRoute.Badge) },
-                modifier = Modifier.fillMaxWidth()
-            )
+            // Header con benvenuto
+            item {
+                EmployeeWelcomeHeader(
+                    user = userState.user.toDomain(),
+                    azienda = userState.azienda.toDomain(),
+                    currentTime = currentTime.value
+                )
+            }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            // Alert pubblicazione turni
+            if (!homeState.shiftsPublishedThisWeek) {
+                item {
+                    EmployeeShiftPublicationAlert(
+                        daysUntilPublication = homeState.daysUntilShiftPublication
+                    )
+                }
+            }
 
-            // Card prossimo turno con timer
-            // Nella parte del Card prossimo turno con timer, aggiorna questa sezione:
-            timerState?.let { prossimo ->
-                ProssimoTurnoCard(
-                    prossimoTurno = prossimo,
-                    canTimbra = uiState.canTimbra,
-                    isGettingLocation = isGettingLocation,
-                    onTimbra = { tipo, _ ->
-                        Log.d("TIMBRATURA_DEBUG", "=== INIZIO PROCESSO TIMBRATURA ===")
-                        Log.d("TIMBRATURA_DEBUG", "Tipo timbratura: $tipo")
-
-                        pendingTimbratura = tipo
-
-                        val turno = prossimo.turno
-                        val zonaLavorativa = turno?.getZonaLavorativaDipendente(userState.user.uid)
-                        Log.d("TIMBRATURA_DEBUG", "Zona lavorativa: $zonaLavorativa")
-
-                        if (zonaLavorativa == ZonaLavorativa.IN_SEDE) {
-                            Log.d("TIMBRATURA_DEBUG", "Dipendente in sede - richiesta posizione necessaria")
-
-                            when {
-                                !locationPermissionState.allPermissionsGranted -> {
-                                    Log.d("TIMBRATURA_DEBUG", "Permessi mancanti - mostro dialog")
-                                    showLocationDialog = true
-                                }
-                                !isLocationEnabled(context) -> {
-                                    Log.d("TIMBRATURA_DEBUG", "GPS disattivato - mostro dialog")
-                                    showGpsDialog = true
-                                }
-                                else -> {
-                                    Log.d("TIMBRATURA_DEBUG", "Permessi OK e GPS attivo - ottengo posizione")
-                                    isGettingLocation = true
-                                    getCurrentLocation(
-                                        context = context,
-                                        onLocationReceived = { lat, lon ->
-                                            Log.d("TIMBRATURA_DEBUG", "✅ Posizione ricevuta: lat=$lat, lon=$lon")
-                                            isGettingLocation = false
-                                            viewModel.onTimbra(tipo, lat, lon)
-                                        },
-                                        onError = { error ->
-                                            Log.e("TIMBRATURA_DEBUG", "❌ Errore posizione: $error")
-                                            isGettingLocation = false
-                                            locationErrorMessage = error
-                                            showLocationErrorDialog = true
-                                        }
-                                    )
-                                }
-                            }
-                        } else {
-                            Log.d("TIMBRATURA_DEBUG", "Dipendente non in sede - timbratura senza GPS")
-                            viewModel.onTimbra(tipo)
-                        }
-                    },
+            // Badge preview
+            item {
+                BadgePreviewCard(
+                    badge = homeState.badge,
+                    onClick = { onNavigate(HomeScreenRoute.Badge) },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            // Panoramica turno di oggi
+            homeState.todayTurno?.let { turnoDetails ->
+                item {
+                    TodayTurnoOverviewCard(
+                        turnoWithDetails = turnoDetails,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+
+            // Prossimo turno con timer
+            homeState.prossimoTurno?.let { prossimoTurno ->
+                item {
+                    ProssimoTurnoCard(
+                        prossimoTurno = prossimoTurno,
+                        canTimbra = homeState.canTimbra,
+                        isGettingLocation = homeState.isGettingLocation,
+                        onTimbra = { tipo, _ ->
+                            pendingTimbratura = tipo
+
+                            val turno = prossimoTurno.turno
+                            val zonaLavorativa = turno?.getZonaLavorativaDipendente(userState.user.uid)
+
+                            if (zonaLavorativa == ZonaLavorativa.IN_SEDE) {
+                                when {
+                                    !locationPermissionState.allPermissionsGranted -> {
+                                        showLocationDialog = true
+                                    }
+                                    !isLocationEnabled(context) -> {
+                                        showGpsDialog = true
+                                    }
+                                    else -> {
+                                        viewModel.setIsGettingLocation(true)
+                                        getCurrentLocation(
+                                            context = context,
+                                            onLocationReceived = { lat, lon ->
+                                                viewModel.setIsGettingLocation(false)
+//                                                viewModel.onTimbra(tipo, lat, lon)
+                                            },
+                                            onError = { error ->
+                                                viewModel.setIsGettingLocation(false)
+                                                locationErrorMessage = error
+                                                showLocationErrorDialog = true
+                                            }
+                                        )
+                                    }
+                                }
+                            } else {
+//                                viewModel.onTimbra(tipo)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
 
             // Timbrature di oggi
-            if (uiState.timbratureOggi.isNotEmpty()) {
-                TimbratureOggiCard(
-                    timbrature = uiState.timbratureOggi,
+            if (homeState.timbratureOggi.isNotEmpty()) {
+                item {
+                    TimbratureOggiCard(
+                        timbrature = homeState.timbratureOggi,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+
+            // Quick actions per il dipendente
+            item {
+                EmployeeQuickActionsCard(
+                    onNavigate = onNavigate,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
         }
 
         // Loading overlay
-        if (uiState.isLoading || isGettingLocation) {
+        if (homeState.isLoading || homeState.isGettingLocation) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -301,7 +318,7 @@ fun EmployeeHomeScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                    if (isGettingLocation) {
+                    if (homeState.isGettingLocation) {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
                             text = "Rilevamento posizione...",
@@ -315,7 +332,493 @@ fun EmployeeHomeScreen(
     }
 }
 
+@Composable
+fun EmployeeWelcomeHeader(
+    user: User,
+    azienda: Azienda,
+    currentTime: LocalDateTime
+) {
+    val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+    val dateFormatter = DateTimeFormatter.ofPattern("EEEE, dd MMMM yyyy", Locale.ITALIAN)
 
+    val greeting = when (currentTime.hour) {
+        in 5..11 -> "Buongiorno"
+        in 12..17 -> "Buon pomeriggio"
+        else -> "Buonasera"
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "$greeting, ${user.nome}!",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Text(
+                    text = azienda.nome,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Medium
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = currentTime.format(dateFormatter).replaceFirstChar { it.uppercase() },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Column(
+                horizontalAlignment = Alignment.End
+            ) {
+                Text(
+                    text = currentTime.format(timeFormatter),
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Person,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "Dipendente",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun EmployeeShiftPublicationAlert(
+    daysUntilPublication: Int
+) {
+    val urgencyLevel = when {
+        daysUntilPublication <= 0 -> UrgencyLevel.CRITICAL
+        daysUntilPublication == 1 -> UrgencyLevel.HIGH
+        daysUntilPublication <= 2 -> UrgencyLevel.MEDIUM
+        else -> UrgencyLevel.LOW
+    }
+
+    val colors = when (urgencyLevel) {
+        UrgencyLevel.CRITICAL -> Triple(
+            Color(0xFFD32F2F),
+            Color(0xFFFFEBEE),
+            Icons.Default.Schedule
+        )
+        UrgencyLevel.HIGH -> Triple(
+            Color(0xFFFF9800),
+            Color(0xFFFFF3E0),
+            Icons.Default.Schedule
+        )
+        UrgencyLevel.MEDIUM -> Triple(
+            Color(0xFFFFC107),
+            Color(0xFFFFFDE7),
+            Icons.Default.Schedule
+        )
+        UrgencyLevel.LOW -> Triple(
+            Color(0xFF2196F3),
+            Color(0xFFE3F2FD),
+            Icons.Default.Schedule
+        )
+    }
+
+    val message = when {
+        daysUntilPublication < 0 -> "I turni della prossima settimana sono in ritardo!"
+        daysUntilPublication == 0 -> "I turni vengono pubblicati oggi!"
+        daysUntilPublication == 1 -> "I turni vengono pubblicati domani"
+        else -> "I turni saranno pubblicati tra ${daysUntilPublication} giorni"
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = colors.second
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = colors.third,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+                tint = colors.first
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "📅 Pubblicazione Turni",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = colors.first
+                )
+
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun TodayTurnoOverviewCard(
+    turnoWithDetails: TurnoWithDetails,
+    modifier: Modifier = Modifier
+) {
+    val statoColor = when (turnoWithDetails.statoTurno) {
+        StatoTurno.NON_INIZIATO -> Color(0xFF9E9E9E)
+        StatoTurno.IN_CORSO -> Color(0xFF4CAF50)
+        StatoTurno.IN_PAUSA -> Color(0xFFFF9800)
+        StatoTurno.COMPLETATO -> Color(0xFF2196F3)
+        StatoTurno.IN_RITARDO -> Color(0xFFFF5722)
+        StatoTurno.ASSENTE -> Color(0xFFF44336)
+    }
+
+    val statoText = when (turnoWithDetails.statoTurno) {
+        StatoTurno.NON_INIZIATO -> "Non iniziato"
+        StatoTurno.IN_CORSO -> "In corso"
+        StatoTurno.IN_PAUSA -> "In pausa"
+        StatoTurno.COMPLETATO -> "Completato"
+        StatoTurno.IN_RITARDO -> "In ritardo"
+        StatoTurno.ASSENTE -> "Assente"
+    }
+
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Turno di Oggi",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Text(
+                        text = turnoWithDetails.turno.titolo,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                Badge(
+                    containerColor = statoColor.copy(alpha = 0.2f)
+                ) {
+                    Text(
+                        text = statoText,
+                        color = statoColor,
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Orari
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(
+                        text = "Orario Previsto",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "${turnoWithDetails.turno.orarioInizio.format(DateTimeFormatter.ofPattern("HH:mm"))} - ${turnoWithDetails.turno.orarioFine.format(DateTimeFormatter.ofPattern("HH:mm"))}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                if (turnoWithDetails.orarioEntrataEffettivo != null) {
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            text = "Entrata Effettiva",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = turnoWithDetails.orarioEntrataEffettivo!!.format(DateTimeFormatter.ofPattern("HH:mm")),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = if (turnoWithDetails.minutiRitardo > 0) Color(0xFFF44336) else Color(0xFF4CAF50)
+                        )
+                    }
+                }
+            }
+
+            // Indicatori ritardo/anticipo
+            if (turnoWithDetails.minutiRitardo > 0 || turnoWithDetails.minutiAnticipo > 0) {
+                Spacer(modifier = Modifier.height(8.dp))
+
+                if (turnoWithDetails.minutiRitardo > 0) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color(0xFFF44336).copy(alpha = 0.1f)
+                    ) {
+                        Text(
+                            text = "⏰ Ritardo: ${turnoWithDetails.minutiRitardo} minuti",
+                            modifier = Modifier.padding(8.dp),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFFF44336),
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+
+                if (turnoWithDetails.minutiAnticipo > 0) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color(0xFF4CAF50).copy(alpha = 0.1f)
+                    ) {
+                        Text(
+                            text = "⚡ Uscita anticipata: ${turnoWithDetails.minutiAnticipo} minuti",
+                            modifier = Modifier.padding(8.dp),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF4CAF50),
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Progress bar dello stato del turno
+            val progress = when {
+                turnoWithDetails.statoTurno == StatoTurno.COMPLETATO -> 1f
+                turnoWithDetails.haTimbratoEntrata -> 0.5f
+                else -> 0f
+            }
+
+            LinearProgressIndicator(
+                progress = progress,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(4.dp)),
+                color = statoColor,
+                trackColor = statoColor.copy(alpha = 0.2f)
+            )
+        }
+    }
+}
+
+@Composable
+fun EmployeeQuickActionsCard(
+    onNavigate: (HomeScreenRoute) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = "Azioni Rapide",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                item {
+                    EmployeeQuickActionButton(
+                        title = "Il Mio\nBadge",
+                        icon = Icons.Default.Badge,
+                        color = Color(0xFF2196F3),
+                        onClick = { onNavigate(HomeScreenRoute.Badge) }
+                    )
+                }
+                item {
+                    EmployeeQuickActionButton(
+                        title = "I Miei\nTurni",
+                        icon = Icons.Default.Schedule,
+                        color = Color(0xFF4CAF50),
+                        onClick = { onNavigate(HomeScreenRoute.Home) }
+                    )
+                }
+                item {
+                    EmployeeQuickActionButton(
+                        title = "Le Mie\nAssenze",
+                        icon = Icons.Default.EventBusy,
+                        color = Color(0xFFFF9800),
+                        onClick = { onNavigate(HomeScreenRoute.Home) }
+                    )
+                }
+                item {
+                    EmployeeQuickActionButton(
+                        title = "Storico\nTimbrature",
+                        icon = Icons.Default.History,
+                        color = Color(0xFF9C27B0),
+                        onClick = { onNavigate(HomeScreenRoute.Timbrature) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun EmployeeQuickActionButton(
+    title: String,
+    icon: ImageVector,
+    color: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        onClick = onClick,
+        modifier = modifier.size(90.dp, 80.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = color.copy(alpha = 0.1f)
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+                tint = color
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center,
+                lineHeight = 12.sp
+            )
+        }
+    }
+}
+
+@Composable
+fun DialogsSection(
+    showLocationDialog: Boolean,
+    showGpsDialog: Boolean,
+    showLocationErrorDialog: Boolean,
+    locationErrorMessage: String,
+    homeState: EmployeeHomeState,
+    pendingTimbratura: TipoTimbratura?,
+    onLocationDialogConfirm: () -> Unit,
+    onLocationDialogDismiss: () -> Unit,
+    onGpsDialogOpenSettings: () -> Unit,
+    onGpsDialogDismiss: () -> Unit,
+    onLocationErrorRetry: () -> Unit,
+    onLocationErrorDismiss: () -> Unit,
+    onErrorDismiss: () -> Unit,
+    onSuccessDismiss: () -> Unit
+) {
+    // Dialog permessi posizione
+    if (showLocationDialog) {
+        LocationPermissionDialog(
+            onConfirm = onLocationDialogConfirm,
+            onDismiss = onLocationDialogDismiss
+        )
+    }
+
+    // Dialog GPS disattivato
+    if (showGpsDialog) {
+        GpsDisabledDialog(
+            onOpenSettings = onGpsDialogOpenSettings,
+            onDismiss = onGpsDialogDismiss
+        )
+    }
+
+    // Dialog errore posizione
+    if (showLocationErrorDialog) {
+        LocationErrorDialog(
+            message = locationErrorMessage,
+            onRetry = onLocationErrorRetry,
+            onDismiss = onLocationErrorDismiss
+        )
+    }
+
+    // Dialog errore generale
+    homeState.error?.let { error ->
+        AlertDialog(
+            onDismissRequest = onErrorDismiss,
+            title = { Text("Errore") },
+            text = { Text(error) },
+            confirmButton = {
+                TextButton(onClick = onErrorDismiss) {
+                    Text("OK")
+                }
+            }
+        )
+    }
+
+    // Dialog successo
+    if (homeState.showSuccess) {
+        SuccessDialog(
+            message = homeState.successMessage,
+            onDismiss = onSuccessDismiss
+        )
+    }
+}
 
 @SuppressLint("MissingPermission")
 fun getCurrentLocation(
@@ -502,7 +1005,6 @@ fun LocationErrorDialog(
     )
 }
 
-// 2. Card preview del badge
 @Composable
 fun BadgePreviewCard(
     badge: BadgeVirtuale?,
@@ -875,7 +1377,6 @@ fun ProssimoTurnoCard(
     }
 }
 
-// 6. Success Dialog
 @Composable
 fun SuccessDialog(
     message: String,

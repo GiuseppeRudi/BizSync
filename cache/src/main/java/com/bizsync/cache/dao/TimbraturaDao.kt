@@ -3,11 +3,31 @@ package com.bizsync.cache.dao
 
 import androidx.room.*
 import com.bizsync.cache.entity.TimbraturaEntity
+import com.bizsync.domain.model.Timbratura
+import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Dao
 interface TimbraturaDao {
+
+
+    @Query("""
+        SELECT * FROM timbrature 
+        WHERE DATE(dataOraTimbratura) BETWEEN :startDate AND :endDate 
+        AND idDipendente = :userId 
+        ORDER BY dataOraTimbratura DESC
+    """)
+    fun getTimbratureInRangeForUser(startDate: LocalDate, endDate: LocalDate, userId: String): Flow<List<TimbraturaEntity>>
+
+    @Query("SELECT * FROM timbrature WHERE createdAt = :date AND idDipendente = :userId ORDER BY createdAt DESC")
+    fun getTimbratureByDateAndUser(date: LocalDate, userId: String): Flow<List<TimbraturaEntity>>
+
+    @Query("SELECT * FROM timbrature WHERE createdAt = :date ORDER BY createdAt DESC")
+    fun getTimbratureByDate(date: LocalDate): Flow<List<TimbraturaEntity>>
+
+    @Query("SELECT * FROM timbrature ORDER BY createdAt DESC LIMIT :limit")
+    fun getRecentTimbrature(limit: Int): Flow<List<TimbraturaEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(timbrature: List<TimbraturaEntity>)

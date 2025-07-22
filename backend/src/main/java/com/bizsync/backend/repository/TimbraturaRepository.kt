@@ -10,6 +10,7 @@ import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.Timbratura
 import com.bizsync.domain.utils.DateUtils.toFirebaseTimestamp
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.toObject
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import java.time.LocalTime
@@ -22,6 +23,61 @@ class TimbraturaRepository @Inject constructor(
 
     private val collection = firestore.collection("timbrature")
     private val TAG = "TimbraturaRepo"
+
+
+    suspend fun syncTimbratureForUserInRange(
+        userId: String,
+        aziendaId: String,
+        startDate: LocalDate,
+        endDate: LocalDate
+    ) {
+        try {
+            Log.d("TimbraturaRepository", "Sincronizzazione timbrature per utente $userId dal $startDate al $endDate")
+
+            // Converte le date in Timestamp per Firebase
+            val startTimestamp = startDate.atStartOfDay()
+            val endTimestamp = endDate.atTime(23, 59, 59)
+
+            // Query Firebase per timbrature dell'utente nel range di date
+            val timbratureFromFirebase = firestore.collection("timbrature")
+                .whereEqualTo("idAzienda", aziendaId)
+                .whereEqualTo("idDipendente", userId)
+                .whereGreaterThanOrEqualTo("dataOraTimbratura", startTimestamp.toString())
+                .whereLessThanOrEqualTo("dataOraTimbratura", endTimestamp.toString())
+                .get()
+                .await()
+                .documents
+                .mapNotNull { doc ->
+                    try {
+                        doc.toObject<Timbratura>()?.copy(
+                            id = doc.id,
+                            idFirebase = doc.id
+                        )
+                    } catch (e: Exception) {
+                        Log.e("TimbraturaRepository", "Errore conversione timbratura ${doc.id}: ${e.message}")
+                        null
+                    }
+                }
+
+            Log.d("TimbraturaRepository", "Trovate ${timbratureFromFirebase.size} timbrature su Firebase")
+
+            // Salva tutte le timbrature in cache locale
+            timbratureFromFirebase.forEach { timbratura ->
+                try {
+                    timbraturaDao.insert(timbratura.toEntity())
+                    Log.d("TimbraturaRepository", "Timbratura ${timbratura.id} salvata in cache")
+                } catch (e: Exception) {
+                    Log.e("TimbraturaRepository", "Errore salvataggio timbratura ${timbratura.id}: ${e.message}")
+                }
+            }
+
+            Log.d("TimbraturaRepository", "Sincronizzazione timbrature completata")
+
+        } catch (e: Exception) {
+            Log.e("TimbraturaRepository", "Errore nella sincronizzazione timbrature: ${e.message}")
+            throw Exception("Errore nel sincronizzare le timbrature da Firebase: ${e.message}")
+        }
+    }
 
     suspend fun getTimbratureByAzienda(
         idAzienda: String,

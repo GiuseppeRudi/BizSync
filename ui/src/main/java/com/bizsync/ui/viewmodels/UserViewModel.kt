@@ -39,6 +39,22 @@ class UserViewModel @Inject constructor(
         _uiState.update { it.copy(azienda = _uiState.value.azienda.copy(giornoPubblicazioneTurni = giorno)) }
     }
 
+    fun aggiornaUser(modifiche : EditableUserFields)
+    {
+        val currentUser = _uiState.value.user
+
+        _uiState.update {
+            it.copy(
+                user = currentUser.copy(
+                    numeroTelefono = modifiche.numeroTelefono,
+                    luogoNascita = modifiche.luogoNascita,
+                    codiceFiscale = modifiche.codiceFiscale,
+                    dataNascita = modifiche.dataNascita,
+                    indirizzo = modifiche.indirizzo))
+
+        }
+    }
+
     fun onAddAziendaRole(idAzienda: String) {
 
         viewModelScope.launch {

@@ -42,9 +42,12 @@ fun HomeScreen(viewModel : HomeViewModel) {
     val userState by userVm.uiState.collectAsState()
 
     if (userState.user.isManager) {
-        ManagerHomeScreen(userState = userState, modifier = Modifier.fillMaxSize(), viewModel)
+        ManagerHomeScreen(
+            userState = userState,
+            onNavigate = {}
+        )
     } else {
-        EmployeeHomeScreen(userState = userState, modifier = Modifier.fillMaxSize(), viewModel)
+        EmployeeHomeScreen(userState = userState, modifier = Modifier.fillMaxSize(), onNavigate = {})
     }
 
 }

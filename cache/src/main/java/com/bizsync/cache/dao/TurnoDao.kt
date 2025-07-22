@@ -9,6 +9,7 @@ import androidx.room.Query
 import androidx.room.Update
 import java.time.LocalDate
 import com.bizsync.cache.entity.TurnoEntity
+import com.bizsync.domain.model.Turno
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -178,6 +179,16 @@ interface TurnoDao {
     suspend fun getPastShifts(aziendaId: String, start: LocalDate, end: LocalDate): List<TurnoEntity>
 
 
+    // da sistemare
+    @Query("SELECT * FROM turni WHERE data = :date ORDER BY orarioInizio ASC")
+    fun getTurniByDateAndUser(date: LocalDate): Flow<List<TurnoEntity>>
+
+    @Query("SELECT * FROM turni WHERE data = :date ORDER BY orarioInizio ASC")
+    fun getTurniByDate(date: LocalDate): Flow<List<TurnoEntity>>
+
+    @Query("SELECT * FROM turni WHERE data BETWEEN :startDate AND :endDate ORDER BY data ASC, orarioInizio ASC")
+    fun getTurniInDateRange(startDate: LocalDate, endDate: LocalDate): Flow<List<TurnoEntity>>
+
     // Turni passati da una data a un'altra
     @Query("""
     SELECT * FROM turni 
@@ -190,6 +201,13 @@ interface TurnoDao {
         startDate: LocalDate,
         endDate: LocalDate = LocalDate.now()
     ): List<TurnoEntity>
+
+    @Query("""
+        SELECT * FROM turni 
+        WHERE data BETWEEN :startDate AND :endDate
+        ORDER BY data DESC, orarioInizio ASC
+    """)
+    fun getTurniInRangeForUser(startDate: LocalDate, endDate: LocalDate): Flow<List<TurnoEntity>>
 
     /**
      * Aggiorna un turno esistente

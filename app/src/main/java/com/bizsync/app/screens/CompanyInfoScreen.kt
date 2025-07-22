@@ -44,12 +44,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.filled.SupervisorAccount
+import androidx.compose.runtime.collectAsState
 
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.domain.model.Azienda
 import com.bizsync.domain.model.Ccnlnfo
 import com.bizsync.domain.model.Contratto
@@ -57,14 +59,20 @@ import com.bizsync.domain.model.User
 import com.bizsync.ui.theme.BizSyncColors
 import com.bizsync.ui.theme.BizSyncDimensions
 import java.time.DayOfWeek
+import androidx.compose.runtime.getValue
+import com.bizsync.ui.mapper.toDomain
 
 @Composable
 fun CompanyInfoScreen(
-    user: User,
-    azienda: Azienda,
-    contratto: Contratto,
     onBackClick: () -> Unit
 ) {
+
+    val userVM = LocalUserViewModel.current
+    val userState by userVM.uiState.collectAsState()
+    val user = userState.user.toDomain()
+    val contratto = userState.contratto
+    val azienda = userState.azienda.toDomain()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -121,15 +129,6 @@ fun CompanyInfoScreen(
                 BenefitsUsageCard(contratto = contratto)
             }
 
-            // Informazioni Personali sul Lavoro
-            item {
-                PersonalWorkInfoCard(user = user, contratto = contratto)
-            }
-
-            // Turni e Orari
-            item {
-                WorkScheduleCard(azienda = azienda)
-            }
         }
     }
 }
@@ -460,102 +459,7 @@ fun BenefitUsageRow(
     }
 }
 
-@Composable
-fun PersonalWorkInfoCard(user: User, contratto: Contratto) {
-    InfoCard(
-        title = "Informazioni Personali Lavoro",
-        icon = Icons.Default.Person
-    ) {
-        InfoRow(
-            label = "Nome Completo",
-            value = "${user.nome} ${user.cognome}",
-            icon = Icons.Default.Person
-        )
 
-        InfoRow(
-            label = "Email Aziendale",
-            value = contratto.emailDipendente,
-            icon = Icons.Default.Email
-        )
-
-        InfoRow(
-            label = "Ruolo",
-            value = if (user.isManager) "Manager" else "Dipendente",
-            icon = if (user.isManager) Icons.Default.SupervisorAccount else Icons.Default.Person
-        )
-
-        InfoRow(
-            label = "Dipartimento",
-            value = user.dipartimento,
-            icon = Icons.Default.Domain
-        )
-
-        InfoRow(
-            label = "Posizione Lavorativa",
-            value = user.posizioneLavorativa,
-            icon = Icons.Default.Badge
-        )
-    }
-}
-
-@Composable
-fun WorkScheduleCard(azienda: Azienda) {
-    InfoCard(
-        title = "Turni e Orari",
-        icon = Icons.Default.Schedule
-    ) {
-        InfoRow(
-            label = "Giorno Pubblicazione Turni",
-            value = getDayOfWeekInItalian(azienda.giornoPubblicazioneTurni),
-            icon = Icons.Default.CalendarToday
-        )
-
-        if (azienda.turniFrequenti.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(BizSyncDimensions.SpacingSmall))
-
-            Text(
-                text = "Turni Frequenti",
-                style = MaterialTheme.typography.titleSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = BizSyncColors.OnSurface
-                ),
-                modifier = Modifier.padding(vertical = BizSyncDimensions.SpacingSmall)
-            )
-
-            azienda.turniFrequenti.forEach { turno ->
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = BizSyncColors.Surface
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 2.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(BizSyncDimensions.SpacingSmall),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.AccessTime,
-                            contentDescription = null,
-                            tint = BizSyncColors.OnSurfaceVariant,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(BizSyncDimensions.SpacingSmall))
-                        Text(
-                            text = turno.nome, // Assumendo che TurnoFrequente abbia un campo nome
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                color = BizSyncColors.OnSurface
-                            )
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-// Composable di supporto
 @Composable
 fun InfoCard(
     title: String,
