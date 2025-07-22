@@ -11,7 +11,6 @@ import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -24,8 +23,10 @@ import com.bizsync.ui.theme.BizSyncColors
 import com.bizsync.ui.theme.BizSyncDimensions
 
 @Composable
-fun GestioneScreen() {
-    GestioneNavigator()
+fun GestioneScreen(
+    onLogout: () -> Unit
+) {
+    GestioneNavigator(onLogout)
 }
 
 @Composable
@@ -38,7 +39,7 @@ fun MainManagementScreen(
     onNavigateToManageCompany: () -> Unit,
     onNavigateToReports: () -> Unit,
     onNavigateToSettings: () -> Unit,
-    onNavigateToSecurity: () -> Unit,
+    onNavigateToLogout: () -> Unit,
     // Employee navigation functions
     onNavigateToShifts: () -> Unit = {},
     onNavigateToAbsences: () -> Unit = {},
@@ -104,11 +105,11 @@ fun MainManagementScreen(
             ) { onNavigateToSettings() },
 
             ManagementCard(
-                title = "Sicurezza",
-                description = "Gestisci permessi e sicurezza",
-                icon = Icons.Default.Security,
+                title = "Logout",
+                description = "Ci rivediamo presto",
+                icon = Icons.Default.Logout,
                 gradient = BizSyncColors.CardGradients[7]
-            ) { onNavigateToSecurity() }
+            ) { onNavigateToLogout() }
         )
     }
 
@@ -155,7 +156,14 @@ fun MainManagementScreen(
                 description = "Informazioni aziendali",
                 icon = Icons.Default.Business,
                 gradient = BizSyncColors.CardGradients[5]
-            ) { onNavigateToCompanyInfo() }
+            ) { onNavigateToCompanyInfo() },
+
+            ManagementCard(
+                title = "Logout",
+                description = "Ci rivediamo presto",
+                icon = Icons.Default.Logout,
+                gradient = BizSyncColors.CardGradients[7]
+            ) { onNavigateToLogout() }
         )
     }
 
@@ -345,12 +353,5 @@ fun FinanceManagementScreen(onBackClick: () -> Unit) {
 //    )
 //}
 
-@Composable
-fun SecurityManagementScreen(onBackClick: () -> Unit) {
-    ManagementTemplate(
-        title = "Sicurezza",
-        onBackClick = onBackClick,
-        content = "Sezione Sicurezza - Coming Soon"
-    )
-}
+
 

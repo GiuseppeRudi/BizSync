@@ -85,7 +85,7 @@ fun AppScaffold(onLogout: () -> Unit) {
                 }
             }
         ) { innerPadding ->
-            AppNavigator(modifier = Modifier.padding(innerPadding))
+            AppNavigator(modifier = Modifier.padding(innerPadding ),onLogout)
         }
 
     }

@@ -7,11 +7,14 @@ import com.bizsync.backend.mapper.toDomain
 import com.bizsync.backend.mapper.toDomainList
 import com.bizsync.backend.mapper.toDto
 import com.bizsync.backend.remote.AbsencesFirestore
+import com.bizsync.cache.dao.AbsenceDao
+import com.bizsync.cache.mapper.toEntity
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.Absence
 import com.bizsync.domain.utils.DateUtils.toFirebaseTimestamp
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.toObject
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import java.time.LocalTime
@@ -20,7 +23,8 @@ import java.util.Date
 import javax.inject.Inject
 
 class AbsenceRepository @Inject constructor(
-    private val db: FirebaseFirestore
+    private val db: FirebaseFirestore,
+    private val absenceDao : AbsenceDao
 ) {
 
 
@@ -65,6 +69,47 @@ class AbsenceRepository @Inject constructor(
         }
     }
 
+
+    suspend fun syncAbsencesInRange(startDate: LocalDate, endDate: LocalDate) {
+        try {
+            val absencesFromFirebase = db.collection("absences")
+                .whereGreaterThanOrEqualTo("startDate", startDate.toString())
+                .whereLessThanOrEqualTo("endDate", endDate.toString())
+                .get()
+                .await()
+                .documents
+                .mapNotNull { doc ->
+                    doc.toObject<Absence>()?.copy(id = doc.id)
+                }
+
+            absencesFromFirebase.forEach { absence ->
+                absenceDao.insert(absence.toEntity())
+            }
+
+        } catch (e: Exception) {
+            throw Exception("Errore nel sync assenze: ${e.message}")
+        }
+    }
+
+    suspend fun syncAllAbsences() {
+        try {
+            val allAbsences = db.collection("absences")
+                .get()
+                .await()
+                .documents
+                .mapNotNull { doc ->
+                    doc.toObject<Absence>()?.copy(id = doc.id)
+                }
+
+//            absenceDao.clearAllAbsences()
+            allAbsences.forEach { absence ->
+                absenceDao.insert(absence.toEntity())
+            }
+
+        } catch (e: Exception) {
+            throw Exception("Errore nel sync completo assenze: ${e.message}")
+        }
+    }
 
     suspend fun salvaAbsence(absence: Absence): Resource<String> {
         return try {

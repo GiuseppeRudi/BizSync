@@ -7,9 +7,27 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.bizsync.cache.entity.AbsenceEntity
+import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
 
 @Dao
 interface AbsenceDao {
+
+
+    @Query("""
+        SELECT * FROM absences 
+        WHERE (startDate BETWEEN :startDate AND :endDate) 
+           OR (endDate BETWEEN :startDate AND :endDate)
+           OR (startDate <= :startDate AND endDate >= :endDate)
+        ORDER BY startDate ASC
+    """)
+    fun getAbsencesInRange(startDate: LocalDate, endDate: LocalDate): Flow<List<AbsenceEntity>>
+
+    @Query("SELECT * FROM absences WHERE startDate >= :fromDate ORDER BY startDate ASC")
+    fun getAbsencesFrom(fromDate: LocalDate): Flow<List<AbsenceEntity>>
+
+    @Query("DELETE FROM absences WHERE endDate < :beforeDate")
+    suspend fun deleteAbsencesBefore(beforeDate: LocalDate)
 
 
     @Query("SELECT * FROM absences WHERE idAzienda = :idAzienda ORDER BY submittedDate DESC")

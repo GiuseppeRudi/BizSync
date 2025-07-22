@@ -6,6 +6,8 @@ import com.bizsync.backend.mapper.toDomainList
 import com.bizsync.backend.prompts.AiPrompts
 import com.bizsync.backend.prompts.ContractPrompts
 import com.bizsync.backend.remote.ContrattiFirestore
+import com.bizsync.cache.dao.ContrattoDao
+import com.bizsync.cache.mapper.toEntity
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.Absence
 import com.bizsync.domain.model.Ccnlnfo
@@ -13,6 +15,7 @@ import com.bizsync.domain.model.Contratto
 import com.google.firebase.Timestamp
 import com.google.firebase.ai.GenerativeModel
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.toObject
 import kotlinx.coroutines.tasks.await
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
@@ -24,8 +27,65 @@ import javax.inject.Inject
 class ContractRepository @Inject constructor(
     private val json: Json,
     private val ai: GenerativeModel,
-    private val db: FirebaseFirestore
+    private val db: FirebaseFirestore,
+    private val contrattoDao: ContrattoDao
 ) {
+
+    suspend fun syncRecentContratti() {
+        try {
+            // Prendi solo i contratti attivi o recentemente scaduti
+            val twoWeeksAgo = LocalDate.now().minusWeeks(2)
+
+            val contrattiFromFirebase = db.collection("contratti")
+                .whereGreaterThanOrEqualTo("dataInizio", twoWeeksAgo.toString())
+                .get()
+                .await()
+                .documents
+                .mapNotNull { doc ->
+                    doc.toObject<Contratto>()?.copy(id = doc.id)
+                }
+
+            // Prendi anche i contratti che sono ancora attivi
+            val contrattiAttivi = db.collection("contratti")
+                .whereEqualTo("isActive", true)
+                .get()
+                .await()
+                .documents
+                .mapNotNull { doc ->
+                    doc.toObject<Contratto>()?.copy(id = doc.id)
+                }
+
+            val allContratti = (contrattiFromFirebase + contrattiAttivi).distinctBy { it.id }
+
+            allContratti.forEach { contratto ->
+                contrattoDao.insert(contratto.toEntity())
+            }
+
+        } catch (e: Exception) {
+            throw Exception("Errore nel sync contratti recenti: ${e.message}")
+        }
+    }
+
+    suspend fun syncAllContratti() {
+        try {
+            val allContratti = db.collection("contratti")
+                .get()
+                .await()
+                .documents
+                .mapNotNull { doc ->
+                    doc.toObject<Contratto>()?.copy(id = doc.id)
+                }
+
+//            contrattoDao.clearAllContratti()
+            allContratti.forEach { contratto ->
+                contrattoDao.insert(contratto.toEntity())
+            }
+
+        } catch (e: Exception) {
+            throw Exception("Errore nel sync completo contratti: ${e.message}")
+        }
+    }
+
     suspend fun updateContratto(contratto: Contratto): Resource<String> {
         return try {
             Log.d("CONTRACT_REPO", "🔄 Aggiornamento contratto ID: ${contratto.id}")

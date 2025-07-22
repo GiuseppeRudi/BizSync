@@ -4,13 +4,16 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.orchestrator.TurnoOrchestrator
+import com.bizsync.backend.repository.TurniAIRepository
 import com.bizsync.cache.dao.AbsenceDao
 import com.bizsync.cache.dao.ContrattoDao
 import com.bizsync.cache.dao.TurnoDao
 import com.bizsync.cache.dao.UserDao
 import com.bizsync.cache.mapper.toDomainList
 import com.bizsync.cache.mapper.toEntity
+import com.bizsync.cache.mapper.toEntityList
 import com.bizsync.domain.constants.enumClass.AbsenceStatus
+import com.bizsync.domain.constants.enumClass.TipoNota
 import com.bizsync.domain.constants.enumClass.TipoPausa
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.*
@@ -25,6 +28,7 @@ import java.time.DayOfWeek
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -33,7 +37,8 @@ class PianificaManagerViewModel @Inject constructor(
     private val userDao: UserDao,
     private val turnoDao : TurnoDao,
     private val absenceDao: AbsenceDao,
-    private val contrattiDao : ContrattoDao
+    private val contrattiDao : ContrattoDao,
+    var turniAIRepository: TurniAIRepository
 ) : ViewModel() {
 
     companion object {
@@ -47,6 +52,144 @@ class PianificaManagerViewModel @Inject constructor(
 
     fun setLoading(loading: Boolean) {
         _uiState.update { it.copy(loading = loading) }
+    }
+
+    fun generateTurniWithAI(
+        dipartimento: AreaLavoro,
+        giornoSelezionato: LocalDate,
+        descrizioneAggiuntiva: String = ""
+    ) {
+        viewModelScope.launch {
+            try {
+                _uiState.update { it.copy(isGeneratingTurni = true) }
+
+                val result = turniAIRepository.generateTurni(
+                    dipartimento = dipartimento,
+                    giornoSelezionato = giornoSelezionato,
+                    dipendentiDisponibili = _uiState.value.disponibilitaMembriTurno,
+                    statoSettimanale = _uiState.value.statoSettimanaleDipendenti,
+                    turniEsistenti = _uiState.value.turniGiornalieriDip,
+                    descrizioneAggiuntiva = descrizioneAggiuntiva
+                )
+
+                // Converti i turni generati nel formato Domain
+                val turniConvertiti = result.turniGenerati.map { turnoAI ->
+                    convertAITurnoToDomain(
+                        turnoAI = turnoAI,
+                        dipartimentoId = dipartimento.id,
+                        giornoSelezionato = giornoSelezionato,
+                        // DA GUARDARE
+                        idAzienda = dipartimento.id
+                    )
+                }
+
+
+                _uiState.update {
+                    it.copy(
+                        isGeneratingTurni = false,
+                        turniGeneratiAI = turniConvertiti,
+                        showAIResultDialog = true,
+                        hasChangeShift = true,
+                        aiGenerationMessage = if (result.coperturaTotale) {
+                            "Generati ${turniConvertiti.size} turni con copertura completa!"
+                        } else {
+                            "Generati ${turniConvertiti.size} turni. ${result.motivoCoperturaParziale}"
+                        }
+                    )
+                }
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Errore generazione turni AI: ${e.message}")
+                _uiState.update {
+                    it.copy(
+                        isGeneratingTurni = false,
+                        errorMessage = "Errore nella generazione automatica: ${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    private fun convertAITurnoToDomain(
+        turnoAI: TurnoGeneratoAI,
+        dipartimentoId: String,
+        giornoSelezionato: LocalDate,
+        idAzienda: String
+    ): Turno {
+        val pause = turnoAI.pause.map { pausaAI ->
+            Pausa(
+                id = UUID.randomUUID().toString(),
+                tipo = convertTipoPausa(pausaAI.tipo),
+                durata = Duration.ofMinutes(pausaAI.durataMinuti.toLong()),
+                èRetribuita = pausaAI.retribuita,
+                note = null
+            )
+        }
+
+        val note = turnoAI.note?.let {
+            listOf(
+                Nota(
+                    id = UUID.randomUUID().toString(),
+                    testo = it,
+                    tipo = TipoNota.GENERALE,
+                    autore = "AI",
+                    createdAt = LocalDate.now()
+                )
+            )
+        } ?: emptyList()
+
+        return Turno(
+            id = UUID.randomUUID().toString(),
+            titolo = turnoAI.titolo,
+            idAzienda = idAzienda,
+            idDipendenti = turnoAI.idDipendenti,
+            dipartimentoId = dipartimentoId,
+            data = giornoSelezionato,
+            orarioInizio = LocalTime.parse(turnoAI.orarioInizio),
+            orarioFine = LocalTime.parse(turnoAI.orarioFine),
+            pause = pause,
+            note = note,
+            createdAt = LocalDate.now(),
+            updatedAt = LocalDate.now()
+        )
+    }
+
+    private fun convertTipoPausa(tipo: String): TipoPausa {
+        return when (tipo) {
+            "PAUSA_PRANZO" -> TipoPausa.PAUSA_PRANZO
+            "PAUSA_CAFFE" -> TipoPausa.PAUSA_CAFFE
+            "RIPOSO_BREVE" -> TipoPausa.RIPOSO_BREVE
+            "TECNICA" -> TipoPausa.TECNICA
+            "OBBLIGATORIA" -> TipoPausa.OBBLIGATORIA
+            else -> TipoPausa.RIPOSO_BREVE
+        }
+    }
+
+    fun confermaAITurni() {
+        viewModelScope.launch {
+            val turniAI = _uiState.value.turniGeneratiAI
+            turnoDao.insertAll(turniAI.toEntityList())
+
+
+            _uiState.update {
+                it.copy(
+                    turniGeneratiAI = emptyList(),
+                    showAIResultDialog = false,
+                    hasChangeShift = true,
+                    successMessage = "Turni AI aggiunti con successo!"
+                )
+            }
+
+        }
+    }
+
+    fun annullaAITurni() {
+        _uiState.update {
+            it.copy(
+                turniGeneratiAI = emptyList(),
+                showAIResultDialog = false
+            )
+        }
     }
 
     fun setturniDipartimento(giorno: DayOfWeek, idDipartimento: String) {

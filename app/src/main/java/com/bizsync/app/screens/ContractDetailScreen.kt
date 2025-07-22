@@ -29,6 +29,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -44,6 +45,7 @@ import com.bizsync.domain.constants.enumClass.EmployeeSection
 import com.bizsync.domain.model.Contratto
 import com.bizsync.ui.model.UserUi
 import com.bizsync.ui.viewmodels.EmployeeManagementViewModel
+import java.util.Locale
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -59,9 +61,9 @@ fun ContractDetailScreen(
     val contract = uiState.contract
     val isLoading = uiState.isLoading
 
-//    LaunchedEffect(employee.id) {
-//        userVm.loadEmployeeContract(employee.id)
-//    }
+    LaunchedEffect(employee.uid) {
+        employeeVm.loadEmployeeContract(employee.uid)
+    }
 
     Column(
         modifier = Modifier
@@ -168,8 +170,12 @@ fun ContractContent(contract: Contratto) {
                 icon = Icons.Default.Euro,
                 iconColor = Color(0xFFF39C12)
             ) {
-                val stipendioMensile = contract.ccnlInfo.stipendioAnnualeLordo / 12
-                InfoRow("Stipendio Mensile Lordo", "€${String.format("%.2f", stipendioMensile)}")
+                val stipendioMensile = contract.ccnlInfo.stipendioAnnualeLordo / 12.0
+                InfoRow(
+                    "Stipendio Mensile Lordo",
+                    "€${String.format(Locale.ITALY, "%.2f", stipendioMensile)}"
+                )
+
                 InfoRow("Stipendio Annuale Lordo", "€${contract.ccnlInfo.stipendioAnnualeLordo}")
             }
         }

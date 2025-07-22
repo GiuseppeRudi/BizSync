@@ -98,6 +98,7 @@ class UserViewModel @Inject constructor(
 
                         when (loaded) {
                             is Success -> {
+                                Log.d("VEDIAMO", "UI  $userUi")
 
                                 if (!userUi.isManager) {
                                     val idUser = _uiState.value.user.uid

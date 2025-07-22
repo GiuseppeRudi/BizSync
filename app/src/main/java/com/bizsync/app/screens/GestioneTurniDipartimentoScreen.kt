@@ -7,6 +7,7 @@ import com.bizsync.app.navigation.LocalUserViewModel
 import androidx.compose.foundation.layout.*
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.filled.*
@@ -27,6 +28,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -36,6 +38,7 @@ import com.bizsync.domain.model.Pausa
 import com.bizsync.domain.model.Turno
 import com.bizsync.domain.model.User
 import com.bizsync.domain.model.WeeklyShift
+import com.bizsync.ui.components.AIResultDialog
 import com.bizsync.ui.components.DipartimentoHeader
 import com.bizsync.ui.components.EmptyTurniCard
 import com.bizsync.ui.components.SectionHeader
@@ -74,6 +77,19 @@ fun GestioneTurniDipartimentoScreen(
         if (weeklyShift != null && hasChangeShift) {
             Log.d("AVVIO", "GESTIONE TURNI DIARTERNALI")
             managerVM.caricaTurniSettimanaEDipartimento(weeklyShift.weekStart,  dipartimento.id)
+        }
+        else {
+            managerVM.setTurniGiornalieriDipartimento(dipartimento.id)
+        }
+    }
+
+    LaunchedEffect(hasChangeShift) {
+        if (weeklyShift != null && hasChangeShift) {
+            Log.d("AVVIO", "GESTIONE TURNI DIARTERNALI")
+            managerVM.caricaTurniSettimanaEDipartimento(weeklyShift.weekStart,  dipartimento.id)
+        }
+        else {
+            managerVM.setTurniGiornalieriDipartimento(dipartimento.id)
         }
     }
 
@@ -136,6 +152,58 @@ fun GestioneTurniDipartimentoScreen(
                     .padding(16.dp)
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Aggiungi Turno")
+            }
+        }
+
+        FloatingActionButton(
+            onClick = {
+                managerVM.generateTurniWithAI(
+                    dipartimento = dipartimento,
+                    giornoSelezionato = giornoSelezionato
+                )
+            },
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(16.dp),
+            containerColor = MaterialTheme.colorScheme.secondary
+        ) {
+            Icon(
+                imageVector = Icons.Default.AutoAwesome, // Icona AI
+                contentDescription = "Genera Turni con AI"
+            )
+        }
+
+// Dialog per mostrare risultati AI
+        if (managerState.showAIResultDialog) {
+            AIResultDialog(
+                turniGenerati = managerState.turniGeneratiAI,
+                message = managerState.aiGenerationMessage,
+                onConfirm = { managerVM.confermaAITurni() },
+                onDismiss = { managerVM.annullaAITurni() }
+            )
+        }
+
+// Loading indicator per generazione AI
+        if (managerState.isGeneratingTurni) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.5f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Card {
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        CircularProgressIndicator()
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            "Generazione turni con AI in corso...",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                }
             }
         }
 

@@ -73,85 +73,14 @@ fun EmployeeManagementScreen(
 
     val searchQuery = uiState.searchQuery
     val selectedDepartment = uiState.selectedDepartment
-    // Recupera la lista dei dipendenti dal ViewModel
-//    val employees = uiState.employees
+    val employees = uiState.employees
     val isLoading = uiState.isLoading
 
-    // Carica i dipendenti quando la schermata viene aperta
-//    LaunchedEffect(Unit) {
-//        employeeVM.loadEmployees()
-//    }
+    LaunchedEffect(Unit) {
+        employeeVM.loadEmployees(userState.azienda.idAzienda)
+    }
 
-    val mockEmployees = listOf(
-        UserUi(
-            uid = "u1",
-            email = "maria.rossi@azienda.com",
-            nome = "Maria",
-            cognome = "Rossi",
-            photourl = "",
-            idAzienda = "az123",
-            isManager = false,
-            posizioneLavorativa = "Impiegata amministrativa",
-            dipartimento = "Amministrazione"
-        ),
-        UserUi(
-            uid = "u2",
-            email = "luca.verdi@azienda.com",
-            nome = "Luca",
-            cognome = "Verdi",
-            photourl = "",
-            idAzienda = "az123",
-            isManager = false,
-            posizioneLavorativa = "Tecnico informatico",
-            dipartimento = "IT"
-        ),
-        UserUi(
-            uid = "u3",
-            email = "giulia.bianchi@azienda.com",
-            nome = "Giulia",
-            cognome = "Bianchi",
-            photourl = "",
-            idAzienda = "az123",
-            isManager = false,
-            posizioneLavorativa = "Operatrice call center",
-            dipartimento = "Customer Service"
-        ),
-        UserUi(
-            uid = "u4",
-            email = "marco.neri@azienda.com",
-            nome = "Marco",
-            cognome = "Neri",
-            photourl = "",
-            idAzienda = "az123",
-            isManager = true,
-            posizioneLavorativa = "Responsabile IT",
-            dipartimento = "IT"
-        ),
-        UserUi(
-            uid = "u5",
-            email = "sara.rizzo@azienda.com",
-            nome = "Sara",
-            cognome = "Rizzo",
-            photourl = "https://lh3.googleusercontent.com/a-/ALV-UjWCNEhTcHDfdrI96_gIMfVFp7SajWSKmnmO3ASMfWlT5yI9P8A=s96-c",
-            idAzienda = "az123",
-            isManager = false,
-            posizioneLavorativa = "Analista contabile",
-            dipartimento = "Amministrazione"
-        ),
-        UserUi(
-            uid = "u6",
-            email = "fabio.moro@azienda.com",
-            nome = "Fabio",
-            cognome = "Moro",
-            photourl = "",
-            idAzienda = "az123",
-            isManager = false,
-            posizioneLavorativa = "Magazziniere",
-            dipartimento = "Logistica"
-        )
-    )
 
-    val employees = mockEmployees
     val departments = listOf(AreaLavoro(nomeArea = "Tutti")) + userState.azienda.areeLavoro
 
     val selectedEmployee = uiState.selectedEmployee

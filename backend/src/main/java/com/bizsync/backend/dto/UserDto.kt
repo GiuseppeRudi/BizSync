@@ -32,7 +32,7 @@ data class UserDto(
         cognome = "",
         photourl = "",
         idAzienda = "",
-        isManager = false,
+        isManager = true,
         posizioneLavorativa = "",
         dipartimento = "",
         numeroTelefono = "",

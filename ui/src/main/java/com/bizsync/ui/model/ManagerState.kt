@@ -46,7 +46,13 @@ data class ManagerState(
     // NUOVE PROPRIETÀ PER GESTIONE PAUSE
     val pausaInModifica: Pausa? = null,
     val showPauseDialog: Boolean = false,
-    val showAddEditPauseDialog: Boolean = false
+    val showAddEditPauseDialog: Boolean = false,
+
+
+    val isGeneratingTurni: Boolean = false,
+    val turniGeneratiAI: List<Turno> = emptyList(),
+    val showAIResultDialog: Boolean = false,
+    val aiGenerationMessage: String? = null
 ) {
     // Computed properties
     val hasError: Boolean get() = errorMessage != null

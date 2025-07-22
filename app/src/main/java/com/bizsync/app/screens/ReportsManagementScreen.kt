@@ -27,9 +27,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.bizsync.domain.constants.enumClass.AbsenceStatus
 import com.bizsync.domain.constants.enumClass.AbsenceType
+import com.bizsync.domain.constants.enumClass.ReportFilter
 import com.bizsync.domain.model.*
+import com.bizsync.ui.model.ReportData
+import com.bizsync.ui.viewmodels.ReportsManagementViewModel
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
 import java.text.SimpleDateFormat
@@ -40,48 +44,22 @@ import java.util.*
 import kotlin.math.*
 
 // Data classes per i report
-data class ReportData(
-    val contratti: List<Contratto>,
-    val users: List<User>,
-    val absences: List<Absence>,
-    val turni: List<Turno>
-)
 
-data class DepartmentStats(
-    val name: String,
-    val employeeCount: Int,
-    val totalSalary: Double,
-    val avgFerieUsed: Double,
-    val avgRolUsed: Double,
-    val color: Color
-)
-
-data class AbsenceStats(
-    val type: AbsenceType,
-    val count: Int,
-    val percentage: Float,
-    val color: Color
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReportsManagementScreen(
-    contratti: List<Contratto>,
-    users: List<User>,
-    absences: List<Absence>,
-    turni: List<Turno>,
+    viewModel: ReportsManagementViewModel = hiltViewModel(),
     onBackClick: () -> Unit
 ) {
-    var selectedFilter by remember { mutableStateOf(ReportFilter.ALL_TIME) }
-    var selectedDepartment by remember { mutableStateOf("Tutti") }
-    var selectedTab by remember { mutableStateOf(0) }
+    val uiState by viewModel.uiState.collectAsState()
 
-    val reportData = remember(contratti, users, absences, turni) {
-        ReportData(contratti, users, absences, turni)
-    }
-
-    val departments = remember(users) {
-        listOf("Tutti") + users.map { it.dipartimento }.distinct().sorted()
+    // Gestione errori
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let { error ->
+            // Mostra snackbar o dialog di errore
+            // viewModel.clearError() dopo aver mostrato l'errore
+        }
     }
 
     Scaffold(
@@ -107,8 +85,26 @@ fun ReportsManagementScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* Export PDF */ }) {
-                        Icon(Icons.Default.Download, contentDescription = "Esporta")
+                    // Pulsante refresh
+                    IconButton(
+                        onClick = { viewModel.refreshData() },
+                        enabled = !uiState.isLoading
+                    ) {
+                        Icon(
+                            Icons.Default.Refresh,
+                            contentDescription = "Aggiorna",
+                            modifier = if (uiState.isLoading) {
+                                Modifier.rotate(
+                                    animateFloatAsState(
+                                        targetValue = 360f,
+                                        animationSpec = infiniteRepeatable(
+                                            animation = tween(1000, easing = LinearEasing),
+                                            repeatMode = RepeatMode.Restart
+                                        )
+                                    ).value
+                                )
+                            } else Modifier
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -117,56 +113,108 @@ fun ReportsManagementScreen(
             )
         }
     ) { paddingValues ->
-        Column(
+
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
         ) {
-            // Filtri
-            FilterSection(
-                selectedFilter = selectedFilter,
-                onFilterChange = { selectedFilter = it },
-                selectedDepartment = selectedDepartment,
-                departments = departments,
-                onDepartmentChange = { selectedDepartment = it }
-            )
-
-            // Tab per diverse sezioni
-            TabRow(
-                selectedTabIndex = selectedTab,
-                modifier = Modifier.padding(horizontal = 16.dp)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
             ) {
-                Tab(
-                    selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 },
-                    text = { Text("Overview") }
+                // Filtri
+                FilterSection(
+                    selectedFilter = uiState.selectedFilter,
+                    onFilterChange = { viewModel.updateSelectedFilter(it) },
+                    selectedDepartment = uiState.selectedDepartment,
+                    departments = uiState.departments,
+                    onDepartmentChange = { viewModel.updateSelectedDepartment(it) }
                 )
-                Tab(
-                    selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 },
-                    text = { Text("HR Analytics") }
-                )
-                Tab(
-                    selected = selectedTab == 2,
-                    onClick = { selectedTab = 2 },
-                    text = { Text("Turni") }
-                )
-                Tab(
-                    selected = selectedTab == 3,
-                    onClick = { selectedTab = 3 },
-                    text = { Text("Costi") }
-                )
+
+                // Tab per diverse sezioni
+                TabRow(
+                    selectedTabIndex = uiState.selectedTab,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                ) {
+                    Tab(
+                        selected = uiState.selectedTab == 0,
+                        onClick = { viewModel.updateSelectedTab(0) },
+                        text = { Text("Overview") }
+                    )
+                    Tab(
+                        selected = uiState.selectedTab == 1,
+                        onClick = { viewModel.updateSelectedTab(1) },
+                        text = { Text("HR") }
+                    )
+                    Tab(
+                        selected = uiState.selectedTab == 2,
+                        onClick = { viewModel.updateSelectedTab(2) },
+                        text = { Text("Turni") }
+                    )
+                    Tab(
+                        selected = uiState.selectedTab == 3,
+                        onClick = { viewModel.updateSelectedTab(3) },
+                        text = { Text("Costi") }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Contenuto basato sul tab selezionato
+                when (uiState.selectedTab) {
+                    0 -> OverviewTab(
+                        uiState.reportData,
+                        uiState.selectedFilter,
+                        uiState.selectedDepartment
+                    )
+                    1 -> HRAnalyticsTab(
+                        uiState.reportData,
+                        uiState.selectedFilter,
+                        uiState.selectedDepartment
+                    )
+                    2 -> ShiftsTab(
+                        uiState.reportData,
+                        uiState.selectedFilter,
+                        uiState.selectedDepartment
+                    )
+                    3 -> CostsTab(
+                        uiState.reportData,
+                        uiState.selectedFilter,
+                        uiState.selectedDepartment
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Contenuto basato sul tab selezionato
-            when (selectedTab) {
-                0 -> OverviewTab(reportData, selectedFilter, selectedDepartment)
-                1 -> HRAnalyticsTab(reportData, selectedFilter, selectedDepartment)
-                2 -> ShiftsTab(reportData, selectedFilter, selectedDepartment)
-                3 -> CostsTab(reportData, selectedFilter, selectedDepartment)
+            // Loading overlay
+            if (uiState.isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.5f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(24.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(
+                                text = "Caricamento dati...",
+                                fontSize = 16.sp
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -260,8 +308,7 @@ fun OverviewTab(
                     title = "Dipendenti Totali",
                     value = filteredData.users.size.toString(),
                     icon = Icons.Default.People,
-                    color = Color(0xFF3498DB),
-                    trend = "+5%"
+                    color = Color(0xFF3498DB)
                 )
             }
             item {
@@ -271,27 +318,21 @@ fun OverviewTab(
                         it.startDate <= LocalDate.now() && it.endDate >= LocalDate.now()
                     }.toString(),
                     icon = Icons.Default.EventBusy,
-                    color = Color(0xFFE74C3C),
-                    trend = "-2%"
-                )
+                    color = Color(0xFFE74C3C))
             }
             item {
                 KPICard(
                     title = "Ore Lavorate",
                     value = calculateTotalHours(filteredData.turni).toString(),
                     icon = Icons.Default.Schedule,
-                    color = Color(0xFF2ECC71),
-                    trend = "+8%"
-                )
+                    color = Color(0xFF2ECC71))
             }
             item {
                 KPICard(
                     title = "Costo Mensile",
                     value = "€${formatCurrency(calculateMonthlyCost(filteredData.contratti))}",
                     icon = Icons.Default.AttachMoney,
-                    color = Color(0xFFF39C12),
-                    trend = "0%"
-                )
+                    color = Color(0xFFF39C12))
             }
         }
 
@@ -333,13 +374,6 @@ fun HRAnalyticsTab(
                 .height(300.dp)
         )
 
-        // Trend assenze mensili
-        MonthlyAbsenceTrend(
-            absences = filteredData.absences,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(250.dp)
-        )
 
         // Top dipendenti per assenze
         TopEmployeesAbsences(
@@ -360,16 +394,7 @@ fun ShiftsTab(
 
     Column(
         modifier = Modifier.padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Distribuzione turni per dipartimento
-        ShiftDistributionChart(
-            turni = filteredData.turni,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(300.dp)
-        )
-
         // Heatmap turni settimanali
         WeeklyShiftHeatmap(
             turni = filteredData.turni,
@@ -378,12 +403,14 @@ fun ShiftsTab(
                 .height(200.dp)
         )
 
-        // Lista turni di oggi
-        TodayShiftsList(
-            turni = filteredData.turni.filter { it.data == LocalDate.now() },
-            users = filteredData.users,
-            modifier = Modifier.fillMaxWidth()
+        // Distribuzione turni per dipartimento
+        ShiftDistributionChart(
+            turni = filteredData.turni,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(300.dp)
         )
+
     }
 }
 
@@ -432,7 +459,6 @@ fun KPICard(
     value: String,
     icon: ImageVector,
     color: Color,
-    trend: String,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -459,22 +485,6 @@ fun KPICard(
                     modifier = Modifier.size(24.dp)
                 )
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = if (trend.startsWith("+")) Icons.Default.TrendingUp else Icons.Default.TrendingDown,
-                        contentDescription = null,
-                        tint = if (trend.startsWith("+")) Color(0xFF2ECC71) else Color(0xFFE74C3C),
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Text(
-                        text = trend,
-                        fontSize = 12.sp,
-                        color = if (trend.startsWith("+")) Color(0xFF2ECC71) else Color(0xFFE74C3C),
-                        fontWeight = FontWeight.Bold
-                    )
-                }
             }
 
             Column {
@@ -553,11 +563,7 @@ fun DepartmentDistributionChart(
                     startAngle += sweepAngle
                 }
 
-                // Centro bianco
-                drawCircle(
-                    color = Color.White,
-                    radius = size.minDimension / 3
-                )
+
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -978,14 +984,6 @@ fun formatCurrency(amount: Double): String {
     return DecimalFormat("#,##0").format(amount)
 }
 
-enum class ReportFilter(val label: String) {
-    TODAY("Oggi"),
-    WEEK("Settimana"),
-    MONTH("Mese"),
-    QUARTER("Trimestre"),
-    YEAR("Anno"),
-    ALL_TIME("Tutto")
-}
 
 // Altri componenti supplementari
 

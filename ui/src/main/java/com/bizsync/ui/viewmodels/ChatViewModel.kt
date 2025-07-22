@@ -4,9 +4,13 @@ package com.bizsync.ui.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.repository.ChatRepository
+import com.bizsync.cache.dao.UserDao
+import com.bizsync.cache.mapper.toDomainList
 import com.bizsync.domain.constants.enumClass.MessageType
 import com.bizsync.domain.model.*
+import com.bizsync.ui.mapper.toDomain
 import com.bizsync.ui.model.ChatUiState
+import com.bizsync.ui.model.UserUi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -14,7 +18,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
-    private val chatRepository: ChatRepository
+    private val chatRepository: ChatRepository,
+    private val userDao : UserDao
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChatUiState())
@@ -29,6 +34,17 @@ class ChatViewModel @Inject constructor(
     private var currentUser: User? = null
     private var chatListJob: kotlinx.coroutines.Job? = null
     private var messagesJob: kotlinx.coroutines.Job? = null
+
+    fun loadUsers(user : UserUi)
+    {
+        _uiState.update { it.copy(isLoading = true) }
+
+        viewModelScope.launch {
+            val users = userDao.getDipendenti(user.idAzienda)
+            _uiState.update { it.copy(allEmployees = users.toDomainList(), isLoading = false, currentUser = user.toDomain()) }
+        }
+
+    }
 
     fun initializeChat(user: User, employees: List<User>) {
         currentUser = user

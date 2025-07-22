@@ -12,6 +12,9 @@ import com.google.firebase.firestore.FirebaseFirestore
 import java.time.LocalDate
 import com.bizsync.backend.mapper.toDomainList
 import com.bizsync.backend.mapper.toDto
+import com.bizsync.cache.dao.TurnoDao
+import com.bizsync.cache.mapper.toEntity
+import com.google.firebase.firestore.toObject
 import java.time.ZoneId
 import java.util.Date
 import javax.inject.Inject
@@ -19,7 +22,8 @@ import javax.inject.Singleton
 
 @Singleton
 class TurnoRepository @Inject constructor(
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore,
+    private val turnoDao : TurnoDao
 )  {
 
     companion object {
@@ -68,6 +72,49 @@ class TurnoRepository @Inject constructor(
             Resource.Success(Unit)
         } catch (e: Exception) {
             Resource.Error("Errore aggiornamento turno su Firebase: ${e.message}")
+        }
+    }
+
+
+    suspend fun syncTurniInRange(startDate: LocalDate, endDate: LocalDate) {
+        try {
+            val turniFromFirebase = firestore.collection("turni")
+                .whereGreaterThanOrEqualTo("data", startDate.toString())
+                .whereLessThanOrEqualTo("data", endDate.toString())
+                .get()
+                .await()
+                .documents
+                .mapNotNull { doc ->
+                    doc.toObject<Turno>()?.copy(id = doc.id)
+                }
+
+            // Salva nella cache locale
+            turniFromFirebase.forEach { turno ->
+                turnoDao.insertTurno(turno.toEntity())
+            }
+
+        } catch (e: Exception) {
+            throw Exception("Errore nel sync turni: ${e.message}")
+        }
+    }
+
+    suspend fun syncAllTurni() {
+        try {
+            val allTurni = firestore.collection("turni")
+                .get()
+                .await()
+                .documents
+                .mapNotNull { doc ->
+                    doc.toObject<Turno>()?.copy(id = doc.id)
+                }
+
+//            turnoDao.clearAllTurni()
+            allTurni.forEach { turno ->
+                turnoDao.insertTurno(turno.toEntity())
+            }
+
+        } catch (e: Exception) {
+            throw Exception("Errore nel sync completo turni: ${e.message}")
         }
     }
 

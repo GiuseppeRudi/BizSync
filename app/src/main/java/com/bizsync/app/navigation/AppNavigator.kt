@@ -13,7 +13,7 @@ import com.bizsync.app.screens.PianificaScreen
 import com.bizsync.domain.constants.sealedClass.Screen
 
 @Composable
-fun AppNavigator(modifier: Modifier = Modifier) {
+fun AppNavigator(modifier: Modifier = Modifier, onLogout: () -> Unit) {
     val navController = LocalNavController.current
 
     NavHost(
@@ -32,7 +32,7 @@ fun AppNavigator(modifier: Modifier = Modifier) {
             ChatScreen()
         }
         composable(Screen.Gestione.route) {
-            GestioneScreen()
+            GestioneScreen(onLogout)
         }
     }
 }
