@@ -164,7 +164,7 @@ fun EmployeeHomeScreen(
                     context = context,
                     onLocationReceived = { lat, lon ->
                         viewModel.setIsGettingLocation(false)
-//                        viewModel.onTimbra(tipo, lat, lon)
+                        viewModel.onTimbra(tipo, lat, lon)
                     },
                     onError = { error ->
                         viewModel.setIsGettingLocation(false)
@@ -213,11 +213,13 @@ fun EmployeeHomeScreen(
                 )
             }
 
-            // Alert pubblicazione turni
-            if (!homeState.shiftsPublishedThisWeek) {
+
+            Log.d("DENTRO", "SONO DENTRO")
+
+            homeState.daysUntilShiftPublication?.let {
                 item {
                     EmployeeShiftPublicationAlert(
-                        daysUntilPublication = homeState.daysUntilShiftPublication
+                        daysUntilPublication = homeState.daysUntilShiftPublication!!
                     )
                 }
             }
@@ -231,15 +233,6 @@ fun EmployeeHomeScreen(
                 )
             }
 
-            // Panoramica turno di oggi
-            homeState.todayTurno?.let { turnoDetails ->
-                item {
-                    TodayTurnoOverviewCard(
-                        turnoWithDetails = turnoDetails,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            }
 
             // Prossimo turno con timer
             homeState.prossimoTurno?.let { prossimoTurno ->
@@ -268,7 +261,7 @@ fun EmployeeHomeScreen(
                                             context = context,
                                             onLocationReceived = { lat, lon ->
                                                 viewModel.setIsGettingLocation(false)
-//                                                viewModel.onTimbra(tipo, lat, lon)
+                                                viewModel.onTimbra(tipo, lat, lon)
                                             },
                                             onError = { error ->
                                                 viewModel.setIsGettingLocation(false)
@@ -279,9 +272,19 @@ fun EmployeeHomeScreen(
                                     }
                                 }
                             } else {
-//                                viewModel.onTimbra(tipo)
+                                viewModel.onTimbra(tipo)
                             }
                         },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+
+            // Panoramica turno di oggi
+            homeState.todayTurno?.let { turnoDetails ->
+                item {
+                    TodayTurnoOverviewCard(
+                        turnoWithDetails = turnoDetails,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -297,13 +300,7 @@ fun EmployeeHomeScreen(
                 }
             }
 
-            // Quick actions per il dipendente
-            item {
-                EmployeeQuickActionsCard(
-                    onNavigate = onNavigate,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
+
         }
 
         // Loading overlay
@@ -651,109 +648,6 @@ fun TodayTurnoOverviewCard(
     }
 }
 
-@Composable
-fun EmployeeQuickActionsCard(
-    onNavigate: (HomeScreenRoute) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = "Azioni Rapide",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                item {
-                    EmployeeQuickActionButton(
-                        title = "Il Mio\nBadge",
-                        icon = Icons.Default.Badge,
-                        color = Color(0xFF2196F3),
-                        onClick = { onNavigate(HomeScreenRoute.Badge) }
-                    )
-                }
-                item {
-                    EmployeeQuickActionButton(
-                        title = "I Miei\nTurni",
-                        icon = Icons.Default.Schedule,
-                        color = Color(0xFF4CAF50),
-                        onClick = { onNavigate(HomeScreenRoute.Home) }
-                    )
-                }
-                item {
-                    EmployeeQuickActionButton(
-                        title = "Le Mie\nAssenze",
-                        icon = Icons.Default.EventBusy,
-                        color = Color(0xFFFF9800),
-                        onClick = { onNavigate(HomeScreenRoute.Home) }
-                    )
-                }
-                item {
-                    EmployeeQuickActionButton(
-                        title = "Storico\nTimbrature",
-                        icon = Icons.Default.History,
-                        color = Color(0xFF9C27B0),
-                        onClick = { onNavigate(HomeScreenRoute.Timbrature) }
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun EmployeeQuickActionButton(
-    title: String,
-    icon: ImageVector,
-    color: Color,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        onClick = onClick,
-        modifier = modifier.size(90.dp, 80.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = color.copy(alpha = 0.1f)
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(24.dp),
-                tint = color
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Medium,
-                textAlign = TextAlign.Center,
-                lineHeight = 12.sp
-            )
-        }
-    }
-}
 
 @Composable
 fun DialogsSection(

@@ -23,9 +23,6 @@ fun MainHomeScreen() {
     val userVm = LocalUserViewModel.current
     val userState by userVm.uiState.collectAsState()
 
-    LaunchedEffect(Unit) {
-        viewModel.setUserAndAgency(userState.user,userState.azienda)
-    }
 
     when (val screen = currentScreen) {
         HomeScreenRoute.Home -> HomeScreen(viewModel)
@@ -54,7 +51,8 @@ fun HomeScreen(viewModel : HomeViewModel) {
             onNavigate = {}
         )
     } else {
-        EmployeeHomeScreen(userState = userState, modifier = Modifier.fillMaxSize(), onNavigate = {})
+        EmployeeHomeScreen(userState = userState, modifier = Modifier.fillMaxSize(), onNavigate = {viewModel.changeCurrentScreen(
+            HomeScreenRoute.Badge)})
     }
 
 }

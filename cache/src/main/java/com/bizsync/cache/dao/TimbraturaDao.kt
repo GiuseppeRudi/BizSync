@@ -20,8 +20,19 @@ interface TimbraturaDao {
     """)
     fun getTimbratureInRangeForUser(startDate: LocalDate, endDate: LocalDate, userId: String): Flow<List<TimbraturaEntity>>
 
-    @Query("SELECT * FROM timbrature WHERE createdAt = :date AND idDipendente = :userId ORDER BY createdAt DESC")
-    fun getTimbratureByDateAndUser(date: LocalDate, userId: String): Flow<List<TimbraturaEntity>>
+    @Query("""
+    SELECT * FROM timbrature 
+    WHERE createdAt >= :startOfDay 
+      AND createdAt <= :endOfDay 
+      AND idDipendente = :userId 
+    ORDER BY createdAt DESC
+""")
+    fun getTimbratureByDateAndUser(
+        startOfDay: String,
+        endOfDay: String,
+        userId: String
+    ): List<TimbraturaEntity>
+
 
     @Query("SELECT * FROM timbrature WHERE createdAt = :date ORDER BY createdAt DESC")
     fun getTimbratureByDate(date: LocalDate): Flow<List<TimbraturaEntity>>

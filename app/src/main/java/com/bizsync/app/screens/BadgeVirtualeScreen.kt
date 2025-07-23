@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.domain.constants.enumClass.HomeScreenRoute
 import com.bizsync.ui.viewmodels.HomeViewModel
 import java.time.LocalDateTime
@@ -37,236 +38,248 @@ import java.time.format.DateTimeFormatter
 fun BadgeVirtualeScreen(modifier: Modifier = Modifier, viewModel: HomeViewModel) {
     var showQRCode by remember { mutableStateOf(false) }
     val uiState by viewModel.uiState.collectAsState()
-    val badge = uiState.badge ?: return
+    val badge = uiState.badge
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.primary,
-                        MaterialTheme.colorScheme.primaryContainer
-                    )
-                )
-            )
-    ) {
-        // Back button
-        IconButton(
-            onClick = { viewModel.changeCurrentScreen(HomeScreenRoute.Home) },
-            modifier = Modifier
-                .padding(16.dp)
-                .align(Alignment.TopStart)
-        ) {
-            Icon(
-                imageVector = Icons.Default.ArrowBack,
-                contentDescription = "Indietro",
-                tint = Color.White
-            )
-        }
+    val userVM = LocalUserViewModel.current
+    val userState by userVM.uiState.collectAsState()
+    LaunchedEffect(Unit) {
+        viewModel.setBadge(userState)
+    }
 
-        Column(
-            modifier = Modifier
+    if (badge == null) {
+        LoadingIndicator()
+    }
+    else {
+        Box(
+            modifier = modifier
                 .fillMaxSize()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            // Badge Card
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .shadow(
-                        elevation = 16.dp,
-                        shape = RoundedCornerShape(24.dp),
-                        ambientColor = Color.Black.copy(alpha = 0.3f),
-                        spotColor = Color.Black.copy(alpha = 0.3f)
-                    ),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.White
-                )
-            ) {
-                Box {
-                    // Background pattern
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(100.dp)
-                            .background(
-                                Brush.horizontalGradient(
-                                    colors = listOf(
-                                        MaterialTheme.colorScheme.primary,
-                                        MaterialTheme.colorScheme.secondary
-                                    )
-                                )
-                            )
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary,
+                            MaterialTheme.colorScheme.primaryContainer
+                        )
                     )
+                )
+        ) {
+            // Back button
+            IconButton(
+                onClick = { viewModel.changeCurrentScreen(HomeScreenRoute.Home) },
+                modifier = Modifier
+                    .padding(16.dp)
+                    .align(Alignment.TopStart)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "Indietro",
+                    tint = Color.White
+                )
+            }
 
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        // Logo azienda o spazio
-                        Spacer(modifier = Modifier.height(40.dp))
-
-                        // Foto profilo con bordo
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                // Badge Card
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .shadow(
+                            elevation = 16.dp,
+                            shape = RoundedCornerShape(24.dp),
+                            ambientColor = Color.Black.copy(alpha = 0.3f),
+                            spotColor = Color.Black.copy(alpha = 0.3f)
+                        ),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White
+                    )
+                ) {
+                    Box {
+                        // Background pattern
                         Box(
                             modifier = Modifier
-                                .size(120.dp)
-                                .clip(CircleShape)
-                                .border(
-                                    width = 4.dp,
-                                    color = Color.White,
-                                    shape = CircleShape
+                                .fillMaxWidth()
+                                .height(100.dp)
+                                .background(
+                                    Brush.horizontalGradient(
+                                        colors = listOf(
+                                            MaterialTheme.colorScheme.primary,
+                                            MaterialTheme.colorScheme.secondary
+                                        )
+                                    )
                                 )
-                                .shadow(8.dp, CircleShape)
+                        )
+
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            AsyncImage(
-                                model = badge.fotoUrl,
-                                contentDescription = "Foto profilo",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
-                        }
+                            // Logo azienda o spazio
+                            Spacer(modifier = Modifier.height(40.dp))
 
-                        Spacer(modifier = Modifier.height(24.dp))
+                            // Foto profilo con bordo
+                            Box(
+                                modifier = Modifier
+                                    .size(120.dp)
+                                    .clip(CircleShape)
+                                    .border(
+                                        width = 4.dp,
+                                        color = Color.White,
+                                        shape = CircleShape
+                                    )
+                                    .shadow(8.dp, CircleShape)
+                            ) {
+                                AsyncImage(
+                                    model = badge.fotoUrl,
+                                    contentDescription = "Foto profilo",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
 
-                        // Nome e cognome
-                        Text(
-                            text = badge.getFullName(),
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                            Spacer(modifier = Modifier.height(24.dp))
 
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        // Posizione lavorativa
-                        Text(
-                            text = badge.posizioneLavorativa,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-
-
-                        Spacer(modifier = Modifier.height(20.dp))
-
-                        // Divider
-                        HorizontalDivider(
-                            modifier = Modifier.fillMaxWidth(0.8f),
-                            color = MaterialTheme.colorScheme.outlineVariant
-                        )
-
-                        Spacer(modifier = Modifier.height(20.dp))
-
-                        // Info row
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            InfoColumn(
-                                label = "MATRICOLA",
-                                value = badge.matricola
+                            // Nome e cognome
+                            Text(
+                                text = badge.getFullName(),
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
 
-                            VerticalDivider(
-                                modifier = Modifier.height(50.dp),
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // Posizione lavorativa
+                            Text(
+                                text = badge.posizioneLavorativa,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+
+
+                            Spacer(modifier = Modifier.height(20.dp))
+
+                            // Divider
+                            HorizontalDivider(
+                                modifier = Modifier.fillMaxWidth(0.8f),
                                 color = MaterialTheme.colorScheme.outlineVariant
                             )
 
-                            InfoColumn(
-                                label = "AZIENDA",
-                                value = badge.nomeAzienda
-                            )
-                        }
+                            Spacer(modifier = Modifier.height(20.dp))
 
-                        Spacer(modifier = Modifier.height(24.dp))
+                            // Info row
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceEvenly
+                            ) {
+                                InfoColumn(
+                                    label = "MATRICOLA",
+                                    value = badge.matricola
+                                )
 
-                        // QR Code section
-                        AnimatedContent(
-                            targetState = showQRCode,
-                            transitionSpec = {
-                                fadeIn() + expandVertically() with
-                                        fadeOut() + shrinkVertically()
+                                VerticalDivider(
+                                    modifier = Modifier.height(50.dp),
+                                    color = MaterialTheme.colorScheme.outlineVariant
+                                )
+
+                                InfoColumn(
+                                    label = "AZIENDA",
+                                    value = badge.nomeAzienda
+                                )
                             }
-                        ) { showQR ->
-                            if (showQR) {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    QRCodeImage(
-                                        data = badge.generateQRData(),
-                                        modifier = Modifier.size(150.dp)
-                                    )
 
-                                    Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(24.dp))
 
-                                    Text(
-                                        text = "Scansiona per verificare",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                            // QR Code section
+                            AnimatedContent(
+                                targetState = showQRCode,
+                                transitionSpec = {
+                                    fadeIn() + expandVertically() with
+                                            fadeOut() + shrinkVertically()
                                 }
-                            } else {
-                                Button(
-                                    onClick = { showQRCode = true },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = MaterialTheme.colorScheme.primary
-                                    )
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.QrCode,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("MOSTRA QR CODE")
+                            ) { showQR ->
+                                if (showQR) {
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        QRCodeImage(
+                                            data = badge.generateQRData(),
+                                            modifier = Modifier.size(150.dp)
+                                        )
+
+                                        Spacer(modifier = Modifier.height(8.dp))
+
+                                        Text(
+                                            text = "Scansiona per verificare",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                } else {
+                                    Button(
+                                        onClick = { showQRCode = true },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.primary
+                                        )
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.QrCode,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text("MOSTRA QR CODE")
+                                    }
                                 }
                             }
+
+                            Spacer(modifier = Modifier.height(20.dp))
+
+                            // Data e ora corrente
+                            CurrentDateTime()
                         }
-
-                        Spacer(modifier = Modifier.height(20.dp))
-
-                        // Data e ora corrente
-                        CurrentDateTime()
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-            // Security note
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f)
-                )
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                // Security note
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f)
+                    )
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Security,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Badge digitale verificato e sicuro",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Security,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Badge digitale verificato e sicuro",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    }
                 }
             }
         }
     }
+
 }
 
 @Composable

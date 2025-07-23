@@ -28,7 +28,7 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     // stato di login
-    private val currentUserLogin = mutableStateOf(false)
+    private val currentUserLogin = mutableStateOf<Boolean?>(null)
 
     // launcher per FirebaseUI
     private val signInLauncher = registerForActivityResult(
@@ -72,17 +72,21 @@ class MainActivity : ComponentActivity() {
             if (firebaseUser != null) {
                 currentUserLogin.value = true
             }
-
-            if (!currentUserLogin.value) {
-                LoginScreen(onLogin = { launchLoginFlow() })
-            }
             else {
-                CompositionLocalProvider(
-                    LocalNavController provides navController,
-                    LocalUserViewModel provides userViewModel
-                ) {
-                    MainApp(onLogout = { userViewModel.clear()
-                                            performLogout() })
+                currentUserLogin.value = false
+            }
+
+            currentUserLogin.value?.let {
+                if (!it) {
+                    LoginScreen(onLogin = { launchLoginFlow() })
+                } else {
+                    CompositionLocalProvider(
+                        LocalNavController provides navController,
+                        LocalUserViewModel provides userViewModel
+                    ) {
+                        MainApp(onLogout = { userViewModel.clear()
+                            performLogout() })
+                    }
                 }
             }
 
@@ -95,7 +99,7 @@ class MainActivity : ComponentActivity() {
         val intent = AuthUI.getInstance()
             .createSignInIntentBuilder()
             .setAvailableProviders(providers)
-            .setIsSmartLockEnabled(true)
+            .setIsSmartLockEnabled(false)     // <<< Disabilita il prompt Smart Lock
             .build()
         signInLauncher.launch(intent)
     }

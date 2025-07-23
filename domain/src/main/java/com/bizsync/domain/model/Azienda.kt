@@ -4,13 +4,13 @@ import java.time.DayOfWeek
 
 
 data class Azienda(
-    val idAzienda: String,
-    val nome: String,
-    val areeLavoro: List<AreaLavoro>,
-    val turniFrequenti: List<TurnoFrequente>,
+    val idAzienda: String = "",
+    val nome: String = "",
+    val areeLavoro: List<AreaLavoro> = emptyList(),
+    val turniFrequenti: List<TurnoFrequente> = emptyList(),
 
-    val numDipendentiRange : String,
-    val sector : String,
+    val numDipendentiRange : String = "",
+    val sector : String = "",
     val giornoPubblicazioneTurni: DayOfWeek = DayOfWeek.FRIDAY,
 
     // Nuovi campi per la geolocalizzazione

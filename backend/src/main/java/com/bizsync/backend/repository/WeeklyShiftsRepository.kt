@@ -10,6 +10,7 @@ import com.bizsync.backend.mapper.toDto
 import com.bizsync.backend.repository.WeeklyShiftRepository
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.WeeklyShift
+import com.bizsync.domain.utils.WeeklyWindowCalculator
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.tasks.await
@@ -56,6 +57,40 @@ class WeeklyShiftRepository @Inject constructor(
         } catch (e: Exception) {
             Log.e(TAG, "❌ Errore nel recupero weekly shift: ${e.message}")
             Resource.Error("Errore nel recupero weekly shift: ${e.message}")
+        }
+    }
+
+    suspend fun getThisWeekPublishedShift(
+        idAzienda: String,
+        weekStart : LocalDate
+    ): Resource<WeeklyShift?> {
+        return try {
+            val documentId = generateDocumentId(idAzienda, weekStart)
+            Log.d(TAG, "🔍 Ricerca pianificazione pubblicata per questa settimana: $documentId")
+
+            // Prendo il documento
+            val snapshot = collection.document(documentId).get().await()
+            if (!snapshot.exists()) {
+                Log.d(TAG, "📭 Nessuna pianificazione trovata per $documentId")
+                return Resource.Success(null)
+            }
+
+            // Deserializzo
+            val dto = snapshot.toObject(WeeklyShiftDto::class.java)
+            val domain = dto?.toDomain(snapshot.id)
+
+            // Controllo lo status
+            return if (domain != null && domain.status != WeeklyShiftStatus.NOT_PUBLISHED) {
+                Log.d(TAG, "✅ Pianificazione valida trovata: status=${domain.status}")
+                Resource.Success(domain)
+            } else {
+                Log.d(TAG, "🚫 Pianificazione trovata ma NON pubblicata (status=${domain?.status})")
+                Resource.Success(null)
+            }
+
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Errore recupero pianificazione pubblicata: ${e.message}")
+            Resource.Error("Errore recupero pianificazione: ${e.message}")
         }
     }
 
