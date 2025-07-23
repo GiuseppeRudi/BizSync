@@ -15,6 +15,7 @@ import com.bizsync.cache.mapper.toEntityList
 import com.bizsync.domain.constants.enumClass.AbsenceStatus
 import com.bizsync.domain.constants.enumClass.TipoNota
 import com.bizsync.domain.constants.enumClass.TipoPausa
+import com.bizsync.domain.constants.enumClass.ZonaLavorativa
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.*
 import com.bizsync.ui.model.ManagerState
@@ -108,6 +109,129 @@ class PianificaManagerViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    // Aggiungi queste funzioni alla classe PianificaManagerViewModel
+
+// ========== GESTIONE ZONE LAVORATIVE ==========
+
+    /**
+     * Aggiorna la zona lavorativa per un singolo dipendente
+     */
+    fun aggiornaZonaLavorativaDipendente(idDipendente: String, zonaLavorativa: ZonaLavorativa) {
+        val turnoCorrente = _uiState.value.turnoInModifica ?: return
+
+        val zoneLavorativeAggiornate = turnoCorrente.zoneLavorative.toMutableMap()
+        zoneLavorativeAggiornate[idDipendente] = zonaLavorativa
+
+        val turnoAggiornato = turnoCorrente.copy(
+            zoneLavorative = zoneLavorativeAggiornate,
+            updatedAt = LocalDate.now()
+        )
+
+        _uiState.update { it.copy(turnoInModifica = turnoAggiornato) }
+        Log.d(TAG, "Zona lavorativa aggiornata per dipendente $idDipendente: $zonaLavorativa")
+    }
+
+    /**
+     * Aggiorna l'intera mappa delle zone lavorative
+     */
+    fun aggiornaZoneLavorative(nuoveZoneLavorative: Map<String, ZonaLavorativa>) {
+        val turnoCorrente = _uiState.value.turnoInModifica ?: return
+
+        val turnoAggiornato = turnoCorrente.copy(
+            zoneLavorative = nuoveZoneLavorative,
+            updatedAt = LocalDate.now()
+        )
+
+        _uiState.update { it.copy(turnoInModifica = turnoAggiornato) }
+        Log.d(TAG, "Zone lavorative aggiornate: ${nuoveZoneLavorative.size} assegnazioni")
+    }
+
+    /**
+     * Rimuove la zona lavorativa per un dipendente quando viene deselezionato
+     */
+    fun rimuoviZonaLavorativaDipendente(idDipendente: String) {
+        val turnoCorrente = _uiState.value.turnoInModifica ?: return
+
+        val zoneLavorativeAggiornate = turnoCorrente.zoneLavorative.toMutableMap()
+        zoneLavorativeAggiornate.remove(idDipendente)
+
+        val turnoAggiornato = turnoCorrente.copy(
+            zoneLavorative = zoneLavorativeAggiornate,
+            updatedAt = LocalDate.now()
+        )
+
+        _uiState.update { it.copy(turnoInModifica = turnoAggiornato) }
+        Log.d(TAG, "Zona lavorativa rimossa per dipendente: $idDipendente")
+    }
+
+    /**
+     * Sincronizza le zone lavorative con i dipendenti selezionati
+     * Rimuove le zone per dipendenti non più selezionati
+     * Aggiunge zone di default per nuovi dipendenti
+     */
+    fun sincronizzaZoneLavorativeConDipendenti(dipendentiSelezionati: List<String>) {
+        val turnoCorrente = _uiState.value.turnoInModifica ?: return
+
+        val zoneLavorativeAttuali = turnoCorrente.zoneLavorative.toMutableMap()
+
+        // Rimuovi zone per dipendenti non più selezionati
+        val dipendentiRimossi = zoneLavorativeAttuali.keys - dipendentiSelezionati.toSet()
+        dipendentiRimossi.forEach { zoneLavorativeAttuali.remove(it) }
+
+        // Aggiungi zone di default per nuovi dipendenti
+        dipendentiSelezionati.forEach { idDipendente ->
+            if (!zoneLavorativeAttuali.containsKey(idDipendente)) {
+                zoneLavorativeAttuali[idDipendente] = ZonaLavorativa.IN_SEDE // Default
+            }
+        }
+
+        val turnoAggiornato = turnoCorrente.copy(
+            zoneLavorative = zoneLavorativeAttuali,
+            updatedAt = LocalDate.now()
+        )
+
+        _uiState.update { it.copy(turnoInModifica = turnoAggiornato) }
+        Log.d(TAG, "Zone lavorative sincronizzate con ${dipendentiSelezionati.size} dipendenti")
+    }
+
+    /**
+     * Ottiene la zona lavorativa assegnata a un dipendente
+     */
+    fun getZonaLavorativaDipendente(idDipendente: String): ZonaLavorativa {
+        val turno = _uiState.value.turnoInModifica ?: return ZonaLavorativa.IN_SEDE
+        return turno.getZonaLavorativaDipendente(idDipendente)
+    }
+
+    /**
+     * Ottiene tutte le zone lavorative assegnate
+     */
+    fun getZoneLavorativeAssegnate(): Map<String, ZonaLavorativa> {
+        val turno = _uiState.value.turnoInModifica ?: return emptyMap()
+        return turno.zoneLavorative
+    }
+
+// ========== MODIFICA FUNZIONE ESISTENTE ==========
+
+    /**
+     * Aggiorna la funzione aggiornaDipendenti esistente per sincronizzare le zone lavorative
+     */
+    fun aggiornaDipendentiConZone(nuoviDipendenti: List<String>) {
+        val turnoCorrente = _uiState.value.turnoInModifica ?: return
+
+        // Aggiorna i dipendenti
+        val turnoAggiornato = turnoCorrente.copy(
+            idDipendenti = nuoviDipendenti,
+            updatedAt = LocalDate.now()
+        )
+
+        _uiState.update { it.copy(turnoInModifica = turnoAggiornato) }
+
+        // Sincronizza le zone lavorative
+        sincronizzaZoneLavorativeConDipendenti(nuoviDipendenti)
+
+        Log.d(TAG, "Dipendenti e zone lavorative aggiornati: ${nuoviDipendenti.size} selezionati")
     }
 
     private fun convertAITurnoToDomain(

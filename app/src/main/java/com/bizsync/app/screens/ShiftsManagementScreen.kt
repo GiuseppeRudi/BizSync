@@ -488,7 +488,6 @@ fun TurnoCard(
             val zonaLavorativa = turno.getZonaLavorativaDipendente(entrata?.idDipendente ?: "")
             val (zonaIcon, zonaText, zonaColor) = when (zonaLavorativa) {
                 ZonaLavorativa.IN_SEDE -> Triple(Icons.Default.Business, "In Sede", Color(0xFF2196F3))
-                ZonaLavorativa.FUORI_SEDE -> Triple(Icons.Default.LocationOn, "Fuori Sede", Color(0xFFFF9800))
                 ZonaLavorativa.SMART_WORKING -> Triple(Icons.Default.Home, "Smart Working", Color(0xFF4CAF50))
                 ZonaLavorativa.TRASFERTA -> Triple(Icons.Default.Flight, "Trasferta", Color(0xFF9C27B0))
             }

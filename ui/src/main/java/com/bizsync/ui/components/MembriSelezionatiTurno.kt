@@ -40,327 +40,327 @@ import com.bizsync.domain.model.DipendentiGiorno
 import com.bizsync.domain.model.User
 import java.time.LocalTime
 
-
-// Aggiornamento del componente MembriSelezionatiSummary
-@Composable
-fun MembriSelezionatiSummary(
-    dipendenti: List<User>,
-    membriSelezionati: List<User>,
-    orarioInizio: LocalTime?,
-    orarioFine: LocalTime?,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val orariImpostati = orarioInizio != null && orarioFine != null
-
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        onClick = (if (orariImpostati) onClick else { }) as () -> Unit
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                Text(
-                    text = "Dipendenti assegnati",
-                    style = MaterialTheme.typography.titleMedium
-                )
-
-                when {
-                    !orariImpostati -> {
-                        Text(
-                            text = "Imposta prima l'orario del turno",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    membriSelezionati.isEmpty() -> {
-                        Text(
-                            text = "Nessun dipendente selezionato",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-                    else -> {
-                        Text(
-                            text = "${membriSelezionati.size} dipendenti selezionati",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        // Mostra i primi 3 nomi
-                        val nomiDaMostrare = membriSelezionati.take(3)
-                        val nomiStringa = nomiDaMostrare.joinToString(", ") {
-                            if (it.nome.isNotBlank() && it.cognome.isNotBlank()) {
-                                "${it.nome} ${it.cognome}"
-                            } else {
-                                it.email
-                            }
-                        }
-                        val altriCount = membriSelezionati.size - nomiDaMostrare.size
-
-                        Text(
-                            text = if (altriCount > 0) "$nomiStringa e altri $altriCount" else nomiStringa,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-            }
-
-            if (orariImpostati) {
-                Icon(
-                    Icons.Default.KeyboardArrowRight,
-                    contentDescription = "Seleziona dipendenti"
-                )
-            } else {
-                Icon(
-                    Icons.Default.Schedule,
-                    contentDescription = "Imposta orario prima",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun MembriSelectionDialog(
-    showDialog: Boolean,
-    disponibiliMembri: DipendentiGiorno,
-    membriSelezionati: List<String>,
-    orarioInizio: LocalTime,
-    orarioFine: LocalTime,
-    onDismiss: () -> Unit,
-    onMembriUpdated: (List<String>) -> Unit
-) {
-    if (showDialog) {
-        var tempSelection by remember { mutableStateOf(membriSelezionati) }
-
-        // Filtra i dipendenti in base alla disponibilità
-        val (disponibili, nonDisponibili) = dividiDipendentiPerDisponibilita(
-            disponibiliMembri = disponibiliMembri,
-            orarioInizio = orarioInizio,
-            orarioFine = orarioFine
-        )
-
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            title = {
-                Text("Seleziona Dipendenti")
-            },
-            text = {
-                LazyColumn(
-                    modifier = Modifier.heightIn(max = 500.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    // Sezione dipendenti disponibili
-                    if (disponibili.isNotEmpty()) {
-                        item {
-                            Card(
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                                )
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        Icons.Default.CheckCircle,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = "Dipendenti disponibili (${disponibili.size})",
-                                        style = MaterialTheme.typography.titleSmall,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                            }
-                        }
-
-                        items(disponibili) { membro ->
-                            DipendenteSelectableItem(
-                                membro = membro,
-                                isSelected = tempSelection.contains(membro.uid),
-                                isDisponibile = true,
-                                motivoIndisponibilita = null,
-                                onSelectionChanged = { isSelected ->
-                                    tempSelection = if (isSelected) {
-                                        tempSelection + membro.uid
-                                    } else {
-                                        tempSelection - membro.uid
-                                    }
-                                }
-                            )
-                        }
-                    }
-
-                    // Sezione dipendenti non disponibili
-                    if (nonDisponibili.isNotEmpty()) {
-                        item {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Card(
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
-                                )
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        Icons.Default.Cancel,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.error,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = "Dipendenti non disponibili (${nonDisponibili.size})",
-                                        style = MaterialTheme.typography.titleSmall,
-                                        color = MaterialTheme.colorScheme.error
-                                    )
-                                }
-                            }
-                        }
-
-                        items(nonDisponibili) { (membro, motivo) ->
-                            DipendenteSelectableItem(
-                                membro = membro,
-                                isSelected = tempSelection.contains(membro.uid),
-                                isDisponibile = false,
-                                motivoIndisponibilita = motivo,
-                                onSelectionChanged = { }
-                            )
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        onMembriUpdated(tempSelection)
-                        onDismiss()
-                    }
-                ) {
-                    val disponibiliSelezionati = tempSelection.count { id ->
-                        disponibili.any { it.uid == id }
-                    }
-                    val nonDisponibiliSelezionati = tempSelection.count { id ->
-                        nonDisponibili.any { it.first.uid == id }
-                    }
-
-                    Text(
-                        if (nonDisponibiliSelezionati > 0) {
-                            "Conferma (${disponibiliSelezionati}+${nonDisponibiliSelezionati}⚠️)"
-                        } else {
-                            "Conferma (${disponibiliSelezionati})"
-                        }
-                    )
-                }
-            },
-            dismissButton = {
-                OutlinedButton(onClick = onDismiss) {
-                    Text("Annulla")
-                }
-            }
-        )
-    }
-}
-
-@Composable
-fun DipendenteSelectableItem(
-    membro: User,
-    isSelected: Boolean,
-    isDisponibile: Boolean,
-    motivoIndisponibilita: String?,
-    onSelectionChanged: (Boolean) -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onSelectionChanged(!isSelected) },
-        colors = CardDefaults.cardColors(
-            containerColor = when {
-                isSelected && isDisponibile -> MaterialTheme.colorScheme.primaryContainer
-                isSelected && !isDisponibile -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f)
-                !isDisponibile -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                else -> MaterialTheme.colorScheme.surface
-            }
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = if (membro.nome.isNotBlank() && membro.cognome.isNotBlank()) {
-                        "${membro.nome} ${membro.cognome}"
-                    } else {
-                        membro.email
-                    },
-                    style = MaterialTheme.typography.titleSmall,
-                    color = if (isDisponibile)
-                        MaterialTheme.colorScheme.onSurface
-                    else
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                if (membro.nome.isNotBlank() && membro.cognome.isNotBlank()) {
-                    Text(
-                        text = membro.email,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                // Mostra motivo indisponibilità
-                if (!isDisponibile && motivoIndisponibilita != null) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Default.Warning,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = motivoIndisponibilita,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-                }
-            }
-
-            // Icona di selezione
-            when {isSelected && isDisponibile -> {
-                Icon(
-                    Icons.Default.CheckCircle,
-                    contentDescription = "Selezionato",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-            }
-        }
-    }
-}
+//
+//// Aggiornamento del componente MembriSelezionatiSummary
+//@Composable
+//fun MembriSelezionatiSummary(
+//    dipendenti: List<User>,
+//    membriSelezionati: List<User>,
+//    orarioInizio: LocalTime?,
+//    orarioFine: LocalTime?,
+//    onClick: () -> Unit,
+//    modifier: Modifier = Modifier
+//) {
+//    val orariImpostati = orarioInizio != null && orarioFine != null
+//
+//    Card(
+//        modifier = modifier.fillMaxWidth(),
+//        onClick = (if (orariImpostati) onClick else { }) as () -> Unit
+//    ) {
+//        Row(
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .padding(16.dp),
+//            horizontalArrangement = Arrangement.SpaceBetween,
+//            verticalAlignment = Alignment.CenterVertically
+//        ) {
+//            Column {
+//                Text(
+//                    text = "Dipendenti assegnati",
+//                    style = MaterialTheme.typography.titleMedium
+//                )
+//
+//                when {
+//                    !orariImpostati -> {
+//                        Text(
+//                            text = "Imposta prima l'orario del turno",
+//                            style = MaterialTheme.typography.bodySmall,
+//                            color = MaterialTheme.colorScheme.onSurfaceVariant
+//                        )
+//                    }
+//                    membriSelezionati.isEmpty() -> {
+//                        Text(
+//                            text = "Nessun dipendente selezionato",
+//                            style = MaterialTheme.typography.bodySmall,
+//                            color = MaterialTheme.colorScheme.error
+//                        )
+//                    }
+//                    else -> {
+//                        Text(
+//                            text = "${membriSelezionati.size} dipendenti selezionati",
+//                            style = MaterialTheme.typography.bodySmall,
+//                            color = MaterialTheme.colorScheme.onSurfaceVariant
+//                        )
+//
+//                        // Mostra i primi 3 nomi
+//                        val nomiDaMostrare = membriSelezionati.take(3)
+//                        val nomiStringa = nomiDaMostrare.joinToString(", ") {
+//                            if (it.nome.isNotBlank() && it.cognome.isNotBlank()) {
+//                                "${it.nome} ${it.cognome}"
+//                            } else {
+//                                it.email
+//                            }
+//                        }
+//                        val altriCount = membriSelezionati.size - nomiDaMostrare.size
+//
+//                        Text(
+//                            text = if (altriCount > 0) "$nomiStringa e altri $altriCount" else nomiStringa,
+//                            style = MaterialTheme.typography.bodySmall,
+//                            color = MaterialTheme.colorScheme.primary
+//                        )
+//                    }
+//                }
+//            }
+//
+//            if (orariImpostati) {
+//                Icon(
+//                    Icons.Default.KeyboardArrowRight,
+//                    contentDescription = "Seleziona dipendenti"
+//                )
+//            } else {
+//                Icon(
+//                    Icons.Default.Schedule,
+//                    contentDescription = "Imposta orario prima",
+//                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+//                )
+//            }
+//        }
+//    }
+//}
+//
+//@OptIn(ExperimentalMaterial3Api::class)
+//@Composable
+//fun MembriSelectionDialog(
+//    showDialog: Boolean,
+//    disponibiliMembri: DipendentiGiorno,
+//    membriSelezionati: List<String>,
+//    orarioInizio: LocalTime,
+//    orarioFine: LocalTime,
+//    onDismiss: () -> Unit,
+//    onMembriUpdated: (List<String>) -> Unit
+//) {
+//    if (showDialog) {
+//        var tempSelection by remember { mutableStateOf(membriSelezionati) }
+//
+//        // Filtra i dipendenti in base alla disponibilità
+//        val (disponibili, nonDisponibili) = dividiDipendentiPerDisponibilita(
+//            disponibiliMembri = disponibiliMembri,
+//            orarioInizio = orarioInizio,
+//            orarioFine = orarioFine
+//        )
+//
+//        AlertDialog(
+//            onDismissRequest = onDismiss,
+//            title = {
+//                Text("Seleziona Dipendenti")
+//            },
+//            text = {
+//                LazyColumn(
+//                    modifier = Modifier.heightIn(max = 500.dp),
+//                    verticalArrangement = Arrangement.spacedBy(8.dp)
+//                ) {
+//                    // Sezione dipendenti disponibili
+//                    if (disponibili.isNotEmpty()) {
+//                        item {
+//                            Card(
+//                                colors = CardDefaults.cardColors(
+//                                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+//                                )
+//                            ) {
+//                                Row(
+//                                    modifier = Modifier.padding(12.dp),
+//                                    verticalAlignment = Alignment.CenterVertically
+//                                ) {
+//                                    Icon(
+//                                        Icons.Default.CheckCircle,
+//                                        contentDescription = null,
+//                                        tint = MaterialTheme.colorScheme.primary,
+//                                        modifier = Modifier.size(20.dp)
+//                                    )
+//                                    Spacer(modifier = Modifier.width(8.dp))
+//                                    Text(
+//                                        text = "Dipendenti disponibili (${disponibili.size})",
+//                                        style = MaterialTheme.typography.titleSmall,
+//                                        color = MaterialTheme.colorScheme.primary
+//                                    )
+//                                }
+//                            }
+//                        }
+//
+//                        items(disponibili) { membro ->
+//                            DipendenteSelectableItem(
+//                                membro = membro,
+//                                isSelected = tempSelection.contains(membro.uid),
+//                                isDisponibile = true,
+//                                motivoIndisponibilita = null,
+//                                onSelectionChanged = { isSelected ->
+//                                    tempSelection = if (isSelected) {
+//                                        tempSelection + membro.uid
+//                                    } else {
+//                                        tempSelection - membro.uid
+//                                    }
+//                                }
+//                            )
+//                        }
+//                    }
+//
+//                    // Sezione dipendenti non disponibili
+//                    if (nonDisponibili.isNotEmpty()) {
+//                        item {
+//                            Spacer(modifier = Modifier.height(8.dp))
+//                            Card(
+//                                colors = CardDefaults.cardColors(
+//                                    containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+//                                )
+//                            ) {
+//                                Row(
+//                                    modifier = Modifier.padding(12.dp),
+//                                    verticalAlignment = Alignment.CenterVertically
+//                                ) {
+//                                    Icon(
+//                                        Icons.Default.Cancel,
+//                                        contentDescription = null,
+//                                        tint = MaterialTheme.colorScheme.error,
+//                                        modifier = Modifier.size(20.dp)
+//                                    )
+//                                    Spacer(modifier = Modifier.width(8.dp))
+//                                    Text(
+//                                        text = "Dipendenti non disponibili (${nonDisponibili.size})",
+//                                        style = MaterialTheme.typography.titleSmall,
+//                                        color = MaterialTheme.colorScheme.error
+//                                    )
+//                                }
+//                            }
+//                        }
+//
+//                        items(nonDisponibili) { (membro, motivo) ->
+//                            DipendenteSelectableItem(
+//                                membro = membro,
+//                                isSelected = tempSelection.contains(membro.uid),
+//                                isDisponibile = false,
+//                                motivoIndisponibilita = motivo,
+//                                onSelectionChanged = { }
+//                            )
+//                        }
+//                    }
+//                }
+//            },
+//            confirmButton = {
+//                Button(
+//                    onClick = {
+//                        onMembriUpdated(tempSelection)
+//                        onDismiss()
+//                    }
+//                ) {
+//                    val disponibiliSelezionati = tempSelection.count { id ->
+//                        disponibili.any { it.uid == id }
+//                    }
+//                    val nonDisponibiliSelezionati = tempSelection.count { id ->
+//                        nonDisponibili.any { it.first.uid == id }
+//                    }
+//
+//                    Text(
+//                        if (nonDisponibiliSelezionati > 0) {
+//                            "Conferma (${disponibiliSelezionati}+${nonDisponibiliSelezionati}⚠️)"
+//                        } else {
+//                            "Conferma (${disponibiliSelezionati})"
+//                        }
+//                    )
+//                }
+//            },
+//            dismissButton = {
+//                OutlinedButton(onClick = onDismiss) {
+//                    Text("Annulla")
+//                }
+//            }
+//        )
+//    }
+//}
+//
+//@Composable
+//fun DipendenteSelectableItem(
+//    membro: User,
+//    isSelected: Boolean,
+//    isDisponibile: Boolean,
+//    motivoIndisponibilita: String?,
+//    onSelectionChanged: (Boolean) -> Unit
+//) {
+//    Card(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .clickable { onSelectionChanged(!isSelected) },
+//        colors = CardDefaults.cardColors(
+//            containerColor = when {
+//                isSelected && isDisponibile -> MaterialTheme.colorScheme.primaryContainer
+//                isSelected && !isDisponibile -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f)
+//                !isDisponibile -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+//                else -> MaterialTheme.colorScheme.surface
+//            }
+//        )
+//    ) {
+//        Row(
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .padding(12.dp),
+//            horizontalArrangement = Arrangement.SpaceBetween,
+//            verticalAlignment = Alignment.CenterVertically
+//        ) {
+//            Column(modifier = Modifier.weight(1f)) {
+//                Text(
+//                    text = if (membro.nome.isNotBlank() && membro.cognome.isNotBlank()) {
+//                        "${membro.nome} ${membro.cognome}"
+//                    } else {
+//                        membro.email
+//                    },
+//                    style = MaterialTheme.typography.titleSmall,
+//                    color = if (isDisponibile)
+//                        MaterialTheme.colorScheme.onSurface
+//                    else
+//                        MaterialTheme.colorScheme.onSurfaceVariant
+//                )
+//
+//                if (membro.nome.isNotBlank() && membro.cognome.isNotBlank()) {
+//                    Text(
+//                        text = membro.email,
+//                        style = MaterialTheme.typography.bodySmall,
+//                        color = MaterialTheme.colorScheme.onSurfaceVariant
+//                    )
+//                }
+//
+//                // Mostra motivo indisponibilità
+//                if (!isDisponibile && motivoIndisponibilita != null) {
+//                    Spacer(modifier = Modifier.height(4.dp))
+//                    Row(
+//                        verticalAlignment = Alignment.CenterVertically
+//                    ) {
+//                        Icon(
+//                            Icons.Default.Warning,
+//                            contentDescription = null,
+//                            tint = MaterialTheme.colorScheme.error,
+//                            modifier = Modifier.size(14.dp)
+//                        )
+//                        Spacer(modifier = Modifier.width(4.dp))
+//                        Text(
+//                            text = motivoIndisponibilita,
+//                            style = MaterialTheme.typography.bodySmall,
+//                            color = MaterialTheme.colorScheme.error
+//                        )
+//                    }
+//                }
+//            }
+//
+//            // Icona di selezione
+//            when {isSelected && isDisponibile -> {
+//                Icon(
+//                    Icons.Default.CheckCircle,
+//                    contentDescription = "Selezionato",
+//                    tint = MaterialTheme.colorScheme.primary
+//                )
+//            }
+//            }
+//        }
+//    }
+//}
 
 // Funzione helper per dividere i dipendenti per disponibilità
 private fun dividiDipendentiPerDisponibilita(
