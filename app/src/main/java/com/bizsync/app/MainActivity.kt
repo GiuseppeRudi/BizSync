@@ -27,6 +27,7 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
+
     // stato di login
     private val currentUserLogin = mutableStateOf<Boolean?>(null)
 
