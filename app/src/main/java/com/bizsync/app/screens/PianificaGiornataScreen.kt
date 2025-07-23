@@ -126,13 +126,13 @@ fun PianificaGiornata(
         // Lista dipartimenti con stato
         items(dipartimentiDelGiorno) { dipartimento ->
 
-            if (dipartimento.id in turniGiorno) {
+            if (dipartimento.nomeArea in turniGiorno) {
                 DipartimentoStatoCard(
                     dipartimento = dipartimento,
                     dayOfWeek = dayOfWeek,
                     onClick = { onDipartimentoClick(dipartimento)
-                                managerVM.setTurniGiornalieriDipartimento(dipartimento.id)},
-                    turniDipartimentoGiornalieri = turniGiorno[dipartimento.id]!!
+                                managerVM.setTurniGiornalieriDipartimento(dipartimento.nomeArea)},
+                    turniDipartimentoGiornalieri = turniGiorno[dipartimento.nomeArea]!!
                 )
             }
 

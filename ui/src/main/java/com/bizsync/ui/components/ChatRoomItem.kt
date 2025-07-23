@@ -80,7 +80,7 @@ fun ChatRoomItem(
                     .background(
                         when (chat.tipo) {
                             ChatType.GENERALE -> Color(0xFF3498DB)
-                            ChatType.DIPARTIMENTO -> getDepartmentColor(chat.dipartimentoId , dipartimenti)
+                            ChatType.DIPARTIMENTO -> getDepartmentColor(chat.dipartimento , dipartimenti)
                             ChatType.PRIVATA -> Color(0xFF95A5A6)
                             else -> {Color(0xFF95A5A6)}
                         }
@@ -90,7 +90,7 @@ fun ChatRoomItem(
                 Icon(
                     imageVector = when (chat.tipo) {
                         ChatType.GENERALE -> Icons.Default.Public
-                        ChatType.DIPARTIMENTO -> getDepartmentIcon(chat.dipartimentoId, dipartimenti )
+                        ChatType.DIPARTIMENTO -> getDepartmentIcon(chat.dipartimento, dipartimenti )
                         ChatType.PRIVATA -> Icons.Default.Person
                         else -> {Icons.Default.Person}
                     },
@@ -111,13 +111,35 @@ fun ChatRoomItem(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = dipartimenti.firstOrNull { it.id == chat.dipartimentoId }?.nomeArea ?:"Chat Generale",
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF2C3E50),
-                        fontSize = 16.sp,
-                        modifier = Modifier.weight(1f)
-                    )
+                    if(chat.tipo == ChatType.GENERALE)
+                    {
+                        Text(
+                            text = "Chat Generale",
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF2C3E50),
+                            fontSize = 16.sp
+                        )
+                    }
+
+                    if(chat.tipo == ChatType.PRIVATA)
+                    {
+                        Text(
+                            text = chat.nome,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF2C3E50),
+                            fontSize = 16.sp
+                        )
+                    }
+
+                    chat.dipartimento?.let {
+                        Text(
+                            text = it,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF2C3E50),
+                            fontSize = 16.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
 
                     if (chat.ultimoMessaggioTimestamp != null) {
                         Text(
@@ -177,7 +199,7 @@ val departmentIcons = listOf(
 
 
 fun getDepartmentIcon(department: String?, dipartimenti: List<AreaLavoro>): ImageVector {
-    val index = dipartimenti.indexOfFirst { it.id == department }
+    val index = dipartimenti.indexOfFirst { it.nomeArea == department }
     return if (index in departmentIcons.indices) {
         departmentIcons[index]
     } else {
@@ -200,7 +222,7 @@ val departmentColors = listOf(
 )
 
 fun getDepartmentColor(department: String?, dipartimenti: List<AreaLavoro>): Color {
-    val index = dipartimenti.indexOfFirst { it.id == department }
+    val index = dipartimenti.indexOfFirst { it.nomeArea == department }
     return if (index in departmentColors.indices) {
         departmentColors[index]
     } else {

@@ -78,10 +78,10 @@ class PianificaManagerViewModel @Inject constructor(
                 val turniConvertiti = result.turniGenerati.map { turnoAI ->
                     convertAITurnoToDomain(
                         turnoAI = turnoAI,
-                        dipartimentoId = dipartimento.id,
+                        dipartimento = dipartimento.nomeArea,
                         giornoSelezionato = giornoSelezionato,
                         // DA GUARDARE
-                        idAzienda = dipartimento.id
+                        idAzienda = dipartimento.nomeArea
                     )
                 }
 
@@ -237,7 +237,7 @@ class PianificaManagerViewModel @Inject constructor(
 
     private fun convertAITurnoToDomain(
         turnoAI: TurnoGeneratoAI,
-        dipartimentoId: String,
+        dipartimento: String,
         giornoSelezionato: LocalDate,
         idAzienda: String
     ): Turno {
@@ -268,7 +268,7 @@ class PianificaManagerViewModel @Inject constructor(
             titolo = turnoAI.titolo,
             idAzienda = idAzienda,
             idDipendenti = turnoAI.idDipendenti,
-            dipartimentoId = dipartimentoId,
+            dipartimento = dipartimento,
             data = giornoSelezionato,
             orarioInizio = LocalTime.parse(turnoAI.orarioInizio),
             orarioFine = LocalTime.parse(turnoAI.orarioFine),
@@ -499,7 +499,7 @@ class PianificaManagerViewModel @Inject constructor(
         // Assumi che turniGiornalieri sia già stato caricato nel State
         val turniMap = _uiState.value.turniSettimanali
         val giornalieri = turniMap.values.flatten()
-            .filter { it.dipartimentoId == dipartimentoId }
+            .filter { it.dipartimento == dipartimentoId }
         _uiState.update {
             it.copy(turniGiornalieriDip = giornalieri)
         }
@@ -545,7 +545,7 @@ class PianificaManagerViewModel @Inject constructor(
             val turniDelGiorno = currentTurniSettimanali[dayOfWeek] ?: emptyList()
 
             val turniPerDipartimento: Map<String, List<Turno>> = dipartimentiDelGiorno.associate { dipartimento ->
-                dipartimento.id to turniDelGiorno.filter { it.dipartimentoId == dipartimento.id }
+                dipartimento.nomeArea to turniDelGiorno.filter { it.dipartimento == dipartimento.nomeArea }
             }
 
 
@@ -556,7 +556,7 @@ class PianificaManagerViewModel @Inject constructor(
     }
 
 
-    fun caricaTurniSettimanaEDipartimento(weekStart: LocalDate, dipartimentoId: String) {
+    fun caricaTurniSettimanaEDipartimento(weekStart: LocalDate, dipartimento: String) {
         viewModelScope.launch {
             try {
                 setLoading(true)
@@ -565,7 +565,7 @@ class PianificaManagerViewModel @Inject constructor(
                 setTurniSettimanaliSuspend(weekStart)
 
                 // 2️⃣ solo dopo, carica i giornalieri
-                setTurniGiornalieriDipartimento(dipartimentoId)
+                setTurniGiornalieriDipartimento(dipartimento)
 
                 _uiState.update { it.copy(hasChangeShift = false) }
             } catch (e: Exception) {
@@ -1029,7 +1029,7 @@ class PianificaManagerViewModel @Inject constructor(
     /**
      * Salva il turno corrente
      */
-    fun saveTurno( dipartimentoId : String, giornoSelezionato : LocalDate, idAzienda: String) {
+    fun saveTurno(dipartimento : String, giornoSelezionato : LocalDate, idAzienda: String) {
         viewModelScope.launch {
 
             _uiState.update { it.copy(loading = true) }
@@ -1045,7 +1045,7 @@ class PianificaManagerViewModel @Inject constructor(
 
             val turnoToSave = if (isNewTurno) {
                 turno.copy(
-                    dipartimentoId = dipartimentoId,
+                    dipartimento = dipartimento,
                     data = giornoSelezionato,
                     idAzienda = idAzienda
                 )

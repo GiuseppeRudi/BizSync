@@ -44,7 +44,7 @@ fun DipartimentiManagementScreen(
     val showAddDialog = uiState.showAddDialog
     val editingArea = uiState.editingArea
     val showOrariDialog = uiState.showOrariDialog
-    val editingOrariAreaId = uiState.editingOrariAreaId
+    val editingOrariAreaId = uiState.editingOrariArea
     val orariTemp = uiState.orariTemp
     val hasChanges = uiState.hasChanges
     val isLoading = uiState.isLoading
@@ -142,14 +142,14 @@ fun DipartimentiManagementScreen(
         ) {
             items(
                 items = areeModificate,
-                key = { it.id }
+                key = { it.nomeArea }
             ) { area ->
                 AreaItemEditableWithOrari(
                     area = area,
-                    orariConfigurati = orariModificati[area.id]?.isNotEmpty() == true,
+                    orariConfigurati = orariModificati[area.nomeArea]?.isNotEmpty() == true,
                     onEdit = { companyVm.setEditingArea(area) },
                     onDelete = { companyVm.removeAreaModificata(area) },
-                    onEditOrari = { companyVm.openOrariDialog(area.id) },
+                    onEditOrari = { companyVm.openOrariDialog(area.nomeArea) },
                     enabled = !isLoading
                 )
             }
@@ -199,7 +199,7 @@ fun DipartimentiManagementScreen(
             area = editingArea,
             onDismiss = { companyVm.setEditingArea(null) },
             onConfirm = { nomeArea ->
-                companyVm.updateAreaModificata(editingArea.id, nomeArea)
+                companyVm.updateAreaModificata(editingArea.nomeArea, nomeArea)
                 companyVm.setEditingArea(null)
             }
         )
@@ -421,20 +421,19 @@ fun OrariSettimanaliDialog(
     val uiState by companyVm.uiState.collectAsState()
     val areeModificate = uiState.areeModificate
     val orariTemp = uiState.orariTemp
-    val editingOrariAreaId = uiState.editingOrariAreaId
+    val editingOrariArea = uiState.editingOrariArea
 
     val orarisettimanali = uiState.orariSettimanaliModificati
 
     LaunchedEffect(Unit) {
-        companyVm.onChangedOrariTemp(orarisettimanali[editingOrariAreaId])
+        companyVm.onChangedOrariTemp(orarisettimanali[editingOrariArea])
     }
 
-    val nomeArea = areeModificate.find { it.id == editingOrariAreaId }?.nomeArea ?: ""
 
     AlertDialog(
         onDismissRequest = {companyVm.closeOrariDialog()},
         title = {
-            Text("Orari Settimanali - $nomeArea")
+            Text("Orari Settimanali - $editingOrariArea")
         },
         text = {
             LazyColumn(

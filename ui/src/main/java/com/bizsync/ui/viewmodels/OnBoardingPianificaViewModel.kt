@@ -69,7 +69,7 @@ class OnBoardingPianificaViewModel @Inject constructor(private val aziendaReposi
     fun onRimuoviAreaById(idDaRimuovere: String) {
         _uiState.update { state ->
             state.copy(
-                aree = state.aree.filter { it.id != idDaRimuovere }
+                aree = state.aree.filter { it.nomeArea != idDaRimuovere }
             )
         }
     }
@@ -156,7 +156,7 @@ class OnBoardingPianificaViewModel @Inject constructor(private val aziendaReposi
 
             // Carica gli orari della prima area selezionata come template
             val newOrariTemp = if (newSelectedAree.isNotEmpty()) {
-                val primaAreaSelezionata = state.aree.find { it.id == newSelectedAree.first() }
+                val primaAreaSelezionata = state.aree.find { it.nomeArea == newSelectedAree.first() }
                 primaAreaSelezionata?.orariSettimanali?.ifEmpty {
                     mapOf(
                         DayOfWeek.MONDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
@@ -184,34 +184,6 @@ class OnBoardingPianificaViewModel @Inject constructor(private val aziendaReposi
         }
     }
 
-    fun selectAllAree() {
-        _uiState.update { state ->
-            val allAreaIds = state.aree.map { it.id }
-
-            // Carica gli orari della prima area come template, o orari di default se vuoti
-            val newOrariTemp = if (state.aree.isNotEmpty()) {
-            val primaArea = state.aree.first()
-            if (primaArea.orariSettimanali.isNotEmpty()) {
-                primaArea.orariSettimanali
-            } else {
-                mapOf(
-                    DayOfWeek.MONDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
-                    DayOfWeek.TUESDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
-                    DayOfWeek.WEDNESDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
-                    DayOfWeek.THURSDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
-                    DayOfWeek.FRIDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0))
-                )
-            }
-        } else {
-            mapOf()
-        }
-
-            state.copy(
-                selectedAree = allAreaIds,
-                orariTemp = newOrariTemp
-            )
-        }
-    }
 
     fun deselectAllAree() {
         _uiState.update { state ->
@@ -288,7 +260,7 @@ class OnBoardingPianificaViewModel @Inject constructor(private val aziendaReposi
         _uiState.update { state ->
             // Applica gli orari temporanei a tutte le aree selezionate
             val areeAggiornate = state.aree.map { area ->
-                if (state.selectedAree.contains(area.id)) {
+                if (state.selectedAree.contains(area.nomeArea)) {
                     area.copy(orariSettimanali = state.orariTemp)
                 } else {
                     area

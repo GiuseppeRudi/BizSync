@@ -2,7 +2,6 @@ package com.bizsync.backend.dto
 
 
 import com.google.firebase.Timestamp
-import com.bizsync.domain.constants.enumClass.EsitoTurno
 import com.google.firebase.firestore.Exclude
 
 
@@ -14,7 +13,7 @@ data class TurnoDto(
     val titolo: String = "",
     val idAzienda: String = "",
     val idDipendenti: List<String> = emptyList(),
-    val dipartimentoId: String = "",
+    val dipartimento: String = "",
 
     val data: Timestamp = Timestamp.now(),
     val orarioInizio: Timestamp = Timestamp.now(),

@@ -10,7 +10,6 @@ import com.bizsync.domain.utils.DateUtils.toFirebaseTimestamp
 import com.bizsync.domain.utils.DateUtils.toLocalDate
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.decodeFromString
 
 object TurnoEntityMapper {
 
@@ -31,7 +30,7 @@ object TurnoEntityMapper {
             data = entity.data,
             orarioInizio = entity.orarioInizio,
             orarioFine = entity.orarioFine,
-            dipartimentoId = entity.dipartimentoId,
+            dipartimento = entity.dipartimento,
             zoneLavorative = deserializeZoneLavorative(entity.zoneLavorativeJson),
             note = deserializeNote(entity.noteJson),
             pause = deserializePause(entity.pauseJson),
@@ -50,7 +49,7 @@ object TurnoEntityMapper {
             data = domain.data,
             orarioInizio = domain.orarioInizio,
             orarioFine = domain.orarioFine,
-            dipartimentoId = domain.dipartimentoId,
+            dipartimento = domain.dipartimento,
             zoneLavorativeJson = serializeZoneLavorative(domain.zoneLavorative),
             noteJson = serializeNote(domain.note),
             pauseJson = serializePause(domain.pause),

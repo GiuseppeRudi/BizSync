@@ -5,10 +5,8 @@ import java.time.DayOfWeek
 
 import java.time.LocalTime
 
-// Domain → DTO
 fun AreaLavoro.toDto(): AreaLavoroDto {
     return AreaLavoroDto(
-        id = this.id,
         nomeArea = this.nomeArea,
         orariSettimanali = this.orariSettimanali.mapKeys { it.key.name }
             .mapValues { entry ->
@@ -24,7 +22,6 @@ fun AreaLavoro.toDto(): AreaLavoroDto {
 // DTO → Domain
 fun AreaLavoroDto.toDomain(): AreaLavoro {
     return AreaLavoro(
-        id = this.id,
         nomeArea = this.nomeArea,
         orariSettimanali = this.orariSettimanali.mapKeys {
             try {

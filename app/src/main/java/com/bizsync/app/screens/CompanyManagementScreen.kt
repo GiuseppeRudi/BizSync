@@ -122,6 +122,6 @@ fun CompanyCore(companyVm: CompanyViewModel, azienda: AziendaUi
 
 fun buildOrariSettimanaliMap(aree: List<AreaLavoro>): Map<String, Map<DayOfWeek, Pair<LocalTime, LocalTime>>> {
     return aree.associate { area ->
-        area.id to area.orariSettimanali
+        area.nomeArea to area.orariSettimanali
     }
 }

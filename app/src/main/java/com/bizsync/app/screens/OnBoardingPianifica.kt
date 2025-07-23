@@ -195,7 +195,7 @@ fun AreeLavoroStep(viewModel: OnBoardingPianificaViewModel) {
                             loading = false,
                             title = area.nomeArea,
                             showDelete = true,
-                            onDelete = { viewModel.onRimuoviAreaById(area.id) }
+                            onDelete = { viewModel.onRimuoviAreaById(area.nomeArea) }
                         )
                     }
                 }
@@ -273,8 +273,8 @@ fun SelezioneAreeOrariStep(viewModel: OnBoardingPianificaViewModel) {
     val areeOrariConfigurati = pianificaState.areeOrariConfigurati // Nuova proprietà per tracciare le aree configurate
 
     // Calcola le aree configurate e non configurate
-    val areeConfigurate = aree.filter { areeOrariConfigurati.contains(it.id) }
-    val areeNonConfigurate = aree.filter { !areeOrariConfigurati.contains(it.id) }
+    val areeConfigurate = aree.filter { areeOrariConfigurati.contains(it.nomeArea) }
+    val areeNonConfigurate = aree.filter { !areeOrariConfigurati.contains(it.nomeArea) }
     val tutteAreeConfigurate = areeNonConfigurate.isEmpty()
 
     Column(
@@ -405,7 +405,7 @@ fun SelezioneAreeOrariStep(viewModel: OnBoardingPianificaViewModel) {
                     ) {
                         Button(
                             onClick = {
-                                viewModel.selectAllAreeNonConfigurate(areeNonConfigurate.map { it.id })
+                                viewModel.selectAllAreeNonConfigurate(areeNonConfigurate.map { it.nomeArea })
                             },
                             modifier = Modifier.weight(1f)
                         ) {
@@ -429,9 +429,9 @@ fun SelezioneAreeOrariStep(viewModel: OnBoardingPianificaViewModel) {
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Checkbox(
-                                    checked = selectedAree.contains(area.id),
+                                    checked = selectedAree.contains(area.nomeArea),
                                     onCheckedChange = { isChecked ->
-                                        viewModel.onAreaSelectionChanged(area.id, isChecked)
+                                        viewModel.onAreaSelectionChanged(area.nomeArea, isChecked)
                                     }
                                 )
                                 Text(
@@ -509,7 +509,6 @@ fun ModificaOrariStep(viewModel: OnBoardingPianificaViewModel) {
         DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY, DayOfWeek.SUNDAY
     )
 
-    val selectedAreaNames = aree.filter { selectedAree.contains(it.id) }.map { it.nomeArea }
 
     Column(
         modifier = Modifier
@@ -523,7 +522,7 @@ fun ModificaOrariStep(viewModel: OnBoardingPianificaViewModel) {
         )
 
         Text(
-            text = "Imposta gli orari che verranno applicati a: ${selectedAreaNames.joinToString(", ")}",
+            text = "Imposta gli orari che verranno applicati a: ${selectedAree}",
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(vertical = 8.dp)
         )

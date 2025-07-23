@@ -18,7 +18,7 @@ data class CompanyState(
     val  areeModificate : List<AreaLavoro> = emptyList(),
 
     val orariSettimanaliModificati: Map<String, Map<DayOfWeek, Pair<LocalTime, LocalTime>>> = emptyMap(),
-    val editingOrariAreaId: String? = null, // ID dell'area di cui stiamo modificando gli orari
+    val editingOrariArea: String? = null, // ID dell'area di cui stiamo modificando gli orari
 
     val showOrariDialog: Boolean = false,
 

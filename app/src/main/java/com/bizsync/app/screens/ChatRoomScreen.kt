@@ -78,7 +78,6 @@ fun ChatRoomScreen(
     onBackClick: () -> Unit
 ) {
 
-    val dipartimento = dipartimenti.firstOrNull { it.id == chatRoom.dipartimentoId }
 
     var inputText by remember { mutableStateOf("") }
     var showMessageTypeDialog by remember { mutableStateOf(false) }
@@ -120,7 +119,7 @@ fun ChatRoomScreen(
                             .background(
                                 when (chatRoom.tipo) {
                                     ChatType.GENERALE -> Color(0xFF3498DB)
-                                    ChatType.DIPARTIMENTO -> getDepartmentColor(chatRoom.dipartimentoId, dipartimenti )
+                                    ChatType.DIPARTIMENTO -> getDepartmentColor(chatRoom.dipartimento, dipartimenti )
                                     ChatType.PRIVATA -> Color(0xFF95A5A6)
                                     else -> { Color(0xFF95A5A6)}
                                 }
@@ -130,7 +129,7 @@ fun ChatRoomScreen(
                         Icon(
                             imageVector = when (chatRoom.tipo) {
                                 ChatType.GENERALE -> Icons.Default.Public
-                                ChatType.DIPARTIMENTO -> getDepartmentIcon(chatRoom.dipartimentoId, dipartimenti )
+                                ChatType.DIPARTIMENTO -> getDepartmentIcon(chatRoom.dipartimento, dipartimenti )
                                 ChatType.PRIVATA -> Icons.Default.Person
                                 else -> { Icons.Default.Person}
                             },
@@ -152,7 +151,7 @@ fun ChatRoomScreen(
                         Text(
                             text = when (chatRoom.tipo) {
                                 ChatType.GENERALE -> "Tutti i dipendenti"
-                                ChatType.DIPARTIMENTO -> "Dipartimento ${chatRoom.dipartimentoId}"
+                                ChatType.DIPARTIMENTO -> "Dipartimento ${chatRoom.dipartimento}"
                                 ChatType.PRIVATA -> "Chat privata"
                                 else -> {"Chat privata"}
                             },

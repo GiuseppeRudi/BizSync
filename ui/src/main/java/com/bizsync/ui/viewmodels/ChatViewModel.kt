@@ -47,15 +47,20 @@ class ChatViewModel @Inject constructor(
     }
 
     fun initializeChat(user: User, employees: List<User>) {
-        currentUser = user
-        _uiState.update { it.copy(currentUser = user, allEmployees = employees) }
-        loadChats(user, employees)
 
-        // Inizializza chat di default
-        viewModelScope.launch {
-            val dipartimenti = employees.map { it.dipartimento }.distinct()
-            chatRepository.initializeDefaultChats(user.idAzienda, dipartimenti)
+        if(!_uiState.value.isLoading)
+        {
+            currentUser = user
+            _uiState.update { it.copy(currentUser = user, allEmployees = employees) }
+            loadChats(user, employees)
+
+            // Inizializza chat di default
+            viewModelScope.launch {
+                val dipartimenti = employees.map { it.dipartimento }.distinct()
+                chatRepository.initializeDefaultChats(user.idAzienda, dipartimenti)
+            }
         }
+
     }
 
     private fun loadChats(user: User, employees: List<User>) {

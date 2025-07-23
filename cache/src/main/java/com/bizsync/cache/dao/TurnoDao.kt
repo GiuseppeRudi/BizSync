@@ -9,7 +9,6 @@ import androidx.room.Query
 import androidx.room.Update
 import java.time.LocalDate
 import com.bizsync.cache.entity.TurnoEntity
-import com.bizsync.domain.model.Turno
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -57,8 +56,8 @@ interface TurnoDao {
     suspend fun fetchTurniSettimana(startDate: LocalDate, endDate: LocalDate): List<TurnoEntity>
 
     // Recupera i turni di un dipartimento in un certo giorno
-    @Query("SELECT * FROM turni WHERE dipartimentoId = :idDipartimento AND data = :giorno")
-    suspend fun getTurniByDipartimentoAndData(idDipartimento: String, giorno: LocalDate): List<TurnoEntity>
+    @Query("SELECT * FROM turni WHERE dipartimento = :dipartimento AND data = :giorno")
+    suspend fun getTurniByDipartimentoAndData(dipartimento: String, giorno: LocalDate): List<TurnoEntity>
 
     // Recupera i turni di un certo giorno
     @Query("SELECT * FROM turni WHERE data = :giorno ORDER BY orarioInizio ASC")
@@ -92,7 +91,7 @@ interface TurnoDao {
 
 
     // Elimina tutti i turni per un certo dipartimento
-    @Query("DELETE FROM turni WHERE dipartimentoId = :dipartimentoId")
+    @Query("DELETE FROM turni WHERE dipartimento = :dipartimentoId")
     suspend fun deleteByDipartimento(dipartimentoId: String)
 
     /**

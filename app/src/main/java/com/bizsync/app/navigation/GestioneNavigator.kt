@@ -154,63 +154,7 @@ fun GestioneNavigator(
         }
 
         // all’interno della tua NavHost…
-        composable(GestioneScreenRoute.CompanyInfo.route) {
-            // --- 1. dummy data di esempio ---
-            val allUsers = listOf(
-                User("u1", "luca@azienda.com", "Luca", "Bianchi", idAzienda = "AZ1", isManager = false, posizioneLavorativa = "Operaio", dipartimento = "DEP1"),
-                User("u2", "mario@azienda.com", "Mario", "Rossi", idAzienda = "AZ1", isManager = true, posizioneLavorativa = "isManager", dipartimento = "DEP1")
-            )
-            val allAziende = listOf(
-                Azienda(
-                    idAzienda = "AZ1",
-                    nome = "Acme Corp",
-                    areeLavoro = listOf(
-                        AreaLavoro(id = "DEP1", nomeArea = "Produzione"),
-                        AreaLavoro(id = "DEP2", nomeArea = "Amministrazione")
-                    ),
-                    turniFrequenti = listOf(
-                        TurnoFrequente(nome = "Mattina", oraInizio = "08:00", oraFine = "12:00"),
-                        TurnoFrequente(nome = "Pomeriggio", oraInizio = "13:00", oraFine = "17:00")
-                    ),
-                    numDipendentiRange = "1-50",
-                    sector = "Manifatturiero",
-                    giornoPubblicazioneTurni = DayOfWeek.MONDAY
-                )
-            )
-            val allContratti = listOf(
-                Contratto(
-                    id = "C1",
-                    idDipendente = "u1",
-                    idAzienda = "AZ1",
-                    emailDipendente = "luca@azienda.com",
-                    posizioneLavorativa = "Operaio",
-                    dipartimento = "DEP1",
-                    tipoContratto = "Tempo Pieno",
-                    oreSettimanali = "40",
-                    settoreAziendale = "Produzione",
-                    dataInizio = "2025-01-01"
-                ),
-                Contratto(
-                    id = "C2",
-                    idDipendente = "u2",
-                    idAzienda = "AZ1",
-                    emailDipendente = "mario@azienda.com",
-                    posizioneLavorativa = "isManager",
-                    dipartimento = "DEP1",
-                    tipoContratto = "Tempo Pieno",
-                    oreSettimanali = "40",
-                    settoreAziendale = "Produzione",
-                    dataInizio = "2025-01-01"
-                )
-            )
-
-            // --- 2. estraggo gli oggetti da passare ---
-            val user    = allUsers.first { it.uid == "u1" }
-            val azienda = allAziende.first { it.idAzienda == user.idAzienda }
-            val contratto = allContratti.first { it.idDipendente == user.uid && it.idAzienda == azienda.idAzienda }
-
-            // --- 3. il composable con i parametri corretti ---
-            CompanyInfoScreen(onBackClick = { navController.popBackStack() },)
+            composable(GestioneScreenRoute.CompanyInfo.route) { CompanyInfoScreen(onBackClick = { navController.popBackStack() },)
         }
 
     }

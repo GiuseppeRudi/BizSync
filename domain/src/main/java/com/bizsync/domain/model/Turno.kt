@@ -1,9 +1,7 @@
 package com.bizsync.domain.model
 
 
-import com.bizsync.domain.constants.enumClass.EsitoTurno
 import com.bizsync.domain.constants.enumClass.ZonaLavorativa
-import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.UUID
@@ -13,7 +11,7 @@ data class Turno(
     val titolo: String = "",
     val idAzienda : String = "",
     val idDipendenti : List<String> = emptyList(),
-    val dipartimentoId: String = "",
+    val dipartimento: String = "",
     val idFirebase : String = "",
 
     val data: LocalDate = LocalDate.now(),
@@ -51,7 +49,7 @@ data class Turno(
      * Verifica se il turno si sovrappone con un altro
      */
     fun siSovrappongeCon(altro: Turno): Boolean {
-        if (this.data != altro.data || this.dipartimentoId != altro.dipartimentoId) {
+        if (this.data != altro.data || this.dipartimento != altro.dipartimento) {
             return false
         }
 
@@ -71,7 +69,7 @@ data class Turno(
      * Verifica se il turno è adiacente a un altro
      */
     fun eAdiacenteA(altro: Turno): Boolean {
-        if (this.data != altro.data || this.dipartimentoId != altro.dipartimentoId) {
+        if (this.data != altro.data || this.dipartimento != altro.dipartimento) {
             return false
         }
 

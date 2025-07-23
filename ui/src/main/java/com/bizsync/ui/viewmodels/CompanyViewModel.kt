@@ -31,7 +31,7 @@ class CompanyViewModel @Inject constructor( private val aziendaRepository: Azien
     }
 
     fun setEditingOrariAreaId(areaId: String?) {
-        _uiState.update { it.copy(editingOrariAreaId = areaId) }
+        _uiState.update { it.copy(editingOrariArea = areaId) }
     }
 
     fun setShowOrariDialog(show: Boolean) {
@@ -46,7 +46,7 @@ class CompanyViewModel @Inject constructor( private val aziendaRepository: Azien
         val orariEsistenti = _uiState.value.orariSettimanaliModificati[areaId] ?: emptyMap()
         _uiState.update {
             it.copy(
-                editingOrariAreaId = areaId,
+                editingOrariArea = areaId,
                 showOrariDialog = true,
                 orariTemp = orariEsistenti
             )
@@ -164,7 +164,7 @@ class CompanyViewModel @Inject constructor( private val aziendaRepository: Azien
                 showAddDialog = false,
                 editingArea = null,
                 showOrariDialog = false,
-                editingOrariAreaId = null,
+                editingOrariArea = null,
                 orariTemp = emptyMap(),
                 showGiornoPublicazioneDialog = false,
                 giornoPublicazioneTemp = null,
@@ -192,14 +192,14 @@ class CompanyViewModel @Inject constructor( private val aziendaRepository: Azien
     }
 
     fun salvaOrariArea() {
-        val areaId = _uiState.value.editingOrariAreaId ?: return
+        val areaId = _uiState.value.editingOrariArea ?: return
         _uiState.update { current ->
             val nuoviOrariModificati = current.orariSettimanaliModificati.toMutableMap()
             nuoviOrariModificati[areaId] = current.orariTemp
             current.copy(
                 orariSettimanaliModificati = nuoviOrariModificati,
                 showOrariDialog = false,
-                editingOrariAreaId = null,
+                editingOrariArea = null,
                 orariTemp = emptyMap(),
                 hasChanges = true
             )
@@ -210,17 +210,16 @@ class CompanyViewModel @Inject constructor( private val aziendaRepository: Azien
         _uiState.update {
             it.copy(
                 showOrariDialog = false,
-                editingOrariAreaId = null,
+                editingOrariArea = null,
                 orariTemp = emptyMap()
             )
         }
     }
 
-    // AGGIORNA la funzione di rimozione area per rimuovere anche gli orari
     fun removeAreaModificata(area: AreaLavoro) {
         _uiState.update { current ->
-            val nuoveAree = current.areeModificate.filterNot { it.id == area.id }
-            val nuoviOrari = current.orariSettimanaliModificati.filterKeys { it != area.id }
+            val nuoveAree = current.areeModificate.filterNot { it.nomeArea == area.nomeArea }
+            val nuoviOrari = current.orariSettimanaliModificati.filterKeys { it != area.nomeArea }
             current.copy(
                 areeModificate = nuoveAree,
                 orariSettimanaliModificati = nuoviOrari,
@@ -238,7 +237,7 @@ class CompanyViewModel @Inject constructor( private val aziendaRepository: Azien
             val orariDaSalvare = _uiState.value.orariSettimanaliModificati
 
             val areeAggiornate = areeDaSalvare.map { area ->
-                val nuoviOrari = orariDaSalvare[area.id] ?: area.orariSettimanali
+                val nuoviOrari = orariDaSalvare[area.nomeArea] ?: area.orariSettimanali
                 area.copy(orariSettimanali = nuoviOrari)
             }
 
@@ -317,7 +316,7 @@ class CompanyViewModel @Inject constructor( private val aziendaRepository: Azien
     fun updateAreaModificata(id: String, nuovoNome: String) {
         _uiState.update { current ->
             val nuoveAree = current.areeModificate.map {
-                if (it.id == id) it.copy(nomeArea = nuovoNome) else it
+                if (it.nomeArea == id) it.copy(nomeArea = nuovoNome) else it
             }
             current.copy(areeModificate = nuoveAree, hasChanges = true)
         }

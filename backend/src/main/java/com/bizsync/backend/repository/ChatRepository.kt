@@ -226,7 +226,7 @@ private fun ChatDto.toDomainModel(currentUserId: String): Chat {
             else -> ChatType.GENERALE
         },
         nome = nome,
-        dipartimentoId = dipartimentoId,
+        dipartimento = dipartimentoId,
         partecipanti = partecipanti,
         ultimoMessaggio = ultimoMessaggio,
         ultimoMessaggioTimestamp = ultimoMessaggioTimestamp?.toDate(),

@@ -152,7 +152,7 @@ fun PianificaDipendentiCore(
     // Inizializza i dati del dipendente
     LaunchedEffect(Unit) {
         val dipartimenti = userState.azienda.areeLavoro
-        val dipartimento = dipartimenti.find { it.id == userState.user.dipartimento}
+        val dipartimento = dipartimenti.find { it.nomeArea == userState.user.dipartimento}
         if(dipartimento != null)
         employeeVM.inizializzaDatiEmployee(userState.user.uid, userState.azienda.idAzienda, dipartimento)
     }

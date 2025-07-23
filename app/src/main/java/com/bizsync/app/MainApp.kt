@@ -15,6 +15,7 @@ import com.bizsync.domain.constants.sealedClass.OnboardingScreen
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.bizsync.app.screens.SplashScreenWithProgress
 import com.bizsync.app.screensMore.AppScaffold
@@ -31,7 +32,7 @@ fun MainApp(onLogout: () -> Unit) {
     val uid = FirebaseAuth.getInstance().currentUser?.uid
 
     // 🔥 TIMER SEMPLICE: Si resetta automaticamente ad ogni ricomposizione
-    var showingSplash by remember(check, uid) { mutableStateOf(check == null) }
+    var showingSplash by rememberSaveable { mutableStateOf(true) }
 
     userState.resultMsg?.let { error ->
         StatusDialog(

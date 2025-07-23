@@ -7,7 +7,6 @@ import com.bizsync.backend.repository.WeeklyShiftRepository
 import com.bizsync.cache.dao.TimbraturaDao
 import com.bizsync.cache.dao.TurnoDao
 import com.bizsync.cache.dao.UserDao
-import com.bizsync.cache.mapper.UserEntityMapper.toDomain
 import com.bizsync.cache.mapper.toDomain
 import com.bizsync.cache.mapper.toDomainList
 import com.bizsync.domain.constants.enumClass.TipoTimbratura
@@ -21,8 +20,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.DayOfWeek
 import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.temporal.TemporalAdjusters
 import javax.inject.Inject
 import kotlin.text.ifEmpty
 
@@ -140,7 +137,6 @@ class ManagerHomeViewModel @Inject constructor(
         }
     }
 
-    // 📈 NUOVA FUNZIONE DI CALCOLO SEMPLIFICATA
     private fun calculateSimplifiedTodayStats(
         todayShifts: List<Turno>,
         todayTimbrature: List<Timbratura>,
@@ -149,49 +145,52 @@ class ManagerHomeViewModel @Inject constructor(
         val today = LocalDate.now()
         val dayOfWeek = today.dayOfWeek
 
+        Log.d("TodayStats", "📅 Calcolo statistiche per il giorno: $today ($dayOfWeek)")
+
         // 1️⃣ TURNI TOTALI ASSEGNATI OGGI
         val turniTotaliAssegnati = todayShifts.size
+        Log.d("TodayStats", "✅ Turni totali assegnati oggi: $turniTotaliAssegnati")
 
         // 2️⃣ UTENTI ATTIVI OGGI (con turni assegnati)
         val utentiAttiviOggi = todayShifts
             .flatMap { it.idDipendenti }
             .distinct()
             .size
+        Log.d("TodayStats", "👥 Utenti attivi oggi (con turni): $utentiAttiviOggi")
 
-
+        // 3️⃣ Dipartimenti con turni e orari (usando orari dell'azienda)
         val dipartimentiConTurni = todayShifts
-            .groupBy { it.dipartimentoId }
-            .mapValues { (dipartimentoId, turni) ->
+            .groupBy { it.dipartimento }
+            .mapValues { (dipartimento, turni) ->
 
-                Log.d("DipartimentoCheck", "Analizzo dipartimento: $dipartimentoId con ${turni.size} turni")
+                Log.d("DipartimentoCheck", "🔍 Analizzo dipartimento: $dipartimento con ${turni.size} turni")
 
-                val areaLavoro = azienda.areeLavoro.find { it.id == dipartimentoId }
+                val areaLavoro = azienda.areeLavoro.find { it.nomeArea == dipartimento }
 
                 if (areaLavoro == null) {
-                    Log.w("DipartimentoCheck", "⚠️ Nessuna areaLavoro trovata per ID: $dipartimentoId")
+                    Log.w("DipartimentoCheck", "⚠️ Nessuna areaLavoro trovata per: $dipartimento")
                 } else {
-                    Log.d("DipartimentoCheck", "Area trovata: ${areaLavoro.nomeArea}")
+                    Log.d("DipartimentoCheck", "✅ Area trovata: ${areaLavoro.nomeArea}")
                 }
 
                 val orari = areaLavoro?.orariSettimanali?.get(dayOfWeek)
-
                 if (orari == null) {
                     Log.w("OrariCheck", "⚠️ Nessun orario per $dayOfWeek in area: ${areaLavoro?.nomeArea}")
                 } else {
-                    Log.d("OrariCheck", "Orari per $dayOfWeek: apertura=${orari.first}, chiusura=${orari.second}")
+                    Log.d("OrariCheck", "⏰ Orari per $dayOfWeek: apertura=${orari.first}, chiusura=${orari.second}")
                 }
 
                 DipartimentoInfo(
-                    nome = areaLavoro?.nomeArea ?: dipartimentoId,
+                    nome = areaLavoro?.nomeArea ?: dipartimento,
                     orarioApertura = orari?.first?.toString() ?: "N/A",
                     orarioChiusura = orari?.second?.toString() ?: "N/A",
                     numeroTurni = turni.size
                 )
             }
 
-
         val dipartimentiAperti = dipartimentiConTurni.size
         val dipartimentiDetails = dipartimentiConTurni.values.toList()
+        Log.d("TodayStats", "🏢 Dipartimenti aperti oggi: $dipartimentiAperti")
 
         // 4️⃣ ANALISI STATO TURNI
         val turniConStato = todayShifts.map { turno ->
@@ -199,16 +198,23 @@ class ManagerHomeViewModel @Inject constructor(
             val haEntrata = timbratureTurno.any { it.tipoTimbratura == TipoTimbratura.ENTRATA }
             val haUscita = timbratureTurno.any { it.tipoTimbratura == TipoTimbratura.USCITA }
 
-            when {
+            val stato = when {
                 haEntrata && haUscita -> "COMPLETATO"
                 haEntrata && !haUscita -> "INIZIATO"
                 else -> "DA_INIZIARE"
             }
+
+            Log.d("TurniStato", "📊 Turno ID=${turno.id}: $stato")
+            stato
         }
 
         val turniCompletati = turniConStato.count { it == "COMPLETATO" }
         val turniIniziati = turniConStato.count { it == "INIZIATO" }
         val turniDaIniziare = turniConStato.count { it == "DA_INIZIARE" }
+
+        Log.d("TodayStats", "✅ Turni completati: $turniCompletati")
+        Log.d("TodayStats", "⏳ Turni iniziati: $turniIniziati")
+        Log.d("TodayStats", "🕒 Turni da iniziare: $turniDaIniziare")
 
         return TodayStats(
             turniTotaliAssegnati = turniTotaliAssegnati,
@@ -220,6 +226,7 @@ class ManagerHomeViewModel @Inject constructor(
             dipartimentiDetails = dipartimentiDetails
         )
     }
+
 
     private suspend fun loadRecentTimbrature() {
         try {

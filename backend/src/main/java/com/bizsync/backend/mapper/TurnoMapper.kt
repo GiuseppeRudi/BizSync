@@ -1,7 +1,6 @@
 package com.bizsync.backend.mapper
 
 import com.bizsync.backend.dto.TurnoDto
-import com.bizsync.backend.mapper.PausaMapper.toDomain
 import com.bizsync.domain.model.Turno
 import com.bizsync.domain.constants.enumClass.ZonaLavorativa
 import com.bizsync.domain.utils.DateUtils.toFirebaseTimestamp
@@ -26,7 +25,7 @@ object TurnoMapper {
             idDipendenti = dto.idDipendenti,
             orarioInizio = orarioInizioLocalTime,
             orarioFine = orarioFineLocalTime,
-            dipartimentoId = dto.dipartimentoId,
+            dipartimento = dto.dipartimento,
             data = dataLocalDate,
             zoneLavorative = dto.zoneLavorative.toZoneLavorativeMap(), // 🆕 Conversione
             pause = dto.pause.toDomainList(),
@@ -50,7 +49,7 @@ object TurnoMapper {
             idDipendenti = domain.idDipendenti,
             orarioInizio = orarioInizioTimestamp,
             orarioFine = orarioFineTimestamp,
-            dipartimentoId = domain.dipartimentoId,
+            dipartimento = domain.dipartimento,
             data = dataTimestamp,
             zoneLavorative = domain.zoneLavorative.toStringMap(),
             note = domain.note.toDtoList(),

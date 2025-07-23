@@ -16,7 +16,7 @@ fun Turno.generateTurnoHash(): String {
         idDipendenti.joinToString(","),
         orarioInizio,
         orarioFine,
-        dipartimentoId,
+        dipartimento,
         data.toString(),
         note,
         createdAt.toString(),

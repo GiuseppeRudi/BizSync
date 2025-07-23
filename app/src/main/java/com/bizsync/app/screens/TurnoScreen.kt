@@ -63,7 +63,7 @@ fun TurnoScreen(
 
 
     LaunchedEffect(giornoSelezionato) {
-        managerVM.setturniDipartimento(giornoSelezionato?.dayOfWeek ?: DayOfWeek.MONDAY, dipartimento.id)
+        managerVM.setturniDipartimento(giornoSelezionato?.dayOfWeek ?: DayOfWeek.MONDAY, dipartimento.nomeArea)
     }
 
     // Gestione fullscreen
@@ -273,7 +273,7 @@ fun TurnoScreen(
                 Button(
                     onClick = {
                         managerVM.saveTurno(
-                            dipartimentoId = dipartimento.id,
+                            dipartimento = dipartimento.nomeArea,
                             giornoSelezionato = giornoSelezionato!!,
                             idAzienda = userState.azienda.idAzienda
                         )

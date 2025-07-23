@@ -7,10 +7,8 @@ import java.time.LocalTime
 
 // @Serializable
 data class AreaLavoro(
-    val id: String = UUID.randomUUID().toString(),
     var nomeArea: String = "",
 
-    // Conversione in LocalTime
     val orariSettimanali: Map<DayOfWeek, Pair<LocalTime, LocalTime>> = mapOf(
         DayOfWeek.MONDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
         DayOfWeek.TUESDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
@@ -20,5 +18,5 @@ data class AreaLavoro(
     )
 )
 {
-    constructor() : this(UUID.randomUUID().toString(),"")
+    constructor() : this("",emptyMap())
 }

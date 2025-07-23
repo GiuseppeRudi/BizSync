@@ -82,10 +82,10 @@ fun GestioneTurniDipartimentoScreen(
     LaunchedEffect(Unit) {
         if (weeklyShift != null && hasChangeShift) {
             Log.d("AVVIO", "GESTIONE TURNI DIARTERNALI")
-            managerVM.caricaTurniSettimanaEDipartimento(weeklyShift.weekStart,  dipartimento.id)
+            managerVM.caricaTurniSettimanaEDipartimento(weeklyShift.weekStart,  dipartimento.nomeArea)
         }
         else {
-            managerVM.setTurniGiornalieriDipartimento(dipartimento.id)
+            managerVM.setTurniGiornalieriDipartimento(dipartimento.nomeArea)
         }
     }
 
@@ -93,10 +93,10 @@ fun GestioneTurniDipartimentoScreen(
         if (weeklyShift != null && hasChangeShift) {
             Log.d("AVVIO", "GESTIONE TURNI DIARTERNALI")
             onHasUnsavedChanges(true)
-            managerVM.caricaTurniSettimanaEDipartimento(weeklyShift.weekStart,  dipartimento.id)
+            managerVM.caricaTurniSettimanaEDipartimento(weeklyShift.weekStart,  dipartimento.nomeArea)
         }
         else {
-            managerVM.setTurniGiornalieriDipartimento(dipartimento.id)
+            managerVM.setTurniGiornalieriDipartimento(dipartimento.nomeArea)
         }
     }
 

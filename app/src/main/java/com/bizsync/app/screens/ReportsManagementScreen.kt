@@ -1,6 +1,5 @@
 package com.bizsync.app.screens
 
-import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -15,33 +14,25 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.bizsync.domain.constants.enumClass.AbsenceStatus
 import com.bizsync.domain.constants.enumClass.AbsenceType
 import com.bizsync.domain.constants.enumClass.ReportFilter
 import com.bizsync.domain.model.*
 import com.bizsync.ui.model.ReportData
 import com.bizsync.ui.viewmodels.ReportsManagementViewModel
-import kotlinx.coroutines.launch
 import java.text.DecimalFormat
-import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
-import java.util.*
-import kotlin.math.*
 
 // Data classes per i report
 
@@ -1143,7 +1134,7 @@ fun ShiftDistributionChart(
     turni: List<Turno>,
     modifier: Modifier = Modifier
 ) {
-    val shiftsByDept = turni.groupBy { it.dipartimentoId }
+    val shiftsByDept = turni.groupBy { it.dipartimento }
         .mapValues { it.value.size }
 
     Card(
@@ -1359,7 +1350,7 @@ fun TodayShiftsList(
                                 horizontalAlignment = Alignment.End
                             ) {
                                 Text(
-                                    text = turno.dipartimentoId,
+                                    text = turno.dipartimento,
                                     fontSize = 12.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )

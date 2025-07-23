@@ -4,11 +4,9 @@ package com.bizsync.cache.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.bizsync.domain.constants.enumClass.EsitoTurno
 import com.google.firebase.Timestamp
 import java.time.LocalDate
 import java.time.LocalTime
-import java.util.UUID
 
 
 @Entity(tableName = "turni")
@@ -22,7 +20,7 @@ data class TurnoEntity(
     val data: LocalDate,
     val orarioInizio: LocalTime,
     val orarioFine: LocalTime,
-    val dipartimentoId: String,
+    val dipartimento: String,
     val zoneLavorativeJson: String = "{}", // Map<String, ZonaLavorativa> serializzata
     val noteJson: String = "[]", // List<Nota> serializzata
     val pauseJson: String = "[]", // List<Pausa> serializzata
