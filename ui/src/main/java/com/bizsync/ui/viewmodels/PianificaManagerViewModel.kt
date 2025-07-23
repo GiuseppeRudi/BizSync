@@ -9,6 +9,7 @@ import com.bizsync.cache.dao.AbsenceDao
 import com.bizsync.cache.dao.ContrattoDao
 import com.bizsync.cache.dao.TurnoDao
 import com.bizsync.cache.dao.UserDao
+import com.bizsync.cache.mapper.toDomain
 import com.bizsync.cache.mapper.toDomainList
 import com.bizsync.cache.mapper.toEntity
 import com.bizsync.cache.mapper.toEntityList
@@ -535,14 +536,7 @@ class PianificaManagerViewModel @Inject constructor(
         }
     }
 
-    fun editTurno()
-    {
 
-    }
-
-    fun deleteTurno(){
-
-    }
 
 
     fun setTurniGiornalieri(dayOfWeek: DayOfWeek, dipartimentiDelGiorno: List<AreaLavoro>) {
@@ -879,6 +873,160 @@ class PianificaManagerViewModel @Inject constructor(
 
 
     /**
+     * Carica un turno esistente per la modifica
+     */
+    fun editTurno(turnoId: String) {
+        viewModelScope.launch {
+            try {
+                setLoading(true)
+
+                // Recupera il turno dal database locale
+                val turnoEntity = turnoDao.getTurnoById(turnoId)
+
+                if (turnoEntity != null && !turnoEntity.isDeleted) {
+                    // Converti in domain model e caricalo per la modifica
+                    val turno = turnoEntity.toDomain()
+
+                    _uiState.update {
+                        it.copy(
+                            turnoInModifica = turno,
+                            showDialogCreateShift = true // Apre la schermata di modifica
+                        )
+                    }
+
+                    Log.d(TAG, "✅ Turno caricato per modifica: ${turno.titolo}")
+
+                } else {
+                    _uiState.update {
+                        it.copy(
+                            errorMessage = "Turno non trovato o già eliminato"
+                        )
+                    }
+                    Log.e(TAG, "❌ Turno non trovato per modifica: $turnoId")
+                }
+
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Errore durante il caricamento turno per modifica: ${e.message}")
+                _uiState.update {
+                    it.copy(
+                        errorMessage = "Errore durante il caricamento del turno: ${e.message}"
+                    )
+                }
+            } finally {
+                setLoading(false)
+            }
+        }
+    }
+
+    /**
+     * Elimina un turno con conferma (versione alternativa con dialog)
+     */
+    fun deleteTurnoWithConfirmation(turnoId: String, onConfirm: () -> Unit) {
+        // Questa versione può essere usata se vuoi mostrare un dialog di conferma
+        viewModelScope.launch {
+            try {
+                val turnoEntity = turnoDao.getTurnoById(turnoId)
+
+                if (turnoEntity != null && !turnoEntity.isDeleted) {
+                    // Mostra dialog di conferma
+                    _uiState.update {
+                        it.copy(
+                            turnoToDelete = turnoEntity.toDomain(),
+                            showDeleteConfirmDialog = true
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Errore durante la preparazione eliminazione: ${e.message}")
+            }
+        }
+    }
+
+    /**
+     * Annulla l'eliminazione del turno
+     */
+    fun cancelDeleteTurno() {
+        _uiState.update {
+            it.copy(
+                turnoToDelete = null,
+                showDeleteConfirmDialog = false
+            )
+        }
+    }
+
+    /**
+     * Elimina un turno (soft delete - imposta isDeleted = true)
+     */
+    fun deleteTurno(turnoId: String) {
+        viewModelScope.launch {
+            try {
+                setLoading(true)
+
+                // Recupera il turno dal database
+                val turnoEntity = turnoDao.getTurnoById(turnoId)
+
+                if (turnoEntity != null && !turnoEntity.isDeleted) {
+                    // Effettua soft delete impostando isDeleted = true
+                    val turnoEliminato = turnoEntity.copy(
+                        isDeleted = true,
+                        isSynced = false, // Marca come non sincronizzato per propagare la modifica
+                        updatedAt = com.google.firebase.Timestamp.now()
+                    )
+
+                    turnoDao.update(turnoEliminato)
+
+                    Log.d(TAG, "✅ Turno eliminato (soft delete): ${turnoEntity.titolo}")
+
+                    _uiState.update {
+                        it.copy(
+                            hasChangeShift = true,
+                            successMessage = "Turno eliminato con successo"
+                        )
+                    }
+
+                } else {
+                    _uiState.update {
+                        it.copy(
+                            errorMessage = if (turnoEntity?.isDeleted == true) {
+                                "Il turno è già stato eliminato"
+                            } else {
+                                "Turno non trovato"
+                            }
+                        )
+                    }
+                    Log.e(TAG, "❌ Turno non trovato o già eliminato: $turnoId")
+                }
+
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Errore durante l'eliminazione turno: ${e.message}")
+                _uiState.update {
+                    it.copy(
+                        errorMessage = "Errore durante l'eliminazione: ${e.message}"
+                    )
+                }
+            } finally {
+                setLoading(false)
+            }
+        }
+    }
+
+    /**
+     * Conferma l'eliminazione del turno
+     */
+    fun confirmDeleteTurno() {
+        val turnoToDelete = _uiState.value.turnoToDelete
+        if (turnoToDelete != null) {
+            deleteTurno(turnoToDelete.id)
+            _uiState.update {
+                it.copy(
+                    turnoToDelete = null,
+                    showDeleteConfirmDialog = false
+                )
+            }
+        }
+    }
+
+    /**
      * Salva il turno corrente
      */
     fun saveTurno( dipartimentoId : String, giornoSelezionato : LocalDate, idAzienda: String) {
@@ -923,7 +1071,7 @@ class PianificaManagerViewModel @Inject constructor(
 
                 Log.d(TAG, "✅ Turno salvato localmente in Room")
 
-                _uiState.update { it.copy(hasChangeShift = true, loading = false) }
+                _uiState.update { it.copy(hasChangeShift = true, loading = false, turnoInModifica = Turno()) }
 
             } catch (e: Exception) {
                 Log.e(TAG, "❌ Errore salvataggio turno locale: ${e.message}")
@@ -940,42 +1088,7 @@ class PianificaManagerViewModel @Inject constructor(
 
 
 
-    /**
-     * Elimina un turno
-     */
-    fun eliminaTurno(turnoId: String) {
-//        viewModelScope.launch {
-//            setLoading(true)
-//
-//            try {
-//                when (val result = turnoOrchestrator.eliminaTurno(turnoId)) {
-//                    is Resource.Success -> {
-//                        Log.d(TAG, "Turno eliminato con successo: $turnoId")
-//
-//                        // Aggiorna la lista dei turni
-//                        val turnoCorrente = _uiState.value.turnoInModifica
-//                        if (turnoCorrente != null) {
-//                            setTurniSettimanali(turnoCorrente.data)
-//                        }
-//
-//                        _uiState.update { it.copy(successMessage = "Turno eliminato con successo") }
-//                    }
-//                    is Resource.Error -> {
-//                        Log.e(TAG, "Errore eliminazione turno: ${result.message}")
-//                        _uiState.update { it.copy(errorMessage = result.message) }
-//                    }
-//                    else -> {
-//                        _uiState.update { it.copy(errorMessage = "Errore imprevisto durante l'eliminazione") }
-//                    }
-//                }
-//            } catch (e: Exception) {
-//                Log.e(TAG, "Eccezione durante l'eliminazione: ${e.message}")
-//                _uiState.update { it.copy(errorMessage = "Errore durante l'eliminazione: ${e.message}") }
-//            } finally {
-//                setLoading(false)
-//            }
-//        }
-    }
+
 
     // ========== GESTIONE MESSAGGI ==========
 

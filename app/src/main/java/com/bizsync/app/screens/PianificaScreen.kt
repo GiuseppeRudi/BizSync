@@ -713,6 +713,7 @@ fun PianificaManagerCore(
     }
 
 
+
     LaunchedEffect(selectionData)
     {
         pianificaVM.backToMain()
@@ -732,6 +733,7 @@ fun PianificaManagerCore(
         if(weeklyShiftRiferimento != null)
         {
             val weekStart = weeklyShiftRiferimento.weekStart
+            pianificaVM.syncTurniAvvio(weekStart)
             managerVM.setTurniSettimanali(weekStart,userState.azienda.idAzienda)
         }
     }
@@ -764,12 +766,10 @@ fun PianificaManagerCore(
                 hasUnsavedChanges = hasUnsavedChanges,
                 isLoading = isSyncing,
                 onSync = {
-                    // Sincronizza le modifiche dalla cache a Firebase
                     pianificaVM.syncTurni(weeklyShiftAttuale?.weekStart)
                 },
                 onStatoSettimana = { nuovoStato ->
-                    // Cambia lo stato della settimana
-                    // Questo attiverà automaticamente la sincronizzazione per DRAFT e PUBLISHED
+
                     pianificaVM.changeStatoWeeklyAttuale(nuovoStato)
                 }
             )
@@ -805,6 +805,7 @@ fun PianificaManagerCore(
                             onCreateShift = { pianificaVM.openCreateShift() },
                             managerVM = managerVM,
                             weeklyShift = weeklyShiftAttuale,
+                            onHasUnsavedChanges = { pianificaVM.setHasUnsavedChanges(it) },
                             onBack = { pianificaVM.backToMain() })
                     }
                 }

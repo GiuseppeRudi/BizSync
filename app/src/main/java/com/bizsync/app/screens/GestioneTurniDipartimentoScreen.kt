@@ -29,9 +29,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.bizsync.app.navigation.LocalScaffoldViewModel
 import com.bizsync.domain.model.AreaLavoro
 import com.bizsync.domain.model.Nota
 import com.bizsync.domain.model.Pausa
@@ -57,6 +59,7 @@ fun GestioneTurniDipartimentoScreen(
     onCreateShift: () -> Unit,
     onBack: () -> Unit,
     weeklyIsIdentical : Boolean,
+    onHasUnsavedChanges : (Boolean) -> Unit,
     managerVM : PianificaManagerViewModel ,
 ) {
     val userViewModel = LocalUserViewModel.current
@@ -67,8 +70,11 @@ fun GestioneTurniDipartimentoScreen(
     val managerState by managerVM.uiState.collectAsState()
     val turniGioDip = managerState.turniGiornalieriDip
 
-    val showDialogCreateShift = managerState.showDialogCreateShift
 
+    val scaffoldVm = LocalScaffoldViewModel.current
+    LaunchedEffect(Unit) {
+      scaffoldVm.onFullScreenChanged(false)
+    }
 
 
     val hasChangeShift = managerState.hasChangeShift
@@ -86,6 +92,7 @@ fun GestioneTurniDipartimentoScreen(
     LaunchedEffect(hasChangeShift) {
         if (weeklyShift != null && hasChangeShift) {
             Log.d("AVVIO", "GESTIONE TURNI DIARTERNALI")
+            onHasUnsavedChanges(true)
             managerVM.caricaTurniSettimanaEDipartimento(weeklyShift.weekStart,  dipartimento.id)
         }
         else {
@@ -97,6 +104,13 @@ fun GestioneTurniDipartimentoScreen(
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
+        DeleteTurnoConfirmDialog(
+            showDialog = managerState.showDeleteConfirmDialog,
+            turnoToDelete = managerState.turnoToDelete,
+            onConfirm = { managerVM.confirmDeleteTurno() },
+            onDismiss = { managerVM.cancelDeleteTurno() }
+        )
+
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize() ,
@@ -120,17 +134,63 @@ fun GestioneTurniDipartimentoScreen(
             }
 
             item {
-                SectionHeader("Turni Assegnati", "${turniGioDip.size} turni")
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Scritta "Turni Assegnati" con numero
+                    Text(
+                        text = "Turni Assegnati (${turniGioDip.size} turni)",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.weight(1f) // Occupa tutto lo spazio disponibile
+                    )
+
+                    if (weeklyIsIdentical) {
+                        // FloatingActionButton per AI
+                        FloatingActionButton(
+                            onClick = {
+                                managerVM.generateTurniWithAI(
+                                    dipartimento = dipartimento,
+                                    giornoSelezionato = giornoSelezionato
+                                )
+                            },
+                            containerColor = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.size(40.dp) // opzionale per rendere più piccoli
+                        ) {
+                            Icon(Icons.Default.AutoAwesome, contentDescription = "Genera con AI")
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        // FloatingActionButton per aggiungere turno
+                        FloatingActionButton(
+                            onClick = onCreateShift,
+                            modifier = Modifier.size(40.dp) // opzionale per rendere più piccoli
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = "Aggiungi Turno")
+                        }
+                    }
+                }
             }
+
 
             if (turniGioDip.isNotEmpty()) {
                 items(turniGioDip) { turno ->
                     TurnoAssegnatoCard(
                         turno = turno,
                         isIdentical = weeklyIsIdentical,
-                        onEdit = { managerVM.editTurno() },
-                        onDelete = { managerVM.deleteTurno() },
-                        dipendenti = managerState.dipendenti
+                        onEdit = { managerVM.editTurno(turno.id)
+                                 onCreateShift()
+                                 },
+                        onDelete = {
+                            // Mostra dialog di conferma prima dell'eliminazione
+                            managerVM.deleteTurnoWithConfirmation(turno.id) {
+                                // Callback eseguito dopo la conferma
+                            }
+                        },
+                        dipendenti = managerState.dipendenti.filter { it.uid in turno.idDipendenti }
                     )
                 }
             } else {
@@ -142,36 +202,7 @@ fun GestioneTurniDipartimentoScreen(
         }
 
 
-        if(weeklyIsIdentical)
-        {
-            // ✅ FAB posizionato correttamente sopra la LazyColumn
-            FloatingActionButton(
-                onClick =  onCreateShift ,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Aggiungi Turno")
-            }
-        }
 
-        FloatingActionButton(
-            onClick = {
-                managerVM.generateTurniWithAI(
-                    dipartimento = dipartimento,
-                    giornoSelezionato = giornoSelezionato
-                )
-            },
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(16.dp),
-            containerColor = MaterialTheme.colorScheme.secondary
-        ) {
-            Icon(
-                imageVector = Icons.Default.AutoAwesome, // Icona AI
-                contentDescription = "Genera Turni con AI"
-            )
-        }
 
 // Dialog per mostrare risultati AI
         if (managerState.showAIResultDialog) {
@@ -211,6 +242,92 @@ fun GestioneTurniDipartimentoScreen(
 
 
 }
+
+
+@Composable
+fun DeleteTurnoConfirmDialog(
+    showDialog: Boolean,
+    turnoToDelete: Turno?,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    if (showDialog && turnoToDelete != null) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = {
+                Text(
+                    text = "Elimina Turno",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        text = "Sei sicuro di voler eliminare il turno:",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(12.dp)
+                        ) {
+                            Text(
+                                text = turnoToDelete.titolo,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                            Text(
+                                text = "${turnoToDelete.orarioInizio} - ${turnoToDelete.orarioFine}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                            Text(
+                                text = "${turnoToDelete.idDipendenti.size} dipendenti assegnati",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Questa azione non può essere annullata.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        fontStyle = FontStyle.Italic
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = onConfirm,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Elimina")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = onDismiss) {
+                    Text("Annulla")
+                }
+            }
+        )
+    }
+}
+
+
 @Composable
 fun TurnoAssegnatoCard(
     turno: Turno,

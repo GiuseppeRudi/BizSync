@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.orchestrator.TurnoOrchestrator
 import com.bizsync.backend.repository.TurnoRepository
 import com.bizsync.backend.repository.WeeklyShiftRepository
+import com.bizsync.cache.dao.TurnoDao
 import com.bizsync.domain.constants.enumClass.PianificaScreenManager
 import com.bizsync.domain.constants.enumClass.WeeklyShiftStatus
 import com.bizsync.domain.constants.sealedClass.Resource
@@ -30,6 +31,7 @@ import javax.inject.Inject
         private val turnoRepository: TurnoRepository,
         private val weeklyShiftRepository: WeeklyShiftRepository,
         private val turnoOrchestrator: TurnoOrchestrator,
+        private val turnoDao : TurnoDao
     ) : ViewModel() {
 
 
@@ -293,6 +295,35 @@ import javax.inject.Inject
                             isSyncing = false,
                             errorMsg = "Errore durante il cambio di stato: ${e.message}"
                         )
+                    }
+                }
+            }
+        }
+
+        fun syncTurniAvvio(weekStart: LocalDate) {
+            viewModelScope.launch {
+                try {
+                    // Calcolo range settimanale
+                    val weekEnd = weekStart.plusDays(6)
+
+                    // 🔽 Ottieni i turni locali non sincronizzati nel range
+                    val turniNonSync = turnoDao.getTurniInRangeNonSync(
+                        weekStart = weekStart,
+                        weekEnd = weekEnd
+                    )
+
+                    // 🔍 Log
+                    Log.d(TAG, "📦 Turni non sincronizzati trovati: ${turniNonSync.size}")
+
+                    // ✅ Se esistono turni modificati → aggiorna stato
+                    if (turniNonSync.isNotEmpty()) {
+                        _uistate.update { it.copy(hasUnsavedChanges = true) }
+                    }
+
+                } catch (e: Exception) {
+                    Log.e(TAG, "❌ Errore durante syncTurni: ${e.message}")
+                    _uistate.update {
+                        it.copy(errorMsg = "Errore nel controllo modifiche locali")
                     }
                 }
             }

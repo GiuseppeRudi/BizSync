@@ -38,10 +38,20 @@ interface TurnoDao {
 //    @Query("SELECT * FROM turni WHERE dipendente = :idDipendente ORDER BY data DESC")
 //    suspend fun getTurniByDipendente(idDipendente: String): List<TurnoEntity>
 
+    @Query("""
+    SELECT * FROM turni 
+    WHERE data BETWEEN :weekStart AND :weekEnd 
+    AND isSynced = 0
+""")
+    suspend fun getTurniInRangeNonSync(
+        weekStart: LocalDate,
+        weekEnd: LocalDate
+    ): List<TurnoEntity>
+
 
     @Query("""
         SELECT * FROM turni
-        WHERE data BETWEEN :startDate AND :endDate
+        WHERE data BETWEEN :startDate AND :endDate AND isDeleted = 0
         ORDER BY data ASC
     """)
     suspend fun fetchTurniSettimana(startDate: LocalDate, endDate: LocalDate): List<TurnoEntity>

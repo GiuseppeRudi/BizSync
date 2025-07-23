@@ -48,7 +48,6 @@ fun TurnoScreen(
     onHasUnsavedChanges: (Boolean) -> Unit,
     onBack: () -> Unit,
     managerVM: PianificaManagerViewModel,
-    turnoId: String? = null
 ) {
     val scaffoldVM: ScaffoldViewModel = LocalScaffoldViewModel.current
     val userVM = LocalUserViewModel.current
@@ -58,23 +57,9 @@ fun TurnoScreen(
     val turnoCorrente = managerState.turnoInModifica
     val isLoading = managerState.loading
     val errorMessage = managerState.errorMessage
-    val successMessage = managerState.successMessage
     val disponibilitaMembriTurno = managerState.disponibilitaMembriTurno
 
-    // Inizializza il turno all'avvio
-    LaunchedEffect(giornoSelezionato, turnoId) {
-        if (turnoId != null) {
-            // Carica turno esistente per modifica
-            // Qui dovresti implementare la logica per caricare il turno dal database
-            // Per ora assumiamo che il turno sia già disponibile
-        } else if (giornoSelezionato != null) {
-            // Crea nuovo turno
-            managerVM.iniziaNuovoTurno(
-                giornoSelezionato = giornoSelezionato,
-                idAzienda = userState.azienda.idAzienda
-            )
-        }
-    }
+
 
 
     LaunchedEffect(giornoSelezionato) {
@@ -116,25 +101,11 @@ fun TurnoScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick ={managerVM.pulisciTurnoInModifica()
+                                            onBack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Indietro")
                     }
                 },
-                actions = {
-                    if (managerState.isModificaTurno) {
-                        IconButton(
-                            onClick = {
-                                managerVM.eliminaTurno(turnoCorrente.id)
-                            }
-                        ) {
-                            Icon(
-                                Icons.Default.Delete,
-                                contentDescription = "Elimina turno",
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    }
-                }
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }

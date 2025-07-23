@@ -52,7 +52,7 @@ object TurnoMapper {
             orarioFine = orarioFineTimestamp,
             dipartimentoId = domain.dipartimentoId,
             data = dataTimestamp,
-            zoneLavorative = domain.zoneLavorative.toStringMap(), 
+            zoneLavorative = domain.zoneLavorative.toStringMap(),
             note = domain.note.toDtoList(),
             pause = domain.pause.toDtoList(),
             createdAt = domain.createdAt.toFirebaseTimestamp(),

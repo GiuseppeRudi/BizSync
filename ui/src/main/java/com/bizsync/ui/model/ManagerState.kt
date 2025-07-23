@@ -21,6 +21,9 @@ data class ManagerState(
     val turniGiornalieriDip: List<Turno> = emptyList(),
     val showDialogCreateShift: Boolean = false,
 
+    // 🆕 NUOVE PROPRIETÀ PER GESTIONE ELIMINAZIONE
+    val turnoToDelete: Turno? = null,
+    val showDeleteConfirmDialog: Boolean = false,
 
     // dipendentiT
     val dipendenti : List<User> = emptyList(),

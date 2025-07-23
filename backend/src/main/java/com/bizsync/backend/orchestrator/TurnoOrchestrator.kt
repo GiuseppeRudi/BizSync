@@ -88,15 +88,14 @@ class TurnoOrchestrator @Inject constructor(
                         turno.idFirebase?.let { firebaseId ->
                             when (val result = turnoRepository.deleteTurnoFromFirebase(firebaseId)) {
                                 is Resource.Success -> {
-//                                    turnoRepository.deleteTurnoFromCache(turno)
+                                    turnoDao.deleteTurno(turno)
                                     turniEliminati++
                                 }
                                 is Resource.Error -> {
                                     return Resource.Error("Errore eliminazione turno: ${result.message}")
                                 }
                                 is Resource.Empty -> {
-                                    // Turno già eliminato da Firebase, rimuovi solo dalla cache
-//                                    turnoRepository.deleteTurnoFromCache(turno)
+                                    turnoDao.deleteTurno(turno)
                                     turniEliminati++
                                 }
                             }
