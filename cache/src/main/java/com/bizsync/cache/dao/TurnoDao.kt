@@ -202,6 +202,9 @@ interface TurnoDao {
         endDate: LocalDate = LocalDate.now()
     ): List<TurnoEntity>
 
+    @Query("DELETE FROM turni")
+    suspend fun clearAll()
+
     @Query("""
         SELECT * FROM turni 
         WHERE data BETWEEN :startDate AND :endDate

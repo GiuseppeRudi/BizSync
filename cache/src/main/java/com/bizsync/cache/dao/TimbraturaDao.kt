@@ -11,6 +11,8 @@ import java.time.LocalDateTime
 @Dao
 interface TimbraturaDao {
 
+    @Query("DELETE FROM timbrature")
+    suspend fun clearAll()
 
     @Query("""
         SELECT * FROM timbrature 

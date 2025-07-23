@@ -119,10 +119,7 @@ fun GestioneNavigator(
         }
 
         composable(GestioneScreenRoute.Security.route) {
-            LogoutManagementScreen(
-                onLogout = onLogout,
-                onBackClick = { navController.popBackStack() }
-            )
+            LogoutManagementScreen( onLogout = onLogout)
         }
 
         // Employee Screens
