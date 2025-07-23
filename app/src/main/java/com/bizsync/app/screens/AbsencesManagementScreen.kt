@@ -1,5 +1,6 @@
 package com.bizsync.app.screens
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -19,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -76,7 +78,7 @@ fun AbsencesManagementScreen(onBackClick: () -> Unit) {
     else{
         Box(modifier = Modifier.fillMaxSize()) {
             when (absenceState.selectedTab) {
-                0 -> RequestsListContent(absenceVM)
+                0 -> RequestsListContent(absenceVM, onBackClick)
                 2 -> NewAbsenceRequestScreen(
                     userVM,
                     absenceVM,
@@ -90,10 +92,9 @@ fun AbsencesManagementScreen(onBackClick: () -> Unit) {
 
 
 }
-
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun RequestsListContent(absenceVM: AbsenceViewModel) {
+private fun RequestsListContent(absenceVM: AbsenceViewModel, onBack: () -> Unit) {
     val uiState by absenceVM.uiState.collectAsState()
     val requests = uiState.absences
 
@@ -101,22 +102,63 @@ private fun RequestsListContent(absenceVM: AbsenceViewModel) {
     val userState by userVM.uiState.collectAsState()
     val contratto = userState.contratto
 
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+
+
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Le Mie Assenze",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Medium
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            contentDescription = "Indietro",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { absenceVM.setSelectedTab(2) }) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Nuova richiesta",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface
+                ),
+                scrollBehavior = scrollBehavior
+            )
+        }
+    ) { paddingValues ->
+
+
         if (requests.isEmpty()) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .padding(paddingValues)
                     .padding(16.dp)
             ) {
-                // Card statistiche anche quando è vuoto
+                Spacer(modifier = Modifier.height(24.dp)) // più spazio
+
                 contratto?.let {
-                    StatisticsCard(contratto = it, absenceVM )
-                    Spacer(modifier = Modifier.height(16.dp))
+                    StatisticsCard(contratto = it, absenceVM)
+                    Spacer(modifier = Modifier.height(24.dp))
                 }
 
-                // Messaggio di lista vuota
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -138,22 +180,24 @@ private fun RequestsListContent(absenceVM: AbsenceViewModel) {
                 }
             }
         } else {
-
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = 80.dp), // spazio per il FAB
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .padding(paddingValues),
+                contentPadding = PaddingValues(
+                    top = 24.dp,
+                    bottom = 80.dp, // spazio per eventuali bottoni
+                    start = 16.dp,
+                    end = 16.dp
+                ),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Prima item: Card delle statistiche
                 item {
                     contratto?.let {
                         StatisticsCard(contratto = it, absenceVM)
                     }
                 }
 
-                // Divider tra statistiche e richieste
                 item {
                     Row(
                         modifier = Modifier
@@ -177,24 +221,16 @@ private fun RequestsListContent(absenceVM: AbsenceViewModel) {
                     }
                 }
 
-                // Lista delle richieste
                 items(requests) { request ->
                     AbsenceRequestCard(request = request)
                 }
             }
         }
-
-        // FAB sempre visibile
-        FloatingActionButton(
-            onClick = { absenceVM.setSelectedTab(2) },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp)
-        ) {
-            Icon(imageVector = Icons.Default.Add, contentDescription = "Nuova richiesta")
-        }
     }
 }
+
+
+
 // Aggiorna StatisticsCard per calcolare anche le richieste pending
 @Composable
 private fun StatisticsCard(contratto: Contratto, absenceVM: AbsenceViewModel) {
