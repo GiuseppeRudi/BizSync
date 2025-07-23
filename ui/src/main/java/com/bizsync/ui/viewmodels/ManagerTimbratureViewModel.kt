@@ -23,7 +23,10 @@ class ManagerTimbratureViewModel @Inject constructor(
 
     fun loadTimbrature(idAzienda: String, startDate: LocalDate, endDate: LocalDate) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
+            _uiState.value = _uiState.value.copy(
+                isLoading = true,
+                idAzienda = idAzienda // Salva l'ID azienda nello stato
+            )
 
             when (val result = timbraturaRepository.getTimbratureByAzienda(
                 idAzienda, startDate, endDate
@@ -56,9 +59,11 @@ class ManagerTimbratureViewModel @Inject constructor(
 
     fun verificaTimbratura(idTimbratura: String) {
         viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+
             when (val result = timbraturaRepository.verificaTimbratura(idTimbratura)) {
                 is Resource.Success -> {
-                    // Ricarica le timbrature
+                    // Ricarica le timbrature per aggiornare lo stato
                     _uiState.value.selectedDate?.let { date ->
                         loadTimbrature(
                             _uiState.value.idAzienda,
@@ -69,15 +74,19 @@ class ManagerTimbratureViewModel @Inject constructor(
 
                     _uiState.value = _uiState.value.copy(
                         showSuccess = true,
-                        successMessage = "Timbratura verificata"
+                        successMessage = "Timbratura verificata con successo",
+                        selectedTimbratura = null // Chiudi il dialog automaticamente
                     )
                 }
                 is Resource.Error -> {
                     _uiState.value = _uiState.value.copy(
+                        isLoading = false,
                         error = result.message
                     )
                 }
-                else -> {}
+                else -> {
+                    _uiState.value = _uiState.value.copy(isLoading = false)
+                }
             }
         }
     }
@@ -86,12 +95,41 @@ class ManagerTimbratureViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(selectedTimbratura = timbratura)
     }
 
+    // NUOVA FUNZIONE: Per chiudere il dialog dei dettagli
+    fun clearSelectedTimbratura() {
+        _uiState.value = _uiState.value.copy(selectedTimbratura = null)
+    }
+
     fun dismissError() {
         _uiState.value = _uiState.value.copy(error = null)
     }
 
     fun dismissSuccess() {
         _uiState.value = _uiState.value.copy(showSuccess = false)
+    }
+
+    // FUNZIONE EXTRA: Per ricaricare rapidamente i dati correnti
+    fun refreshCurrentData() {
+        val currentState = _uiState.value
+        if (currentState.idAzienda.isNotEmpty() && currentState.selectedDate != null) {
+            loadTimbrature(
+                currentState.idAzienda,
+                currentState.selectedDate,
+                currentState.selectedDate
+            )
+        }
+    }
+
+    // FUNZIONE EXTRA: Per cambiare data e ricaricare automaticamente
+    fun changeDate(newDate: LocalDate) {
+        val currentState = _uiState.value
+        if (currentState.idAzienda.isNotEmpty()) {
+            loadTimbrature(
+                currentState.idAzienda,
+                newDate,
+                newDate
+            )
+        }
     }
 }
 

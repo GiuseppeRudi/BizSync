@@ -1,5 +1,6 @@
 package com.bizsync.ui.viewmodels
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.repository.WeeklyShiftRepository
@@ -12,22 +13,35 @@ import com.bizsync.cache.mapper.toDomainList
 import com.bizsync.domain.constants.enumClass.TipoTimbratura
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.*
+import com.bizsync.domain.utils.WeeklyPublicationCalculator
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.TemporalAdjusters
 import javax.inject.Inject
+import kotlin.text.ifEmpty
 
 
-
-// Data classes per il ViewModel
 data class TodayStats(
-    val presenti: Int = 0,
-    val assenti: Int = 0,
-    val turniAttivi: Int = 0
+    val turniTotaliAssegnati: Int = 0,
+    val dipartimentiAperti: Int = 0,
+    val utentiAttiviOggi: Int = 0,
+    val turniCompletati: Int = 0,
+    val turniIniziati: Int = 0,
+    val turniDaIniziare: Int = 0,
+    val dipartimentiDetails: List<DipartimentoInfo> = emptyList()
+)
+
+data class DipartimentoInfo(
+    val nome: String,
+    val orarioApertura: String,
+    val orarioChiusura: String,
+    val numeroTurni: Int
 )
 
 data class TimbratureWithUser(
@@ -44,11 +58,9 @@ enum class UrgencyLevel {
     LOW, MEDIUM, HIGH, CRITICAL
 }
 
-enum class HomeScreenRoute {
-    Timbrature, Shifts, Reports, Absences
-}
 
 data class ManagerHomeState(
+    val azienda : Azienda = Azienda(),
     val todayStats: TodayStats = TodayStats(),
     val recentTimbrature: List<TimbratureWithUser> = emptyList(),
     val todayShifts: List<TurnoWithUsers> = emptyList(),
@@ -70,17 +82,13 @@ class ManagerHomeViewModel @Inject constructor(
     private val _homeState = MutableStateFlow(ManagerHomeState())
     val homeState = _homeState.asStateFlow()
 
-    init {
-        loadHomeData()
-    }
 
-    private fun loadHomeData() {
+    fun loadHomeManagerData(azienda : Azienda) {
         viewModelScope.launch {
-            _homeState.update { it.copy(isLoading = true) }
+            _homeState.update { it.copy(isLoading = true, azienda = azienda) }
 
             try {
-                // Carica tutti i dati in parallelo
-                launch { loadTodayStats() }
+                launch { loadTodayStats(azienda) }
                 launch { loadRecentTimbrature() }
                 launch { loadTodayShifts() }
                 launch { loadShiftPublicationInfo() }
@@ -95,23 +103,25 @@ class ManagerHomeViewModel @Inject constructor(
             }
         }
     }
-
-    private suspend fun loadTodayStats() {
+    // 🔧 FUNZIONE CARICAMENTO AGGIORNATA
+    private suspend fun loadTodayStats(azienda : Azienda) {
         try {
             val today = LocalDate.now()
-
 
             // Prendi tutti i turni di oggi
             val todayShifts = turnoDao.getTurniByDate(today).first()
 
+            val startOfDay = today.atStartOfDay().toString()         // "2025-07-23T00:00"
+            val endOfDay = today.atTime(23, 59, 59).toString()
             // Prendi tutte le timbrature di oggi
-            val todayTimbrature = timbratureDao.getTimbratureByDate(today).first()
-
-            // Prendi tutti gli utenti attivi
-            val activeUsers = userDao.getDipendentiFull()
+            val todayTimbrature = timbratureDao.getTimbratureByDate(startOfDay,endOfDay).first()
 
             // Calcola statistiche
-            val stats = calculateTodayStats(todayShifts.toDomainList(), todayTimbrature.toDomainList(), activeUsers.toDomainList())
+            val stats = calculateSimplifiedTodayStats(
+                todayShifts.toDomainList(),
+                todayTimbrature.toDomainList(),
+                azienda
+            )
 
             _homeState.update {
                 it.copy(
@@ -130,49 +140,84 @@ class ManagerHomeViewModel @Inject constructor(
         }
     }
 
-    private fun calculateTodayStats(
+    // 📈 NUOVA FUNZIONE DI CALCOLO SEMPLIFICATA
+    private fun calculateSimplifiedTodayStats(
         todayShifts: List<Turno>,
         todayTimbrature: List<Timbratura>,
-        activeUsers: List<User>
+        azienda: Azienda
     ): TodayStats {
-        val now = LocalDateTime.now()
-        val todayDate = LocalDate.now()
+        val today = LocalDate.now()
+        val dayOfWeek = today.dayOfWeek
 
-        // Utenti con turni oggi
-        val usersWithShiftsToday = todayShifts
+        // 1️⃣ TURNI TOTALI ASSEGNATI OGGI
+        val turniTotaliAssegnati = todayShifts.size
+
+        // 2️⃣ UTENTI ATTIVI OGGI (con turni assegnati)
+        val utentiAttiviOggi = todayShifts
             .flatMap { it.idDipendenti }
             .distinct()
-
-        // Utenti che hanno timbrato entrata oggi
-        val usersWithEntranceToday = todayTimbrature
-            .filter { it.tipoTimbratura == TipoTimbratura.ENTRATA }
-            .map { it.idDipendente }
-            .distinct()
-
-        // Utenti che hanno timbrato uscita oggi
-        val usersWithExitToday = todayTimbrature
-            .filter { it.tipoTimbratura == TipoTimbratura.USCITA }
-            .map { it.idDipendente }
-            .distinct()
+            .size
 
 
-        // Presenti = hanno timbrato entrata ma non uscita (e non sono in pausa)
-        val presenti = (usersWithEntranceToday - usersWithExitToday ).size
+        val dipartimentiConTurni = todayShifts
+            .groupBy { it.dipartimentoId }
+            .mapValues { (dipartimentoId, turni) ->
 
-        // Assenti = utenti con turni oggi che non hanno timbrato entrata
-        val assenti = (usersWithShiftsToday - usersWithEntranceToday).size
+                Log.d("DipartimentoCheck", "Analizzo dipartimento: $dipartimentoId con ${turni.size} turni")
 
-        // Turni attualmente attivi
-        val turniAttivi = todayShifts.count { turno ->
-            val startTime = todayDate.atTime(turno.orarioInizio)
-            val endTime = todayDate.atTime(turno.orarioFine)
-            now.isAfter(startTime) && now.isBefore(endTime)
+                val areaLavoro = azienda.areeLavoro.find { it.id == dipartimentoId }
+
+                if (areaLavoro == null) {
+                    Log.w("DipartimentoCheck", "⚠️ Nessuna areaLavoro trovata per ID: $dipartimentoId")
+                } else {
+                    Log.d("DipartimentoCheck", "Area trovata: ${areaLavoro.nomeArea}")
+                }
+
+                val orari = areaLavoro?.orariSettimanali?.get(dayOfWeek)
+
+                if (orari == null) {
+                    Log.w("OrariCheck", "⚠️ Nessun orario per $dayOfWeek in area: ${areaLavoro?.nomeArea}")
+                } else {
+                    Log.d("OrariCheck", "Orari per $dayOfWeek: apertura=${orari.first}, chiusura=${orari.second}")
+                }
+
+                DipartimentoInfo(
+                    nome = areaLavoro?.nomeArea ?: dipartimentoId,
+                    orarioApertura = orari?.first?.toString() ?: "N/A",
+                    orarioChiusura = orari?.second?.toString() ?: "N/A",
+                    numeroTurni = turni.size
+                )
+            }
+
+
+        val dipartimentiAperti = dipartimentiConTurni.size
+        val dipartimentiDetails = dipartimentiConTurni.values.toList()
+
+        // 4️⃣ ANALISI STATO TURNI
+        val turniConStato = todayShifts.map { turno ->
+            val timbratureTurno = todayTimbrature.filter { it.idTurno == turno.id }
+            val haEntrata = timbratureTurno.any { it.tipoTimbratura == TipoTimbratura.ENTRATA }
+            val haUscita = timbratureTurno.any { it.tipoTimbratura == TipoTimbratura.USCITA }
+
+            when {
+                haEntrata && haUscita -> "COMPLETATO"
+                haEntrata && !haUscita -> "INIZIATO"
+                else -> "DA_INIZIARE"
+            }
         }
 
+        val turniCompletati = turniConStato.count { it == "COMPLETATO" }
+        val turniIniziati = turniConStato.count { it == "INIZIATO" }
+        val turniDaIniziare = turniConStato.count { it == "DA_INIZIARE" }
+
         return TodayStats(
-            presenti = presenti,
-            assenti = assenti,
-            turniAttivi = turniAttivi
+            turniTotaliAssegnati = turniTotaliAssegnati,
+            dipartimentiAperti = dipartimentiAperti,
+            utentiAttiviOggi = utentiAttiviOggi,
+            turniCompletati = turniCompletati,
+            turniIniziati = turniIniziati,
+            turniDaIniziare = turniDaIniziare,
+            dipartimentiDetails = dipartimentiDetails
         )
     }
 
@@ -226,40 +271,50 @@ class ManagerHomeViewModel @Inject constructor(
 
     private suspend fun loadShiftPublicationInfo() {
         try {
-            val today = LocalDate.now()
-            val nextFriday = today.with(TemporalAdjusters.nextOrSame(DayOfWeek.FRIDAY))
-            val daysUntilPublication = today.until(nextFriday).days
+            val weekStartRiferimento = WeeklyPublicationCalculator.getReferenceWeekStart(LocalDate.now())
+            val idAzienda = _homeState.value.azienda.idAzienda.ifEmpty { "ZNTzPHOA2xyJMgymaFN7" }
 
-            // Controlla se i turni sono già stati pubblicati questa settimana
-            val currentWeekStart = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+            val publicationRecord = weeklyShiftRepository.getThisWeekPublishedShift(idAzienda, weekStartRiferimento)
+            Log.d("TAG", "loadShiftPublicationInfoSuspend: publicationRecord=$publicationRecord")
 
-            val idAzienda = "ZNTzPHOA2xyJMgymaFN7"
-            val publicationRecord = weeklyShiftRepository.getWeeklyShift(idAzienda,currentWeekStart)
-
-
-            when (publicationRecord)
-            {
+            when (publicationRecord) {
                 is Resource.Success -> {
-
-                    _homeState.update {
-                        it.copy(
-                            daysUntilShiftPublication = daysUntilPublication,
-                            shiftsPublishedThisWeek = true
-                        )
+                    withContext(Dispatchers.Main) {
+                        _homeState.update {
+                            it.copy(
+                                daysUntilShiftPublication = daysUntilNextFriday(LocalDate.now()),
+                                shiftsPublishedThisWeek = publicationRecord.data != null
+                            )
+                        }
+                    }
+                    Log.d("TAG", "loadShiftPublicationInfoSuspend: updated publication flags")
+                }
+                is Resource.Error -> {
+                    Log.e("TAG", "loadShiftPublicationInfoSuspend: error=${publicationRecord.message}")
+                    withContext(Dispatchers.Main) {
+                        _homeState.update {
+                            it.copy(error = "Errore caricamento info pubblicazione: ${publicationRecord.message}")
+                        }
                     }
                 }
-
-                else -> {}
+                else -> {
+                    Log.d("TAG", "loadShiftPublicationInfoSuspend: result not success, skipping")
+                }
             }
 
-
-
         } catch (e: Exception) {
-            _homeState.update {
-                it.copy(error = "Errore nel caricamento info pubblicazione: ${e.message}")
+            Log.e("TAG", "loadShiftPublicationInfoSuspend: exception=${e.message}", e)
+            withContext(Dispatchers.Main) {
+                _homeState.update { it.copy(error = "Errore caricamento info pubblicazione: ${e.message}") }
             }
         }
     }
+    fun daysUntilNextFriday(date: LocalDate): Int {
+        val todayValue = date.dayOfWeek.value        // lun=1 … dom=7
+        val fridayValue = DayOfWeek.FRIDAY.value     // 5
+        return (fridayValue - todayValue + 7) % 7
+    }
+
 
     fun markShiftsAsPublished() {
         viewModelScope.launch {
@@ -277,19 +332,13 @@ class ManagerHomeViewModel @Inject constructor(
         }
     }
 
-    fun refreshData() {
-        loadHomeData()
-    }
+
 
     fun clearError() {
         _homeState.update { it.copy(error = null) }
     }
 
-    private fun getCurrentUserId(): String {
-        // Implementare per ottenere l'ID dell'utente corrente
-        // Probabilmente da un repository di autenticazione o SharedPreferences
-        return "current_manager_id" // Placeholder
-    }
+
 }
 
 

@@ -39,7 +39,7 @@ fun MainManagementScreen(
     onNavigateToRequest: () -> Unit,
     onNavigateToManageCompany: () -> Unit,
     onNavigateToReports: () -> Unit,
-    onNavigateToSettings: () -> Unit,
+    onNavigateToTimbratura: () -> Unit,
     onNavigateToLogout: () -> Unit,
     // Employee navigation functions
     onNavigateToShifts: () -> Unit = {},
@@ -102,11 +102,11 @@ fun MainManagementScreen(
             ) { onNavigateToReports() },
 
             ManagementCard(
-                title = "Impostazioni",
-                description = "Configurazioni sistema",
-                icon = Icons.Default.Settings,
+                title = "Timbrature",
+                description = "Verifica entrate e uscite",
+                icon = Icons.Default.AccessTime,
                 gradient = BizSyncColors.CardGradients[6]
-            ) { onNavigateToSettings() },
+            ) { onNavigateToTimbratura() },
 
             ManagementCard(
                 title = "Logout",
@@ -313,7 +313,6 @@ fun EmployeeFinanceScreen(onBackClick: () -> Unit) {
 }
 
 
-// Schermate Manager esistenti
 @Composable
 fun ProjectsManagementScreen(onBackClick: () -> Unit) {
     ManagementTemplate(

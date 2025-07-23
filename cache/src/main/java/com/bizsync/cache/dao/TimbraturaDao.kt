@@ -34,8 +34,17 @@ interface TimbraturaDao {
     ): List<TimbraturaEntity>
 
 
-    @Query("SELECT * FROM timbrature WHERE createdAt = :date ORDER BY createdAt DESC")
-    fun getTimbratureByDate(date: LocalDate): Flow<List<TimbraturaEntity>>
+    @Query("""
+    SELECT * FROM timbrature 
+    WHERE createdAt >= :startOfDay 
+      AND createdAt <= :endOfDay 
+    ORDER BY createdAt DESC
+""")
+    fun getTimbratureByDate(
+        startOfDay: String,
+        endOfDay: String
+    ): Flow<List<TimbraturaEntity>>
+
 
     @Query("SELECT * FROM timbrature ORDER BY createdAt DESC LIMIT :limit")
     fun getRecentTimbrature(limit: Int): Flow<List<TimbraturaEntity>>

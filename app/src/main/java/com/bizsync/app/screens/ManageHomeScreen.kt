@@ -12,8 +12,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CheckCircle
@@ -45,7 +43,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Assignment
+import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Fingerprint
+import androidx.compose.material.icons.filled.HourglassEmpty
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.Card
@@ -64,6 +67,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.domain.constants.enumClass.HomeScreenRoute
 import com.bizsync.domain.constants.enumClass.TipoTimbratura
 import com.bizsync.domain.model.Azienda
@@ -71,6 +75,7 @@ import com.bizsync.domain.model.Timbratura
 import com.bizsync.domain.model.User
 import com.bizsync.ui.mapper.toDomain
 import com.bizsync.ui.model.UserState
+import com.bizsync.ui.viewmodels.DipartimentoInfo
 import com.bizsync.ui.viewmodels.ManagerHomeViewModel
 import com.bizsync.ui.viewmodels.TimbratureWithUser
 import com.bizsync.ui.viewmodels.TodayStats
@@ -100,6 +105,11 @@ fun ManagerHomeScreen(
             delay(60000) // 1 minuto
             currentTime.value = LocalDateTime.now()
         }
+    }
+
+
+    LaunchedEffect(Unit) {
+        viewModel.loadHomeManagerData(userState.azienda.toDomain())
     }
 
     LazyColumn(
@@ -134,16 +144,12 @@ fun ManagerHomeScreen(
             )
         }
 
-        // Quick Actions
-        item {
-            QuickActionsSection(onNavigate = onNavigate)
-        }
+
 
         // Ultime timbrature
         item {
             RecentTimbratureSection(
                 recentTimbrature = homeState.recentTimbrature,
-                onViewAll = { onNavigate(HomeScreenRoute.Timbrature) }
             )
         }
 
@@ -319,36 +325,6 @@ fun ShiftPublicationAlert(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Button(
-                    onClick = { /* Naviga a pubblicazione turni */ },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = colors.first
-                    )
-                ) {
-                    Icon(
-                        Icons.Default.Schedule,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Pubblica Ora")
-                }
-
-                OutlinedButton(
-                    onClick = onMarkAsPublished,
-                    border = BorderStroke(1.dp, colors.first)
-                ) {
-                    Text(
-                        "Già Pubblicato",
-                        color = colors.first
-                    )
-                }
-            }
         }
     }
 }
@@ -375,11 +351,6 @@ fun TodayStatsSection(
                     fontWeight = FontWeight.Bold
                 )
 
-                Icon(
-                    Icons.Default.Today,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -392,37 +363,161 @@ fun TodayStatsSection(
                     CircularProgressIndicator(modifier = Modifier.size(24.dp))
                 }
             } else {
+                // 📊 STATISTICHE PRINCIPALI
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     item {
                         StatCard(
-                            title = "Presenti",
-                            value = todayStats.presenti.toString(),
-                            icon = Icons.Default.CheckCircle,
-                            color = Color(0xFF4CAF50),
-                            subtitle = "In servizio"
-                        )
-                    }
-                    item {
-                        StatCard(
-                            title = "Assenti",
-                            value = todayStats.assenti.toString(),
-                            icon = Icons.Default.Cancel,
-                            color = Color(0xFFF44336),
-                            subtitle = "Non presenti"
-                        )
-                    }
-                    item {
-                        StatCard(
-                            title = "Turni Attivi",
-                            value = todayStats.turniAttivi.toString(),
-                            icon = Icons.Default.Schedule,
+                            title = "Turni Assegnati",
+                            value = todayStats.turniTotaliAssegnati.toString(),
+                            icon = Icons.Default.Assignment,
                             color = Color(0xFF2196F3),
-                            subtitle = "In corso"
+                            subtitle = "Totali oggi"
+                        )
+                    }
+                    item {
+                        StatCard(
+                            title = "Utenti Attivi",
+                            value = todayStats.utentiAttiviOggi.toString(),
+                            icon = Icons.Default.People,
+                            color = Color(0xFF4CAF50),
+                            subtitle = "Con turni"
+                        )
+                    }
+                    item {
+                        StatCard(
+                            title = "Dipartimenti",
+                            value = todayStats.dipartimentiAperti.toString(),
+                            icon = Icons.Default.Business,
+                            color = Color(0xFFFF9800),
+                            subtitle = "Aperti oggi"
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 📈 STATO TURNI
+                Text(
+                    text = "Stato Turni",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    item {
+                        StatCard(
+                            title = "Completati",
+                            value = todayStats.turniCompletati.toString(),
+                            icon = Icons.Default.CheckCircle,
+                            color = Color(0xFF4CAF50),
+                            subtitle = "Entrata + Uscita"
+                        )
+                    }
+                    item {
+                        StatCard(
+                            title = "In Corso",
+                            value = todayStats.turniIniziati.toString(),
+                            icon = Icons.Default.Schedule,
+                            color = Color(0xFF2196F3),
+                            subtitle = "Solo entrata"
+                        )
+                    }
+                    item {
+                        StatCard(
+                            title = "Da Iniziare",
+                            value = todayStats.turniDaIniziare.toString(),
+                            icon = Icons.Default.HourglassEmpty,
+                            color = Color(0xFFFF9800),
+                            subtitle = "Nessuna timbratura"
+                        )
+                    }
+                }
+
+                // 🏢 DETTAGLI DIPARTIMENTI (se ci sono)
+                if (todayStats.dipartimentiDetails.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "Dipartimenti Attivi",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        todayStats.dipartimentiDetails.forEach { dipartimento ->
+                            DipartimentoCard(dipartimento = dipartimento)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DipartimentoCard(
+    dipartimento: DipartimentoInfo,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(
+                    Icons.Default.Business,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.secondary
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Column {
+                    Text(
+                        text = dipartimento.nome,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+
+                    Text(
+                        text = "${dipartimento.orarioApertura} - ${dipartimento.orarioChiusura}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            Badge(
+                containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f)
+            ) {
+                Text(
+                    text = "${dipartimento.numeroTurni}",
+                    color = MaterialTheme.colorScheme.secondary,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }
@@ -438,7 +533,7 @@ fun StatCard(
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier.width(120.dp),
+        modifier = modifier.width(101.dp).height(135.dp),
         colors = CardDefaults.cardColors(
             containerColor = color.copy(alpha = 0.1f)
         )
@@ -469,124 +564,25 @@ fun StatCard(
                 text = title,
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Medium,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                lineHeight = 12.sp
             )
 
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
-        }
-    }
-}
-
-@Composable
-fun QuickActionsSection(
-    onNavigate: (HomeScreenRoute) -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = "Azioni Rapide",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                item {
-                    QuickActionButton(
-                        title = "Verifica\nTimbrature",
-                        icon = Icons.Default.Fingerprint,
-                        color = Color(0xFF2196F3),
-                        onClick = { onNavigate(HomeScreenRoute.Timbrature) }
-                    )
-                }
-                item {
-                    QuickActionButton(
-                        title = "Gestisci\nTurni",
-                        icon = Icons.Default.Schedule,
-                        color = Color(0xFF4CAF50),
-                        onClick = { onNavigate(HomeScreenRoute.Home) }
-                    )
-                }
-                item {
-                    QuickActionButton(
-                        title = "Report\nAnalisi",
-                        icon = Icons.Default.Analytics,
-                        color = Color(0xFFFF9800),
-                        onClick = { onNavigate(HomeScreenRoute.Home) }
-                    )
-                }
-                item {
-                    QuickActionButton(
-                        title = "Gestisci\nAssenze",
-                        icon = Icons.Default.EventBusy,
-                        color = Color(0xFF9C27B0),
-                        onClick = { onNavigate(HomeScreenRoute.Home) }
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun QuickActionButton(
-    title: String,
-    icon: ImageVector,
-    color: Color,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        onClick = onClick,
-        modifier = modifier.size(100.dp, 90.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = color.copy(alpha = 0.1f)
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(28.dp),
-                tint = color
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Center,
-                lineHeight = 14.sp
+                lineHeight = 12.sp
             )
         }
     }
 }
+
 
 @Composable
 fun RecentTimbratureSection(
-    recentTimbrature: List<TimbratureWithUser>,
-    onViewAll: () -> Unit
-) {
+    recentTimbrature: List<TimbratureWithUser>, ) {
     Card(
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -604,14 +600,6 @@ fun RecentTimbratureSection(
                     fontWeight = FontWeight.Bold
                 )
 
-                TextButton(onClick = onViewAll) {
-                    Text("Vedi tutte")
-                    Icon(
-                        Icons.Default.ArrowForward,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
             }
 
             Spacer(modifier = Modifier.height(12.dp))

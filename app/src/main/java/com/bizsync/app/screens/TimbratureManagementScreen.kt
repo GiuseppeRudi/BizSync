@@ -1,7 +1,5 @@
 package com.bizsync.app.screens
 
-
-import androidx.compose.animation.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -20,35 +18,55 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.bizsync.domain.constants.enumClass.HomeScreenRoute
+import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.domain.constants.enumClass.StatoTimbratura
 import com.bizsync.domain.constants.enumClass.TipoTimbratura
 import com.bizsync.domain.constants.enumClass.ZonaLavorativa
 import com.bizsync.domain.model.*
-import com.bizsync.ui.viewmodels.HomeViewModel
 import com.bizsync.ui.viewmodels.ManagerTimbratureViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ManagerTimbratureScreen(
-    viewModel: HomeViewModel,
+fun TimbratureManagementScreen(
+    onBackClick: () -> Unit,
     managerHome: ManagerTimbratureViewModel = hiltViewModel()
 ) {
     val uiState by managerHome.uiState.collectAsStateWithLifecycle()
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
     var showDatePicker by remember { mutableStateOf(false) }
     var filterType by remember { mutableStateOf(FilterType.TUTTE) }
+    val userVM = LocalUserViewModel.current
+    val userState by userVM.uiState.collectAsState()
+    val idAzienda = userState.user.idAzienda
 
-    val homeState by viewModel.uiState.collectAsState()
-    val idAzienda = homeState.azienda.idAzienda
+    // DatePicker State
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = selectedDate.toEpochDay() * 24 * 60 * 60 * 1000
+    )
 
     LaunchedEffect(idAzienda, selectedDate) {
         managerHome.loadTimbrature(idAzienda, selectedDate, selectedDate)
     }
 
-    // Dialoghi
+    // DatePicker Dialog
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDateSelected = { dateMillis ->
+                dateMillis?.let {
+                    val newDate = LocalDate.ofEpochDay(it / (24 * 60 * 60 * 1000))
+                    selectedDate = newDate
+                    managerHome.loadTimbrature(idAzienda, newDate, newDate)
+                }
+                showDatePicker = false
+            },
+            onDismiss = { showDatePicker = false },
+            datePickerState = datePickerState
+        )
+    }
+
+    // Dialoghi di errore e successo
     uiState.error?.let { error ->
         AlertDialog(
             onDismissRequest = managerHome::dismissError,
@@ -76,12 +94,15 @@ fun ManagerTimbratureScreen(
         )
     }
 
-    // Dettaglio timbratura
+    // Dettaglio timbratura - FIXED: Ora si chiude correttamente
     uiState.selectedTimbratura?.let { timbratura ->
         TimbraturaDetailDialog(
             timbratura = timbratura,
-            onDismiss = { /* viewModel.selectTimbratura(null) */ },
-            onVerifica = { managerHome.verificaTimbratura(timbratura.id) }
+            onDismiss = { managerHome.clearSelectedTimbratura() }, // FIXED
+            onVerifica = {
+                managerHome.verificaTimbratura(timbratura.id)
+                managerHome.clearSelectedTimbratura() // Chiudi dialog dopo verifica
+            }
         )
     }
 
@@ -90,13 +111,26 @@ fun ManagerTimbratureScreen(
             TopAppBar(
                 title = { Text("Gestione Timbrature") },
                 navigationIcon = {
-                    IconButton(onClick = { viewModel.changeCurrentScreen(HomeScreenRoute.Home) }) {
+                    IconButton(onClick = onBackClick) { // FIXED: Era { onBackClick }
                         Icon(Icons.Default.ArrowBack, "Indietro")
                     }
                 },
                 actions = {
-                    IconButton(onClick = { showDatePicker = true }) {
-                        Icon(Icons.Default.DateRange, "Seleziona data")
+                    // Data corrente con indicatore
+                    OutlinedButton(
+                        onClick = { showDatePicker = true },
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.DateRange,
+                            "Seleziona data",
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = selectedDate.format(DateTimeFormatter.ofPattern("dd/MM")),
+                            style = MaterialTheme.typography.labelMedium
+                        )
                     }
 
                     IconButton(
@@ -115,12 +149,13 @@ fun ManagerTimbratureScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Header con statistiche
+            // Header con statistiche - Enhanced
             TimbratureStatsCard(
                 totali = uiState.timbrature.size,
                 anomale = uiState.timbratureAnomale.size,
                 daVerificare = uiState.timbratureDaVerificare.size,
-                data = selectedDate
+                data = selectedDate,
+                isLoading = uiState.isLoading
             )
 
             // Filtri
@@ -142,7 +177,17 @@ fun ManagerTimbratureScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator()
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        CircularProgressIndicator()
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Caricamento timbrature...",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             } else if (filteredTimbrature.isEmpty()) {
                 EmptyStateMessage(filterType)
@@ -164,12 +209,58 @@ fun ManagerTimbratureScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DatePickerDialog(
+    onDateSelected: (Long?) -> Unit,
+    onDismiss: () -> Unit,
+    datePickerState: DatePickerState
+) {
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onDateSelected(datePickerState.selectedDateMillis)
+                }
+            ) {
+                Text("OK")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Annulla")
+            }
+        }
+    ) {
+        DatePicker(
+            state = datePickerState,
+            title = {
+                Text(
+                    text = "Seleziona data",
+                    modifier = Modifier.padding(16.dp)
+                )
+            },
+            headline = {
+                Text(
+                    text = datePickerState.selectedDateMillis?.let { millis ->
+                        LocalDate.ofEpochDay(millis / (24 * 60 * 60 * 1000))
+                            .format(DateTimeFormatter.ofPattern("dd MMMM yyyy"))
+                    } ?: "Nessuna data selezionata",
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+            }
+        )
+    }
+}
+
 @Composable
 fun TimbratureStatsCard(
     totali: Int,
     anomale: Int,
     daVerificare: Int,
     data: LocalDate,
+    isLoading: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -185,11 +276,24 @@ fun TimbratureStatsCard(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            Text(
-                text = data.format(DateTimeFormatter.ofPattern("dd MMMM yyyy")),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = data.format(DateTimeFormatter.ofPattern("dd MMMM yyyy")),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -198,21 +302,21 @@ fun TimbratureStatsCard(
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 StatItem(
-                    value = totali.toString(),
+                    value = if (isLoading) "-" else totali.toString(),
                     label = "Totali",
                     color = MaterialTheme.colorScheme.primary
                 )
 
                 StatItem(
-                    value = anomale.toString(),
+                    value = if (isLoading) "-" else anomale.toString(),
                     label = "Anomale",
-                    color = Color.Red
+                    color = if (anomale > 0) Color.Red else MaterialTheme.colorScheme.tertiary
                 )
 
                 StatItem(
-                    value = daVerificare.toString(),
+                    value = if (isLoading) "-" else daVerificare.toString(),
                     label = "Da verificare",
-                    color = Color.Yellow
+                    color = if (daVerificare > 0) Color(0xFFFF9800) else MaterialTheme.colorScheme.tertiary
                 )
             }
         }
@@ -277,7 +381,7 @@ fun TimbraturaCard(
         colors = CardDefaults.cardColors(
             containerColor = when {
                 timbratura.isAnomala() -> Color.Red.copy(alpha = 0.1f)
-                !timbratura.verificataDaManager -> Color.Yellow.copy(alpha = 0.1f)
+                !timbratura.verificataDaManager -> Color(0xFFFF9800).copy(alpha = 0.1f)
                 else -> MaterialTheme.colorScheme.surface
             }
         )
@@ -334,7 +438,7 @@ fun TimbraturaCard(
                         StatoTimbratura.RITARDO_LIEVE -> {
                             Chip(
                                 label = "${timbratura.minutiRitardo}m ritardo",
-                                color = Color.Yellow,
+                                color = Color(0xFFFF9800),
                                 icon = Icons.Default.Schedule
                             )
                         }
@@ -366,7 +470,7 @@ fun TimbraturaCard(
                     Icons.Default.Verified else Icons.Default.PendingActions,
                 contentDescription = null,
                 tint = if (timbratura.verificataDaManager)
-                    Color.Green else Color.Yellow
+                    Color.Green else Color(0xFFFF9800)
             )
         }
     }

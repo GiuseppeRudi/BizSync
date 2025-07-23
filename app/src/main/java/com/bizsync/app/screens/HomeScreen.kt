@@ -26,8 +26,7 @@ fun MainHomeScreen() {
 
     when (val screen = currentScreen) {
         HomeScreenRoute.Home -> HomeScreen(viewModel)
-        HomeScreenRoute.Badge -> BadgeVirtualeScreen(modifier = Modifier.fillMaxSize(), viewModel)
-        HomeScreenRoute.Timbrature -> ManagerTimbratureScreen(viewModel) }
+        HomeScreenRoute.Badge -> BadgeVirtualeScreen(modifier = Modifier.fillMaxSize(), viewModel) }
 }
 
 

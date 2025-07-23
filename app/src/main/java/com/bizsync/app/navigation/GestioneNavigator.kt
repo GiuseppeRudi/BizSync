@@ -6,20 +6,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.bizsync.app.screens.*
-import com.bizsync.domain.constants.enumClass.AbsenceStatus
-import com.bizsync.domain.constants.enumClass.AbsenceType
 import com.bizsync.domain.constants.sealedClass.GestioneScreenRoute
-import com.bizsync.domain.model.Absence
 import com.bizsync.domain.model.AreaLavoro
 import com.bizsync.domain.model.Azienda
-import com.bizsync.domain.model.Ccnlnfo
 import com.bizsync.domain.model.Contratto
-import com.bizsync.domain.model.Turno
 import com.bizsync.domain.model.TurnoFrequente
 import com.bizsync.domain.model.User
 import java.time.DayOfWeek
-import java.time.LocalDate
-import java.time.LocalTime
 
 @Composable
 fun GestioneNavigator(
@@ -55,7 +48,7 @@ fun GestioneNavigator(
                 onNavigateToReports = {
                     navController.navigate(GestioneScreenRoute.Reports.route)
                 },
-                onNavigateToSettings = {
+                onNavigateToTimbratura = {
                     navController.navigate(GestioneScreenRoute.Settings.route)
                 },
                 onNavigateToLogout = {
@@ -120,7 +113,7 @@ fun GestioneNavigator(
         }
 
         composable(GestioneScreenRoute.Settings.route) {
-            SettingsManagementScreen(
+            TimbratureManagementScreen(
                 onBackClick = { navController.popBackStack() }
             )
         }
