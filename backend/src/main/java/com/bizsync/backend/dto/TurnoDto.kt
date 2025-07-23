@@ -22,7 +22,8 @@ data class TurnoDto(
     val orarioInizio: Timestamp = Timestamp.now(),
     val orarioFine: Timestamp = Timestamp.now(),
 
-    val note: String = "",
+    val note: List<NotaDto> = emptyList(),
+    val pause : List<PausaDto> = emptyList(),
 
     val createdAt: Timestamp = Timestamp.now(),
     val updatedAt: Timestamp = Timestamp.now()

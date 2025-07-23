@@ -10,29 +10,24 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.util.UUID
 
+
 @Entity(tableName = "turni")
 data class TurnoEntity(
-
     @PrimaryKey
     val id: String,
-
-    val idFirebase : String,
-    val idAzienda : String,
-    val idDipendenti : List<String>,
-
+    val idFirebase: String,
+    val idAzienda: String,
+    val idDipendenti: List<String>,
     val titolo: String,
-
-    val data : LocalDate,
+    val data: LocalDate,
     val orarioInizio: LocalTime,
     val orarioFine: LocalTime,
-
     val dipartimentoId: String,
-    val note: String,
-
+    val zoneLavorativeJson: String = "{}", // Map<String, ZonaLavorativa> serializzata
+    val noteJson: String = "[]", // List<Nota> serializzata
+    val pauseJson: String = "[]", // List<Pausa> serializzata
     val isSynced: Boolean = false,
     val isDeleted: Boolean = false,
-
-
     val createdAt: Timestamp,
     val updatedAt: Timestamp
 )

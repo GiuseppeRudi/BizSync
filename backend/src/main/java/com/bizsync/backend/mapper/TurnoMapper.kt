@@ -1,6 +1,7 @@
 package com.bizsync.backend.mapper
 
 import com.bizsync.backend.dto.TurnoDto
+import com.bizsync.backend.mapper.PausaMapper.toDomain
 import com.bizsync.domain.model.Nota
 import com.bizsync.domain.model.Turno
 import com.bizsync.domain.utils.DateUtils.toFirebaseTimestamp
@@ -28,7 +29,8 @@ object TurnoMapper {
             orarioFine = orarioFineLocalTime,
             dipartimentoId = dto.dipartimentoId,
             data = dataLocalDate,
-            note = parseNoteFromString(dto.note), // se serve parsare note da String
+            pause = dto.pause.toDomainList(),
+            note = dto.note.toDomainList(),
             createdAt = dto.createdAt.toLocalDate(),
             updatedAt = dto.updatedAt.toLocalDate()
         )
@@ -50,17 +52,13 @@ object TurnoMapper {
             orarioFine = orarioFineTimestamp,
             dipartimentoId = domain.dipartimentoId,
             data = dataTimestamp,
-            note = domain.note.joinToString(separator = ";") { it.toString() }, // esempio conversione note a String
+            note = domain.note.toDtoList(),
+            pause = domain.pause.toDtoList(),
             createdAt = domain.createdAt.toFirebaseTimestamp(),
             updatedAt = domain.updatedAt.toFirebaseTimestamp()
         )
     }
 
-    // Aggiungi se serve una funzione per parsare le note da stringa
-    private fun parseNoteFromString(noteString: String): List<Nota> {
-        // TODO: Implementa la logica se le note vengono salvage come stringa; altrimenti cambia tipo
-        return emptyList()
-    }
 
     fun toDomainList(dtoList: List<TurnoDto>): List<Turno> = dtoList.map { toDomain(it) }
 

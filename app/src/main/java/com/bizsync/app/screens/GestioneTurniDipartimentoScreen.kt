@@ -46,7 +46,7 @@ import com.bizsync.ui.components.TimelineOrariaDettagliata
 import com.bizsync.ui.components.getTipoPausaIcon
 import com.bizsync.ui.viewmodels.PianificaManagerViewModel
 import java.time.LocalDate
-
+import java.time.format.DateTimeFormatter
 
 
 @Composable
@@ -264,7 +264,7 @@ fun TurnoAssegnatoCard(
                             tint = MaterialTheme.colorScheme.primary
                         )
                         Text(
-                            text = "${turno.orarioInizio} - ${turno.orarioFine}",
+                            text = "${turno.orarioInizio.format(DateTimeFormatter.ofPattern("HH:mm"))} - ${turno.orarioFine.format(DateTimeFormatter.ofPattern("HH:mm"))}",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

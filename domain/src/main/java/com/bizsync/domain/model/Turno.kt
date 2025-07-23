@@ -8,7 +8,6 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.util.UUID
 
-// @Serializable
 data class Turno(
     val id: String = UUID.randomUUID().toString(),
     val titolo: String = "",
