@@ -233,10 +233,9 @@ class PianificaEmployeeViewModel @Inject constructor(
         }
     }
 
-    fun  inizializzaDati(userCurrent : User, contratti: Contratto) {
+    fun  inizializzaContratto(contratti: Contratto) {
         _uiState.update {
             it.copy(
-                currentUser = userCurrent,
                 contrattoEmployee = contratti
             )
         }

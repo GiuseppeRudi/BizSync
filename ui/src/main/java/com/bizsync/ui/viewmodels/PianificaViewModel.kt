@@ -7,6 +7,8 @@ import com.bizsync.backend.orchestrator.TurnoOrchestrator
 import com.bizsync.backend.repository.TurnoRepository
 import com.bizsync.backend.repository.WeeklyShiftRepository
 import com.bizsync.cache.dao.TurnoDao
+import com.bizsync.cache.dao.UserDao
+import com.bizsync.cache.mapper.toDomainList
 import com.bizsync.domain.constants.enumClass.PianificaScreenManager
 import com.bizsync.domain.constants.enumClass.WeeklyShiftStatus
 import com.bizsync.domain.constants.sealedClass.Resource
@@ -32,7 +34,8 @@ import javax.inject.Inject
         private val turnoRepository: TurnoRepository,
         private val weeklyShiftRepository: WeeklyShiftRepository,
         private val turnoOrchestrator: TurnoOrchestrator,
-        private val turnoDao : TurnoDao
+        private val turnoDao : TurnoDao,
+        private val userDao : UserDao
     ) : ViewModel() {
 
 
@@ -365,55 +368,6 @@ import javax.inject.Inject
 
 
         /**
-         * Elimina la pianificazione corrente
-         */
-        fun deleteWeeklyPlanning(idAzienda: String) {
-            viewModelScope.launch {
-                val currentShift = _uistate.value.weeklyShiftRiferimento
-                if (currentShift == null) {
-                    Log.w(TAG, "⚠️ Tentativo di eliminare senza pianificazione corrente")
-                    return@launch
-                }
-
-                Log.d(TAG, "🗑️ Eliminazione pianificazione settimana: ${currentShift.weekStart}")
-                _uistate.update { it.copy(isLoading = true) }
-
-                when (val result = weeklyShiftRepository.deleteWeeklyShift(idAzienda, currentShift.weekStart)) {
-                    is Resource.Success -> {
-                        Log.d(TAG, "✅ Pianificazione eliminata con successo")
-                        _uistate.update {
-                            it.copy(
-                                isLoading = false,
-                                weeklyPlanningExists = false,
-                                weeklyShiftRiferimento = null,
-                                onBoardingDone = false
-                            )
-                        }
-                    }
-                    is Resource.Error -> {
-                        Log.e(TAG, "❌ Errore eliminazione: ${result.message}")
-                        _uistate.update {
-                            it.copy(
-                                isLoading = false,
-                                errorMsg = result.message
-                            )
-                        }
-                    }
-                    else -> {
-                        _uistate.update {
-                            it.copy(
-                                isLoading = false,
-                                errorMsg = "Errore imprevisto durante l'eliminazione"
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        // ========== PRIVATE HELPER FUNCTIONS (ex-UseCase) ==========
-
-        /**
          * Controlla se esiste già una pianificazione per la settimana pubblicabile
          */
         private suspend fun checkWeeklyPlanningExists(idAzienda: String): Resource<WeeklyShift?> {
@@ -428,6 +382,20 @@ import javax.inject.Inject
             }
         }
 
+
+        fun setDipendentiAzienda() {
+            viewModelScope.launch {
+                try {
+                    val dipendenti = userDao.getDipendentiFull()
+                    Log.d(TAG, "👥 Dipendenti caricati: ${dipendenti.size}")
+                    _uistate.update { it.copy(dipendenti = dipendenti.toDomainList()) }
+                } catch (e: Exception) {
+                    Log.e(TAG, "❌ Errore durante il recupero dei dipendenti: ${e.message}")
+                    _uistate.update { it.copy(errorMsg = "Errore durante il caricamento dei dipendenti") }
+                }
+            }
+        }
+
         /**
          * Crea una nuova pianificazione settimanale (logica interna)
          */
@@ -439,6 +407,7 @@ import javax.inject.Inject
                 val weeklyShift = WeeklyShift(
                     idAzienda = azienda.idAzienda,
                     dipartimentiAttivi = azienda.areeLavoro,
+                    dipendentiAttivi =_uistate.value.dipendenti,
                     weekStart = publishableWeek,
                     createdBy = userId,
                     createdAt = LocalDateTime.now(),

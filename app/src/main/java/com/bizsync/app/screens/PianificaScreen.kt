@@ -45,7 +45,6 @@ import com.bizsync.ui.mapper.toDomain
 import com.bizsync.ui.viewmodels.DettagliGiornalieri
 import com.bizsync.ui.viewmodels.PianificaEmployeeViewModel
 import com.bizsync.ui.viewmodels.PianificaManagerViewModel
-import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 
@@ -98,7 +97,7 @@ fun PianificaScreen() {
             // Schermata "Inizia Pubblicazione" solo per manager
             IniziaPubblicazioneScreen(
                 publishableWeek = pianificaState.publishableWeek,
-                onStartPlanning = { pianificaVM.createWeeklyPlanning(azienda.toDomain(), userId) }
+                pianificaViewModel = pianificaVM
             )
         }
 
@@ -141,22 +140,31 @@ fun PianificaDipendentiCore(
     }
 
     val selectionData = pianificaState.selectionData
-
-
     val weeklyisIdentical = pianificaState.weeklyisIdentical
     val weeklyShiftRiferimento = pianificaState.weeklyShiftRiferimento
     val weeklyShiftAttuale = pianificaState.weeklyShiftAttuale
     val dipartimento = employeeState.dipartimentoEmployee
-    // Inizializza i dati del dipendente
-    LaunchedEffect(Unit) {
-        val dipartimenti = weeklyShiftAttuale?.dipartimentiAttivi ?: emptyList()
-        val dipartimento = dipartimenti.find { it.nomeArea == userState.user.dipartimento}
-        if(dipartimento != null)
-        employeeVM.inizializzaDatiEmployee(userState.user.uid, userState.azienda.idAzienda, dipartimento)
+
+
+    LaunchedEffect(weeklyShiftAttuale) {
+        if(weeklyShiftAttuale != null)
+        {
+            val dipartimenti = weeklyShiftAttuale.dipartimentiAttivi
+            val dipendenti = weeklyShiftAttuale.dipendentiAttivi
+            val dipendentePassato = dipendenti.find { it.uid == userState.user.uid }
+            if(dipendentePassato!=null)
+            {
+                val dipartimento = dipartimenti.find { it.nomeArea == dipendentePassato.dipartimento}
+
+                if(dipartimento != null)
+                    employeeVM.inizializzaDatiEmployee(userState.user.uid, userState.azienda.idAzienda, dipartimento)
+            }
+        }
+
     }
 
     LaunchedEffect(userState) {
-        employeeVM.inizializzaDati(userState.user.toDomain(), userState.contratto)
+        employeeVM.inizializzaContratto( userState.contratto)
     }
 
     LaunchedEffect(weeklyShiftRiferimento, weeklyShiftAttuale) {
@@ -178,7 +186,7 @@ fun PianificaDipendentiCore(
         }
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(weeklyShiftRiferimento) {
         if(weeklyShiftRiferimento != null) {
             val weekStart = weeklyShiftRiferimento.weekStart
             employeeVM.setTurniSettimanaliDipendente(weekStart, userState.azienda.idAzienda, userState.user.uid)
@@ -728,26 +736,27 @@ fun PianificaManagerCore(
 
 
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(weeklyShiftRiferimento) {
         if(weeklyShiftRiferimento != null)
         {
             val weekStart = weeklyShiftRiferimento.weekStart
             pianificaVM.syncTurniAvvio(weekStart)
             managerVM.setTurniSettimanali(weekStart,userState.azienda.idAzienda)
+
+            managerVM.inizializzaDatiWeeklyRiferimento(userState.azienda.idAzienda,
+                weeklyShiftRiferimento.dipendentiAttivi
+            )
         }
     }
 
     LaunchedEffect(weeklyShiftAttuale) {
         if (weeklyShiftAttuale != null && !weeklyisIdentical) {
+            managerVM.inizializzaDatiDipendenti(weeklyShiftAttuale.dipendentiAttivi)
             managerVM.setTurniSettimanali(weeklyShiftAttuale.weekStart,userState.azienda.idAzienda)
         }
     }
 
 
-    // Carica i dipendenti
-    LaunchedEffect(userState.azienda.idAzienda) {
-        managerVM.inizializzaDatiDipendenti(userState.azienda.idAzienda)
-    }
 
 
     val currentScreen by pianificaVM.currentScreen.collectAsState()

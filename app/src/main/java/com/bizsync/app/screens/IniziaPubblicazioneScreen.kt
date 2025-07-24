@@ -14,18 +14,25 @@ import androidx.compose.ui.unit.dp
 import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.domain.model.AreaLavoro
 import com.bizsync.ui.components.OrarioGiornoRow
+import com.bizsync.ui.mapper.toDomain
+import com.bizsync.ui.viewmodels.PianificaViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @Composable
 fun IniziaPubblicazioneScreen(
+    pianificaViewModel: PianificaViewModel,
     publishableWeek: LocalDate?,
-    onStartPlanning: () -> Unit,
 ) {
+
     val userViewModel = LocalUserViewModel.current
     val userState by userViewModel.uiState.collectAsState()
 
     val dipartimenti = userState.azienda.areeLavoro
+
+    LaunchedEffect(Unit) {
+        pianificaViewModel.setDipendentiAzienda()
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -169,7 +176,7 @@ fun IniziaPubblicazioneScreen(
 
                 // Pulsante principale
                 Button(
-                    onClick = onStartPlanning,
+                    onClick =  {   pianificaViewModel.createWeeklyPlanning(userState.azienda.toDomain(), userState.user.uid)},
                     modifier = Modifier.fillMaxWidth(),
                     enabled = dipartimenti.isNotEmpty()
                 ) {

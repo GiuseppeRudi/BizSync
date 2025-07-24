@@ -6,6 +6,7 @@ import com.bizsync.domain.model.WeeklyShift
 import java.time.LocalDate
 import com.bizsync.domain.constants.enumClass.WeeklyShiftStatus
 import com.bizsync.domain.model.AreaLavoro
+import com.bizsync.domain.model.User
 
 data class PianificaState(
     // Stati di caricamento e errori
@@ -27,6 +28,8 @@ data class PianificaState(
     val weeklyisIdentical : Boolean = false,
     val canPublish: Boolean = false,
     val publishableWeek: LocalDate? = null,
+
+    val dipendenti: List<User> = emptyList(),
 
     // Stati turni (esistenti)
     val selectionData: LocalDate? = null,

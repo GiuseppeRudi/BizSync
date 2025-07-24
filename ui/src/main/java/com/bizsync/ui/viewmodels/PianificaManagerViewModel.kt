@@ -345,14 +345,21 @@ class PianificaManagerViewModel @Inject constructor(
     }
 
 
-    fun inizializzaDatiDipendenti(idAzienda: String) {
+    fun inizializzaDatiDipendenti(dipendenti : List<User>)
+    {
+        _uiState.update { it.copy(dipendenti = dipendenti) }
+    }
+
+    fun inizializzaDatiWeeklyRiferimento(idAzienda: String, dipendenti : List<User>) {
         viewModelScope.launch {
             try {
-                val dipDeferred = async { userDao.getDipendenti(idAzienda).toDomainList() }
+//                val dipDeferred = async { userDao.getDipendenti(idAzienda).toDomainList() }
+
+                // LE ASSENZE MI SERVONO SOLO DELLA SETTIMANA DI RIFERIMENTO
                 val assDeferred = async { absenceDao.getAbsencesByAzienda(idAzienda).toDomainList() }
                 val contrDeferred = async { contrattiDao.getContratti(idAzienda).toDomainList() }
 
-                val dipendenti = dipDeferred.await()
+//                val dipendenti = dipDeferred.await()
                 val assenze = assDeferred.await()
                 val contratti = contrDeferred.await()
 

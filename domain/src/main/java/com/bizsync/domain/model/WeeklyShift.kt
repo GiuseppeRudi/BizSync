@@ -12,5 +12,6 @@ data class WeeklyShift(
     val createdAt: LocalDateTime,
     val status: WeeklyShiftStatus,
     val dipartimentiAttivi: List<AreaLavoro>,
+    val dipendentiAttivi: List<User>
 
     )

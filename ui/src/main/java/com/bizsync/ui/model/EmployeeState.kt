@@ -11,7 +11,6 @@ import java.time.LocalTime
 
 data class EmployeeState(
     // Dati utente corrente
-    val currentUser: User? = null,
     val contrattoEmployee: Contratto? = null,
     val dipartimentoEmployee: AreaLavoro? = null,
 
