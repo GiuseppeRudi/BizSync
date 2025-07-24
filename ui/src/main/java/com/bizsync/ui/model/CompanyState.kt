@@ -30,7 +30,6 @@ data class CompanyState(
 
     val hasChanges : Boolean = false,
 
-    // NUOVE PROPRIETÀ PER GIORNO PUBBLICAZIONE
     val giornoPublicazioneTemp: DayOfWeek? = null, // Giorno temporaneo durante la modifica
     val showGiornoPublicazioneDialog: Boolean = false,
     val hasGiornoPublicazioneChanges: Boolean = false,

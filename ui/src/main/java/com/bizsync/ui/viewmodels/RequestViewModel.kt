@@ -101,7 +101,6 @@ class RequestViewModel @Inject constructor(
 
 
 
-    // Funzione helper per aggiornare l'UI dopo la decisione
     private fun updateUIAfterDecision(updatedRequest: AbsenceUi) {
         _uiState.update { currentState ->
             val newPending = currentState.pendingRequests.filter { r -> r.id != updatedRequest.id }
@@ -120,7 +119,6 @@ class RequestViewModel @Inject constructor(
         }
     }
 
-    // Nel RequestViewModel - ANCORA PIÙ SEMPLICE
     fun handleRequestDecision(
         approver: String,
         request: AbsenceUi,
@@ -148,13 +146,13 @@ class RequestViewModel @Inject constructor(
                                 // 3. SEMPLICISSIMO: Update Firebase + Force Sync
                                 when (val contractResult = contractOrchestrator.updateContratto(updatedContract)) {
                                     is Resource.Success -> {
-                                        Log.d("REQUEST_DECISION", "✅ Contratto aggiornato e sincronizzato")
+                                        Log.d("REQUEST_DECISION", " Contratto aggiornato e sincronizzato")
 
                                         // 4. Aggiorna UI con i nuovi dati
                                         updateUIAfterSuccessfulApproval(updatedRequest, updatedContract)
                                     }
                                     is Resource.Error -> {
-                                        Log.e("REQUEST_DECISION", "❌ Errore aggiornamento contratto: ${contractResult.message}")
+                                        Log.e("REQUEST_DECISION", " Errore aggiornamento contratto: ${contractResult.message}")
 
                                         // Anche se il contratto fallisce, la richiesta è stata approvata
                                         _uiState.update {
@@ -218,6 +216,7 @@ class RequestViewModel @Inject constructor(
             )
         }
     }
+
     // Funzione helper per aggiornare il contratto quando si approva
     private fun updateContractForApprovedAbsence(
         contract: Contratto,
@@ -242,47 +241,7 @@ class RequestViewModel @Inject constructor(
             AbsenceType.PERSONAL_LEAVE,
             AbsenceType.UNPAID_LEAVE,
             AbsenceType.STRIKE -> {
-                // Questi tipi non aggiornano i limiti del contratto
                 contract
-            }
-        }
-    }
-
-
-    fun handleRequestDecision(approver : String , request: AbsenceUi, isApproved: Boolean, comment: String) {
-        viewModelScope.launch {
-
-            val updatedRequest = request.copy(
-                statusUi = if (isApproved) AbsenceStatus.APPROVED.toUiData() else AbsenceStatus.REJECTED.toUiData(),
-                comments = comment,
-                approver = approver,
-                approvedDate = LocalDate.now()
-            )
-
-            when (val result = absenceRepository.updateAbsence(updatedRequest.toDomain())) {
-                is Resource.Success -> {
-                    _uiState.update {
-                        val newPending = it.pendingRequests.filter { r -> r.id != updatedRequest.id }
-                        val newHistory = it.historyRequests + updatedRequest
-                        it.copy(
-                            pendingRequests = newPending,
-                            historyRequests = newHistory,
-                            resultMsg = "Richiesta aggiornata con successo",
-                            statusMsg = DialogStatusType.SUCCESS
-                        )
-                    }
-                }
-                is Resource.Error -> {
-                    _uiState.update {
-                        it.copy(
-                            resultMsg = result.message ?: "Errore durante l'aggiornamento",
-                            statusMsg = DialogStatusType.ERROR
-                        )
-                    }
-                }
-                else -> {
-                    // Puoi gestire anche Resource.Empty se serve
-                }
             }
         }
     }

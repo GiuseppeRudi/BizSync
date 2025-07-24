@@ -1,6 +1,5 @@
 package com.bizsync.app.screens
 
-import EmployeeAvatar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -49,6 +48,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bizsync.domain.constants.enumClass.EmployeeSection
+import com.bizsync.ui.components.EmployeeAvatar
 import com.bizsync.ui.model.UserUi
 import com.bizsync.ui.viewmodels.EmployeeManagementViewModel
 

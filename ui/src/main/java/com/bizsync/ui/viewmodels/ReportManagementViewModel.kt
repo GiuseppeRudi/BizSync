@@ -3,7 +3,6 @@ package com.bizsync.ui.viewmodels
 import com.bizsync.backend.repository.AbsenceRepository
 import com.bizsync.backend.repository.ContractRepository
 import com.bizsync.backend.repository.TurnoRepository
-import com.bizsync.backend.repository.UserRepository
 import com.bizsync.cache.dao.AbsenceDao
 import com.bizsync.cache.dao.ContrattoDao
 import com.bizsync.cache.dao.TurnoDao
@@ -33,7 +32,6 @@ class ReportsManagementViewModel @Inject constructor(
     private val absenceDao: AbsenceDao,
     private val turnoDao: TurnoDao,
     private val contrattoRepository: ContractRepository,
-    private val userRepository: UserRepository,
     private val absenceRepository: AbsenceRepository,
     private val turnoRepository: TurnoRepository
 ) : ViewModel() {
@@ -300,7 +298,6 @@ class ReportsManagementViewModel @Inject constructor(
             val turni = turnoDao.getTurniInRange(fromDate, LocalDate.now())
             val absences = absenceDao.getAbsencesInRange(fromDate, LocalDate.now()).first()
 
-            // Verifichiamo se abbiamo dati recenti sufficienti
             turni.isNotEmpty() || absences.isNotEmpty()
         } catch (e: Exception) {
             false

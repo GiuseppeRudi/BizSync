@@ -34,7 +34,6 @@ fun StepProgressIndicator(
         repeat(totalSteps) { index ->
             val stepNumber = index + 1
             val isActive = stepNumber <= currentStep
-            val isCurrent = stepNumber == currentStep
 
             Row(
                 modifier = Modifier.weight(1f),

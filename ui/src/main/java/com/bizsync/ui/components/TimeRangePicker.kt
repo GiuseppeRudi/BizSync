@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -73,7 +73,7 @@ fun TimeRangePicker(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Icon(
-                        imageVector = Icons.Default.ArrowForward,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(20.dp)
@@ -179,7 +179,6 @@ fun TimePickerField(
     }
 }
 
-// ========== FUNZIONI DI CALCOLO CON LOCALTIME ==========
 
 /**
  * Calcola la durata tra due LocalTime gestendo anche i turni notturni
@@ -205,84 +204,6 @@ private fun calculateDuration(startTime: LocalTime, endTime: LocalTime): String 
     }
 }
 
-// ========== FUNZIONI UTILITY PER CONVERSIONE ==========
-
-/**
- * Converte una stringa "HH:mm" in LocalTime
- */
-fun String.toLocalTime(): LocalTime? {
-    return try {
-        LocalTime.parse(this, DateTimeFormatter.ofPattern("HH:mm"))
-    } catch (e: Exception) {
-        null
-    }
-}
-
-/**
- * Converte LocalTime in stringa "HH:mm"
- */
-fun LocalTime.toTimeString(): String {
-    return this.format(DateTimeFormatter.ofPattern("HH:mm"))
-}
-
-// ========== VERSIONE CON TIME PICKER DIALOG COMPLETO ==========
-
-@Composable
-fun TimePickerFieldWithDialog(
-    label: String,
-    time: LocalTime?,
-    onTimeSelected: (LocalTime) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var showTimePicker by remember { mutableStateOf(false) }
-    val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
-
-    Column(modifier = modifier) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 4.dp)
-        )
-
-        Surface(
-            onClick = { showTimePicker = true },
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            shape = RoundedCornerShape(8.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(
-                modifier = Modifier.padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Schedule,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = time?.format(timeFormatter) ?: "--:--",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = if (time != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-    }
-
-    // Time Picker Dialog
-    if (showTimePicker) {
-        TimePickerDialog(
-            initialTime = time ?: LocalTime.of(8, 0),
-            onTimeSelected = { selectedTime ->
-                onTimeSelected(selectedTime)
-                showTimePicker = false
-            },
-            onDismiss = { showTimePicker = false }
-        )
-    }
-}
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TimePickerDialog(

@@ -20,13 +20,12 @@ import javax.inject.Inject
 @HiltViewModel
 class OnBoardingPianificaViewModel @Inject constructor(
     private val aziendaRepository: AziendaRepository,
-    private val OnBoardingPianificaRepository: OnBoardingPianificaRepository
+    private val onBoardingPianificaRepository: OnBoardingPianificaRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(OnBoardingPianificaState())
     val uiState: StateFlow<OnBoardingPianificaState> = _uiState
 
-    // ========== FUNZIONI BASE ==========
 
     fun setStep(step: Int) {
         _uiState.update { it.copy(currentStep = step) }
@@ -40,7 +39,6 @@ class OnBoardingPianificaViewModel @Inject constructor(
         _uiState.update { it.copy(errorMsg = null) }
     }
 
-    // ========== GESTIONE AREE ==========
 
     fun onNuovaAreaChangeName(name: String) {
         _uiState.update { it.copy(nuovaArea = it.nuovaArea.copy(nomeArea = name)) }
@@ -64,12 +62,11 @@ class OnBoardingPianificaViewModel @Inject constructor(
 
     fun generaAreeAi(nomeAzienda: String) {
         viewModelScope.launch {
-            val aree = OnBoardingPianificaRepository.setAreaAi(nomeAzienda)
+            val aree = onBoardingPianificaRepository.setAreaAi(nomeAzienda)
             _uiState.update { it.copy(aree = aree, areePronte = true) }
         }
     }
 
-    // ========== GESTIONE ORARI CON LOCALTIME ==========
 
     fun onAreaSelectionChanged(areaId: String, isSelected: Boolean) {
         _uiState.update { state ->
@@ -216,65 +213,6 @@ class OnBoardingPianificaViewModel @Inject constructor(
         }
     }
 
-    // ========== FUNZIONI LEGACY PER RETROCOMPATIBILITÀ ==========
-
-    fun onOrarioInizioChanged(giorno: DayOfWeek, orarioInizio: String) {
-        try {
-            // Gestisci diversi formati di input
-            val time = when {
-                orarioInizio.matches(Regex("^\\d{1,2}:\\d{2}$")) -> {
-                    // Aggiungi zero iniziale se necessario (es: "8:00" -> "08:00")
-                    val parts = orarioInizio.split(":")
-                    val hour = parts[0].padStart(2, '0')
-                    val minute = parts[1]
-                    LocalTime.parse("$hour:$minute")
-                }
-                orarioInizio.matches(Regex("^\\d{2}:\\d{2}$")) -> {
-                    // Formato già corretto
-                    LocalTime.parse(orarioInizio)
-                }
-                else -> {
-                    // Fallback per formato non riconosciuto
-                    LocalTime.of(8, 0)
-                }
-            }
-
-            onOrarioInizioChangedLocalTime(giorno, time)
-        } catch (e: Exception) {
-            // In caso di errore, usa un orario di default
-            onOrarioInizioChangedLocalTime(giorno, LocalTime.of(8, 0))
-        }
-    }
-
-    fun onOrarioFineChanged(giorno: DayOfWeek, orarioFine: String) {
-        try {
-            // Gestisci diversi formati di input
-            val time = when {
-                orarioFine.matches(Regex("^\\d{1,2}:\\d{2}$")) -> {
-                    // Aggiungi zero iniziale se necessario (es: "8:00" -> "08:00")
-                    val parts = orarioFine.split(":")
-                    val hour = parts[0].padStart(2, '0')
-                    val minute = parts[1]
-                    LocalTime.parse("$hour:$minute")
-                }
-                orarioFine.matches(Regex("^\\d{2}:\\d{2}$")) -> {
-                    // Formato già corretto
-                    LocalTime.parse(orarioFine)
-                }
-                else -> {
-                    // Fallback per formato non riconosciuto
-                    LocalTime.of(18, 0)
-                }
-            }
-
-            onOrarioFineChangedLocalTime(giorno, time)
-        } catch (e: Exception) {
-            // In caso di errore, usa un orario di default
-            onOrarioFineChangedLocalTime(giorno, LocalTime.of(18, 0))
-        }
-    }
-
-    // ========== GESTIONE TURNI ==========
 
     fun onRimuoviTurnoById(idDaRimuovere: String) {
         _uiState.update { state ->
@@ -319,12 +257,11 @@ class OnBoardingPianificaViewModel @Inject constructor(
 
     fun generaTurniAi(nomeAzienda: String) {
         viewModelScope.launch {
-            val turni = OnBoardingPianificaRepository.setTurniAi(nomeAzienda)
+            val turni = onBoardingPianificaRepository.setTurniAi(nomeAzienda)
             _uiState.update { it.copy(turni = turni, turniPronti = true) }
         }
     }
 
-    // ========== COMPLETAMENTO SETUP ==========
 
     fun onComplete(idAzienda: String) {
         viewModelScope.launch {

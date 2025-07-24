@@ -17,7 +17,6 @@ object UserUiMapper {
             isManager = ui.isManager,
             posizioneLavorativa = ui.posizioneLavorativa,
             dipartimento = ui.dipartimento,
-            // MAPPING NUOVI CAMPI
             numeroTelefono = ui.numeroTelefono,
             indirizzo = ui.indirizzo,
             codiceFiscale = ui.codiceFiscale,
@@ -37,7 +36,6 @@ object UserUiMapper {
             isManager = domain.isManager,
             posizioneLavorativa = domain.posizioneLavorativa,
             dipartimento = domain.dipartimento,
-            // MAPPING NUOVI CAMPI
             numeroTelefono = domain.numeroTelefono,
             indirizzo = domain.indirizzo,
             codiceFiscale = domain.codiceFiscale,
@@ -50,7 +48,6 @@ object UserUiMapper {
     fun toUiList(domainList: List<User>): List<UserUi> = domainList.map { toUi(it) }
 }
 
-// Extension functions for convenience
 fun UserUi.toDomain(): User = UserUiMapper.toDomain(this)
 fun User.toUi(): UserUi = UserUiMapper.toUi(this)
 fun List<UserUi>.toDomainList(): List<User> = UserUiMapper.toDomainList(this)

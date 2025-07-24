@@ -230,11 +230,10 @@ class EmployeeSettingsViewModel @Inject constructor(
 
     private fun isValidPhoneNumber(phone: String): Boolean {
         // Validazione semplice per numero di telefono (solo cifre, +, spazi, -, parentesi)
-        return phone.matches(Regex("^[+]?[0-9\\s\\-\\(\\)]{6,20}$"))
+        return phone.matches(Regex("^[+]?[0-9\\s\\-()]{6,20}$"))
     }
 }
 
-// Estensione del UserRepository per l'update delle informazioni personali
 suspend fun UserRepository.updateUserPersonalInfo(user: User): Resource<Unit> {
     return try {
         val success = this.updateUser(user, user.uid)

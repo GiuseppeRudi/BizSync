@@ -14,7 +14,7 @@ data class UserUi(
     val posizioneLavorativa: String = "",
     val dipartimento: String = "",
 
-    // NUOVI CAMPI PERSONALI (inseriti dall'utente durante registrazione)
+    //  CAMPI PERSONALI (inseriti dall'utente durante registrazione)
     val numeroTelefono: String = "",
     val indirizzo: String = "",
     val codiceFiscale: String = "",

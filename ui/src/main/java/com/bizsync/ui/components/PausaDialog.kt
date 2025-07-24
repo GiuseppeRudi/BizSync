@@ -9,6 +9,7 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Note
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -181,9 +182,8 @@ fun PauseManagerDialog(
         )
     }
 
-    // Dialog per aggiungere/modificare una pausa
     if (showAddDialog) {
-        ModernAddEditPausaDialog(
+        AddEditPausaDialog(
             viewModel = managerVm
         )
     }
@@ -207,7 +207,6 @@ fun ModernPausaItem(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            // Header con icona e azioni
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -297,7 +296,7 @@ fun ModernPausaItem(
                         },
                         leadingIcon = {
                             Icon(
-                                Icons.Default.Note,
+                                Icons.AutoMirrored.Filled.Note,
                                 contentDescription = null,
                                 modifier = Modifier.size(16.dp)
                             )
@@ -331,7 +330,7 @@ fun ModernPausaItem(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ModernAddEditPausaDialog(
+fun AddEditPausaDialog(
     viewModel: PianificaManagerViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -340,7 +339,7 @@ fun ModernAddEditPausaDialog(
 
     var selectedTipo by remember { mutableStateOf(pausa?.tipo ?: TipoPausa.PAUSA_PRANZO) }
     var durata by remember { mutableStateOf(pausa?.durata?.toMinutes()?.toString() ?: "30") }
-    var èRetribuita by remember { mutableStateOf(pausa?.èRetribuita ?: false) }
+    var isRetribuita by remember { mutableStateOf(pausa?.èRetribuita ?: false) }
     var note by remember { mutableStateOf(pausa?.note ?: "") }
     var showError by remember { mutableStateOf(false) }
 
@@ -349,7 +348,7 @@ fun ModernAddEditPausaDialog(
         pausa?.let {
             selectedTipo = it.tipo
             durata = it.durata.toMinutes().toString()
-            èRetribuita = it.èRetribuita
+            isRetribuita = it.èRetribuita
             note = it.note ?: ""
         }
     }
@@ -393,7 +392,7 @@ fun ModernAddEditPausaDialog(
                                     .padding(8.dp)
                                     .selectableGroup()
                             ) {
-                                TipoPausa.values().forEach { tipo ->
+                                TipoPausa.entries.forEach { tipo ->
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -465,7 +464,7 @@ fun ModernAddEditPausaDialog(
                     // Checkbox retribuita
                     Card(
                         colors = CardDefaults.cardColors(
-                            containerColor = if (èRetribuita)
+                            containerColor = if (isRetribuita)
                                 MaterialTheme.colorScheme.primaryContainer
                             else
                                 MaterialTheme.colorScheme.surfaceVariant
@@ -479,9 +478,9 @@ fun ModernAddEditPausaDialog(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Checkbox(
-                                checked = èRetribuita,
+                                checked = isRetribuita,
                                 onCheckedChange = {
-                                    èRetribuita = it
+                                    isRetribuita = it
                                     viewModel.aggiornaRetribuitaPausa(it)
                                 }
                             )
@@ -511,7 +510,7 @@ fun ModernAddEditPausaDialog(
                         },
                         label = { Text("Note (opzionale)") },
                         leadingIcon = {
-                            Icon(Icons.Default.Note, contentDescription = null)
+                            Icon(Icons.AutoMirrored.Filled.Note, contentDescription = null)
                         },
                         modifier = Modifier.fillMaxWidth(),
                         minLines = 2,

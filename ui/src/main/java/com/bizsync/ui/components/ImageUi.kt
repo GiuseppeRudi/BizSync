@@ -1,4 +1,5 @@
-import android.net.Uri
+package com.bizsync.ui.components
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
@@ -16,7 +17,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.bizsync.ui.R
 
 @Composable
 fun EmployeeAvatar(photoUrl: String?, nome: String, cognome: String, size: Dp = 56.dp) {

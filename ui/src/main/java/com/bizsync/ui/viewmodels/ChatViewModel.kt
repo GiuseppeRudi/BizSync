@@ -120,8 +120,7 @@ class ChatViewModel @Inject constructor(
         val user = currentUser ?: return
 
         viewModelScope.launch {
-            val chatId = chatRepository.createPrivateChat(user, otherUser)
-            // Ricarica le chat
+            chatRepository.createPrivateChat(user, otherUser)
             loadChats(user, _uiState.value.allEmployees)
         }
     }

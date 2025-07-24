@@ -45,7 +45,6 @@ fun ManagementTemplate(
             .background(BizSyncColors.Background)
             .padding(BizSyncDimensions.SpacingMedium)
     ) {
-        // Header con titolo e back button
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -68,7 +67,6 @@ fun ManagementTemplate(
             )
         }
 
-        // Contenuto principale con stato "Coming Soon"
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
@@ -77,7 +75,6 @@ fun ManagementTemplate(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                // Icona principale
                 Icon(
                     imageVector = Icons.Default.Build,
                     contentDescription = null,
@@ -161,7 +158,6 @@ fun ManagementTemplate(
 
                 Spacer(modifier = Modifier.height(BizSyncDimensions.SpacingLarge))
 
-                // Indicatore di progresso animato
                 Box(
                     modifier = Modifier
                         .size(60.dp)

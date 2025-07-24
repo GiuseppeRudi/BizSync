@@ -120,7 +120,7 @@ fun AddAzienda(onTerminate: () -> Unit) {
             totalSteps = 5,
             onPrevious = { addaziendaviewmodel.onCurrentStepDown() },
             onNext = { addaziendaviewmodel.onCurrentStepUp() },
-            onComplete = { addaziendaviewmodel.aggiungiAzienda(uid) },
+            onComplete = { addaziendaviewmodel.aggiungiAzienda() },
             canProceed = addaziendaviewmodel.canProceedToNextStep(currentStep)
         )
     }

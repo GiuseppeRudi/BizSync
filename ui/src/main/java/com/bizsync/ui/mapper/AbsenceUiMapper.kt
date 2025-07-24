@@ -6,10 +6,8 @@ import java.time.LocalDate
 import com.bizsync.ui.mapper.toUiData as typeToUiData
 import com.bizsync.ui.mapper.toUiData as statusToUiData
 
-import java.time.format.DateTimeFormatter
 
 fun Absence.toUi(): AbsenceUi {
-    val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
     return AbsenceUi(
         id = id,

@@ -1,6 +1,5 @@
 package com.bizsync.app.screens
 
-import EmployeeAvatar
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -51,6 +50,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.domain.model.AreaLavoro
+import com.bizsync.ui.components.EmployeeAvatar
 import com.bizsync.ui.model.UserUi
 import com.bizsync.ui.viewmodels.EmployeeManagementViewModel
 import kotlinx.coroutines.delay
@@ -77,7 +77,7 @@ fun EmployeeManagementScreen(
     val isLoading = uiState.isLoading
 
     LaunchedEffect(Unit) {
-        employeeVM.loadEmployees(userState.azienda.idAzienda)
+        employeeVM.loadEmployees()
     }
 
 

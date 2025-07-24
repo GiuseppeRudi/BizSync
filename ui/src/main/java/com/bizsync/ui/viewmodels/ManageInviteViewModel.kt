@@ -8,8 +8,8 @@ import com.bizsync.domain.constants.enumClass.InviteView
 import com.bizsync.domain.constants.enumClass.StatusInvite
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.Ccnlnfo
-import com.bizsync.domain.utils.toDomain
-import com.bizsync.domain.utils.toUiStateList
+import com.bizsync.ui.mapper.toDomain
+import com.bizsync.ui.mapper.toUiStateList
 import com.bizsync.ui.components.DialogStatusType
 import com.bizsync.ui.model.AziendaUi
 import com.bizsync.ui.model.ManageInviteState
@@ -113,12 +113,6 @@ class ManageInviteViewModel @Inject constructor(
         }
     }
 
-    fun setSettoreAziendale(value: String) {
-        _uiState.update { state ->
-            state.copy(invite = state.invite.copy(settoreAziendale = value))
-        }
-    }
-
     fun setTipoContratto(value: String) {
         _uiState.update { state ->
             state.copy(invite = state.invite.copy(tipoContratto = value))
@@ -155,8 +149,6 @@ class ManageInviteViewModel @Inject constructor(
             }
         }
     }
-
-
 
 
     // Functions to update CCNL info manually

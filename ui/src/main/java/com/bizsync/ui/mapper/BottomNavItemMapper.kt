@@ -9,7 +9,6 @@ import androidx.compose.material.icons.filled.Info
 import com.bizsync.domain.constants.enumClass.BottomNavType
 import com.bizsync.ui.model.BottomNavItemUi
 
-// com.bizsync.ui.mapper.BottomNavMapper.kt
 fun BottomNavType.toUi(): BottomNavItemUi = when (this) {
     BottomNavType.HOME -> BottomNavItemUi(this, "home", "Home", Icons.Filled.Home)
     BottomNavType.TURNI -> BottomNavItemUi(this, "turni", "Turni", Icons.Filled.DateRange)

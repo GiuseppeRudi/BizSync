@@ -50,7 +50,6 @@ data class AbsenceUi(
             "${startTime.format(timeFormatter)} - ${endTime.format(timeFormatter)}"
         } else null
 
-    // Proprietà computed per il display
     val formattedTotalDays: String
         get() = if ( totalDays != null) {
             if (totalDays > 0)

@@ -9,8 +9,8 @@ import com.bizsync.backend.repository.InvitoRepository
 import com.bizsync.domain.constants.enumClass.StatusInvite
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.constants.sealedClass.Resource.Success
-import com.bizsync.domain.utils.toDomain
-import com.bizsync.domain.utils.toUiStateList
+import com.bizsync.ui.mapper.toDomain
+import com.bizsync.ui.mapper.toUiStateList
 import com.bizsync.ui.components.DialogStatusType
 import com.bizsync.ui.model.InvitiState
 import com.bizsync.ui.model.InvitoUi
@@ -115,14 +115,8 @@ class InvitiViewModel @Inject constructor(
 
 
     fun declineInvite(invite: InvitoUi) = viewModelScope.launch {
-        // repo.declineInvite(...)
-//        fetchInvites(// da implemenrtare)
+        TODO()
     }
-
-    fun showDetails(invite: InvitoUi) {
-        // potresti navigare o mostrare dialog
-    }
-
 
 
     fun onInvitesLoaded(invites: List<InvitoUi>) {
@@ -132,7 +126,6 @@ class InvitiViewModel @Inject constructor(
     fun onInviteMsg(status: DialogStatusType, message: String?) {
         _uiState.value = _uiState.value.copy(statusMsg = status, resultMsg = message)
     }
-
 
 
 }

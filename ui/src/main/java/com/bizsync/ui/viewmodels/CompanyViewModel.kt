@@ -38,19 +38,8 @@ class CompanyViewModel @Inject constructor(
         _uiState.update { it.copy(orariSettimanaliModificati = orari) }
     }
 
-    fun setEditingOrariAreaId(areaId: String?) {
-        _uiState.update { it.copy(editingOrariArea = areaId) }
-    }
 
-    fun setShowOrariDialog(show: Boolean) {
-        _uiState.update { it.copy(showOrariDialog = show) }
-    }
-
-    fun setOrariTemp(orari: Map<DayOfWeek, Pair<LocalTime, LocalTime>>) {
-        _uiState.update { it.copy(orariTemp = orari) }
-    }
-
-    suspend fun loadDipendentiAzienda(idAzienda: String) {
+     fun loadDipendentiAzienda() {
         viewModelScope.launch {
             try {
                 val dipendenti = userDao.getDipendentiFull()
@@ -83,10 +72,7 @@ class CompanyViewModel @Inject constructor(
         }
     }
 
-    fun salvaDipendentiModificati(
-        idAzienda: String,
-        onComplete: () -> Unit
-    ) {
+    fun salvaDipendentiModificati(onComplete: () -> Unit) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
@@ -97,7 +83,7 @@ class CompanyViewModel @Inject constructor(
                 userRepository.updateDipartimentoDipendenti(dipendentiDaAggiornare)
 
                 // Ricarica i dipendenti aggiornati
-                loadDipendentiAzienda(idAzienda)
+                loadDipendentiAzienda()
 
                 // Reset delle modifiche
                 _uiState.update {
@@ -143,14 +129,11 @@ class CompanyViewModel @Inject constructor(
     fun onOrarioInizioChanged(giorno: DayOfWeek, orario: LocalTime) {
         _uiState.update { current ->
             val nuoviOrari = current.orariTemp.toMutableMap()
-            // Fallback a coppia di LocalTime (esempio 08:00-18:00)
             val orarioCorrente = nuoviOrari[giorno] ?: (LocalTime.of(8, 0) to LocalTime.of(18, 0))
-            // Aggiorna solo il "first" (orario inizio)
             nuoviOrari[giorno] = orarioCorrente.copy(first = orario)
             current.copy(orariTemp = nuoviOrari)
         }
     }
-
 
 
     fun setGiornoPublicazioneTemp(giorno: DayOfWeek) {
@@ -170,10 +153,6 @@ class CompanyViewModel @Inject constructor(
         }
     }
 
-
-    fun setShowGiornoPublicazioneDialog(show: Boolean) {
-        _uiState.update { it.copy(showGiornoPublicazioneDialog = show) }
-    }
 
     fun openGiornoPublicazioneDialog(giornoAttuale: DayOfWeek) {
         _uiState.update {
@@ -232,25 +211,6 @@ class CompanyViewModel @Inject constructor(
         }
     }
 
-    // AGGIORNA resetTempState
-    fun resetTempState() {
-        _uiState.update {
-            it.copy(
-                showAddDialog = false,
-                editingArea = null,
-                showOrariDialog = false,
-                editingOrariArea = null,
-                orariTemp = emptyMap(),
-                showGiornoPublicazioneDialog = false,
-                giornoPublicazioneTemp = null,
-                hasGiornoPublicazioneChanges = false,
-                resultMsg = null,
-                hasChanges = false
-            )
-        }
-    }
-
-
     fun onOrarioFineChanged(giorno: DayOfWeek, orario: LocalTime) {
         _uiState.update { current ->
             val nuoviOrari = current.orariTemp.toMutableMap()
@@ -303,8 +263,6 @@ class CompanyViewModel @Inject constructor(
         }
     }
 
-    // AGGIORNA la funzione di salvataggio per includere gli orari
-    // Modifica il metodo onSaveChanges esistente per reindirizzare
     fun onSaveChanges(idAzienda: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
@@ -334,9 +292,6 @@ class CompanyViewModel @Inject constructor(
     }
 
 
-
-
-    /** Seleziona l'operazione attiva nella schermata principale */
     fun setSelectedOperation(operation: CompanyOperation?) {
         _uiState.update { it.copy(selectedOperation = operation) }
     }
@@ -352,17 +307,11 @@ class CompanyViewModel @Inject constructor(
             _uiState.update { it.copy(onBoardingDone = false) }
         }
     }
-    /** Segna l'onboarding come completato */
+
     fun setOnBoardingDone(done: Boolean) {
         _uiState.update { it.copy(onBoardingDone = done) }
     }
 
-    /** Mostra/Nasconde dialog per aggiunta area */
-    fun toggleAddDialog(show: Boolean) {
-        _uiState.update { it.copy(showAddDialog = show) }
-    }
-
-    /** Imposta area in fase di modifica */
     fun setEditingArea(area: AreaLavoro?) {
         _uiState.update { it.copy(editingArea = area) }
     }
@@ -396,14 +345,6 @@ class CompanyViewModel @Inject constructor(
         }
     }
 
-//    /** Rimuove un'area dall'elenco */
-//    fun removeAreaModificata(area: AreaLavoro) {
-//        _uiState.update { current ->
-//            val nuoveAree = current.areeModificate.filterNot { it.id == area.id }
-//            current.copy(areeModificate = nuoveAree, hasChanges = true)
-//        }
-//    }
-
     /** Imposta se ci sono modifiche da salvare */
     fun setHasChanges(value: Boolean) {
         _uiState.update { it.copy(hasChanges = value) }
@@ -419,6 +360,5 @@ class CompanyViewModel @Inject constructor(
     fun setAreeModificate(aree: List<AreaLavoro>) {
         _uiState.update { it.copy(areeModificate = aree, hasChanges = true) }
     }
-
 
 }

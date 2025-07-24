@@ -61,7 +61,6 @@ fun SingleDayTimeRangePicker(
                     label = "Dalle ore",
                     time = startTime,
                     onTimeSelected = { time ->
-                        // Validazione per giorno singolo: deve essere prima dell'ora di fine
                         if (endTime.isNotEmpty()) {
                             val startTimeObj = LocalTime.parse(time, DateTimeFormatter.ofPattern("HH:mm"))
                             val endTimeObj = LocalTime.parse(endTime, DateTimeFormatter.ofPattern("HH:mm"))

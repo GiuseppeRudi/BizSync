@@ -1,9 +1,9 @@
-package com.bizsync.domain.utils
+package com.bizsync.ui.mapper
 
 import com.bizsync.domain.constants.enumClass.StatusInvite
 import com.bizsync.domain.model.Invito
-import com.bizsync.ui.model.InvitoUi
 import com.bizsync.domain.utils.DateUtils
+import com.bizsync.ui.model.InvitoUi
 
 object InvitoUiMapper {
 
@@ -72,7 +72,7 @@ object InvitoUiMapper {
 
 // Extension functions aggiornate
 fun Invito.toUiState(): InvitoUi =
-    InvitoUiMapper.toUiState(this,)
+    InvitoUiMapper.toUiState(this)
 
 fun InvitoUi.toDomain(): Invito =
     InvitoUiMapper.toDomain(this)

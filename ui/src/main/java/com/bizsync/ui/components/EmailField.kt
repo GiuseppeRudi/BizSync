@@ -25,16 +25,15 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
 
-// Mantengo le funzioni esistenti
 @Composable
 fun EmailField(
+    modifier: Modifier = Modifier,
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
     placeholder: String = "",
     leadingIcon: ImageVector,
     isEmail: Boolean = false,
-    modifier: Modifier = Modifier
 ) {
     var isFocused by remember { mutableStateOf(false) }
     val isValid = if (isEmail) {
@@ -92,7 +91,7 @@ fun EmailField(
             )
         )
 
-        if (!isValid && value.isNotEmpty() && isEmail) {
+        if (!isValid && value.isNotEmpty()) {
             Text(
                 text = "Inserisci un indirizzo email valido",
                 color = MaterialTheme.colorScheme.error,

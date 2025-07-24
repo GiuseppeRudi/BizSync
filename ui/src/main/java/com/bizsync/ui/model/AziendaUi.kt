@@ -13,8 +13,7 @@ data class AziendaUi(
     val sector: String = "",
     val giornoPubblicazioneTurni: DayOfWeek = DayOfWeek.FRIDAY,
 
-    // COORDINATE PER GEOLOCALIZZAZIONE
     val latitudine: Double = 0.0,
     val longitudine: Double = 0.0,
-    val tolleranzaMetri: Int = 100 // tolleranza predefinita 100 metri
+    val tolleranzaMetri: Int = 100
 )

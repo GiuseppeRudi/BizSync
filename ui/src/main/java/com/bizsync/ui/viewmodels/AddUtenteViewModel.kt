@@ -20,15 +20,10 @@ class AddUtenteViewModel @Inject constructor(
     private val userRepository: UserRepository
 ) : ViewModel() {
 
-    // Stato principale consolidato
-    private val _uiState = MutableStateFlow(
-        AddUtenteState(
-            userState = UserUi()
-        )
-    )
+    private val _uiState = MutableStateFlow(AddUtenteState(userState = UserUi()))
     val uiState: StateFlow<AddUtenteState> = _uiState
 
-    fun addUserAndPropaga(userviewmodel: UserViewModel) {
+    fun addUserAndPropaga() {
         if (!validateUser()) return
 
         viewModelScope.launch {
@@ -48,7 +43,7 @@ class AddUtenteViewModel @Inject constructor(
                 if (success) {
                     val utenteConUid = utenteCreato.copy(uid = _uiState.value.uid)
 
-                    Log.d("ADD_USER_DEBUG", "✅ Utente creato con successo")
+                    Log.d("ADD_USER_DEBUG", " Utente creato con successo")
 
                     updateState {
                         it.copy(
@@ -58,7 +53,7 @@ class AddUtenteViewModel @Inject constructor(
                         )
                     }
                 } else {
-                    Log.e("ADD_USER_DEBUG", "❌ Errore durante il salvataggio")
+                    Log.e("ADD_USER_DEBUG", " Errore durante il salvataggio")
                     updateState {
                         it.copy(
                             isLoading = false,
@@ -67,7 +62,7 @@ class AddUtenteViewModel @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
-                Log.e("ADD_USER_DEBUG", "❌ Eccezione: ${e.message}")
+                Log.e("ADD_USER_DEBUG", " Eccezione: ${e.message}")
                 updateState {
                     it.copy(
                         isLoading = false,
@@ -78,7 +73,6 @@ class AddUtenteViewModel @Inject constructor(
         }
     }
 
-    // METODI PER AGGIORNARE I CAMPI UTENTE
 
     fun onNomeChanged(newValue: String) {
         updateUserState { it.copy(nome = newValue) }
@@ -96,7 +90,6 @@ class AddUtenteViewModel @Inject constructor(
         updateUserState { it.copy(photourl = newValue) }
     }
 
-    // NUOVI METODI PER I CAMPI AGGIUNTIVI
 
     fun onNumeroTelefonoChanged(newValue: String) {
         updateUserState { it.copy(numeroTelefono = newValue) }
@@ -107,13 +100,11 @@ class AddUtenteViewModel @Inject constructor(
     }
 
     fun onCodiceFiscaleChanged(newValue: String) {
-        // Mantieni solo caratteri alfanumerici e limita a 16 caratteri
         val cleanValue = newValue.filter { it.isLetterOrDigit() }.take(16)
         updateUserState { it.copy(codiceFiscale = cleanValue) }
     }
 
     fun onDataNascitaChanged(newValue: String) {
-        // Semplice formattazione per data (potrebbe essere migliorata)
         val cleanValue = newValue.filter { it.isDigit() || it == '/' }.take(10)
         updateUserState { it.copy(dataNascita = cleanValue) }
     }
@@ -122,7 +113,6 @@ class AddUtenteViewModel @Inject constructor(
         updateUserState { it.copy(luogoNascita = newValue) }
     }
 
-    // METODI PER LA NAVIGAZIONE
 
     fun onCurrentStepUp() {
         val canProceed = canProceedToNextStep(_uiState.value.currentStep)
@@ -171,7 +161,6 @@ class AddUtenteViewModel @Inject constructor(
         }
     }
 
-    // UTILITY METHODS
     private fun updateState(update: (AddUtenteState) -> AddUtenteState) {
         _uiState.value = update(_uiState.value)
     }
@@ -216,7 +205,4 @@ class AddUtenteViewModel @Inject constructor(
         }
     }
 
-    fun resetState() {
-        _uiState.value = AddUtenteState()
-    }
 }

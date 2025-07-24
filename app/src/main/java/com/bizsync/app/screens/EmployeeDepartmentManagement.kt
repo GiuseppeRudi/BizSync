@@ -37,7 +37,7 @@ fun EmployeeDepartmentManagement(
 
     // Carica tutti i dipendenti al primo caricamento
     LaunchedEffect(Unit) {
-        companyVm.loadDipendentiAzienda(idAzienda)
+        companyVm.loadDipendentiAzienda()
     }
 
     // Verifica quali dipendenti hanno dipartimenti non più esistenti
@@ -76,7 +76,7 @@ fun EmployeeDepartmentManagement(
                     if (hasModifiche || hasProblemi) {
                         IconButton(
                             onClick = {
-                                companyVm.salvaDipendentiModificati(idAzienda, onSaveComplete)
+                                companyVm.salvaDipendentiModificati(onSaveComplete)
                             },
                             enabled = !isLoading
                         ) {

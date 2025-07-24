@@ -38,7 +38,7 @@ class EmployeeManagementViewModel @Inject constructor(
         _uiState.update { it.copy(currentSection = section) }
     }
 
-    fun loadEmployees(idAzienda: String) {
+    fun loadEmployees() {
         viewModelScope.launch {
             try {
                 _uiState.update { it.copy(isLoading = true, errorMessage = null) }
@@ -80,13 +80,6 @@ class EmployeeManagementViewModel @Inject constructor(
     }
 
 
-
-    /**
-     * Carica i turni passati di un dipendente con logica intelligente cache + Firebase
-     * @param employeeId ID del dipendente
-     * @param startDate Data inizio range (default: 3 mesi fa)
-     * @param endDate Data fine range (default: oggi)
-     */
     fun loadEmployeePastShifts(
         employeeId: String,
         startDate: LocalDate = LocalDate.now().minusMonths(3),
@@ -97,18 +90,18 @@ class EmployeeManagementViewModel @Inject constructor(
             try {
                 _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-                Log.d("ShiftsViewModel", "🔍 Caricamento turni passati per $employeeId dal $startDate al $endDate")
+                Log.d("ShiftsViewModel", " Caricamento turni passati per $employeeId dal $startDate al $endDate")
 
                 // 1. Prova prima dalla cache
                 val tuttiTurni = turniDao.getPastShifts(idAzienda, startDate, endDate)
                 val turniDelDip = tuttiTurni.filter { it.idDipendenti.contains(employeeId) }
                 val turniDelDipendente = turniDelDip.toDomainList()
 
-                Log.d("ShiftsViewModel", "📦 Trovati ${turniDelDipendente.size} turni in cache")
+                Log.d("ShiftsViewModel", " Trovati ${turniDelDipendente.size} turni in cache")
 
                 // 2. Se la cache è vuota o insufficiente per il range richiesto, carica da Firebase
                 if (shouldLoadFromFirebase(turniDelDipendente, startDate, endDate)) {
-                    Log.d("ShiftsViewModel", "🌐 Caricamento da Firebase necessario")
+                    Log.d("ShiftsViewModel", " Caricamento da Firebase necessario")
 
 
 
@@ -119,7 +112,7 @@ class EmployeeManagementViewModel @Inject constructor(
                         idEmployee = employeeId
                     )) {
                         is Resource.Success -> {
-                            Log.d("ShiftsViewModel", "✅ Caricati ${result.data.size} turni da Firebase")
+                            Log.d("ShiftsViewModel", " Caricati ${result.data.size} turni da Firebase")
 
                             // Salva in cache i nuovi turni
                             val turniEntity = result.data.toEntityList()
@@ -132,8 +125,7 @@ class EmployeeManagementViewModel @Inject constructor(
                             _uiState.update { it.copy(shifts = turniPassati) }
                         }
                         is Resource.Error -> {
-                            Log.e("ShiftsViewModel", "❌ Errore Firebase: ${result.message}")
-                            // Fallback sui dati cache se disponibili
+                            Log.e("ShiftsViewModel", " Errore Firebase: ${result.message}")
                             _uiState.update {
                                 it.copy(
                                     shifts = turniDelDipendente,
@@ -142,13 +134,13 @@ class EmployeeManagementViewModel @Inject constructor(
                             }
                         }
                         is Resource.Empty -> {
-                            Log.d("ShiftsViewModel", "📭 Nessun turno trovato su Firebase")
+                            Log.d("ShiftsViewModel", "Nessun turno trovato su Firebase")
                             _uiState.update { it.copy(shifts = turniDelDipendente) }
                         }
                     }
                 } else {
                     // Usa i dati dalla cache
-                    Log.d("ShiftsViewModel", "✅ Utilizzando dati dalla cache")
+                    Log.d("ShiftsViewModel", " Utilizzando dati dalla cache")
                     _uiState.update { it.copy(shifts = turniDelDipendente) }
                 }
 
@@ -172,19 +164,19 @@ class EmployeeManagementViewModel @Inject constructor(
             try {
                 _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-                Log.d("ShiftsViewModel", "🔍 Caricamento turni futuri per $employeeId")
+                Log.d("ShiftsViewModel", " Caricamento turni futuri per $employeeId")
 
                 val tuttiTurni = turniDao.getFutureShiftsFromToday(idAzienda, LocalDate.now())
                 val turniDelD = tuttiTurni.filter { it.idDipendenti.contains(employeeId) }
                 val turniDelDipendente = turniDelD.toDomainList()
 
-                Log.d("ShiftsViewModel", "📦 Trovati ${turniDelDipendente.size} turni futuri in cache")
+                Log.d("ShiftsViewModel", " Trovati ${turniDelDipendente.size} turni futuri in cache")
 
                 _uiState.update { it.copy(shifts = turniDelDipendente) }
 
                 // Opzionale: verifica se servono aggiornamenti da Firebase
                 if (turniDelDipendente.isEmpty()) {
-                    Log.d("ShiftsViewModel", "🌐 Nessun turno futuro in cache, provo Firebase")
+                    Log.d("ShiftsViewModel", " Nessun turno futuro in cache, provo Firebase")
 
 
 
@@ -249,30 +241,6 @@ class EmployeeManagementViewModel @Inject constructor(
 
         // Se abbiamo meno di 1/3 dei giorni con dati, carica da Firebase
         return daysWithShifts < (totalDaysInRange / 3)
-    }
-
-    fun fireEmployee(employee: UserUi) {
-        viewModelScope.launch {
-            try {
-                _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-                // TODO: Implementare logica di licenziamento
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(errorMessage = "Errore nella rimozione: ${e.message}")
-                }
-                Log.e("EmployeeManagementViewModel", "Error firing employee", e)
-            } finally {
-                _uiState.update { it.copy(isLoading = false) }
-            }
-        }
-    }
-
-    fun clearContract() {
-        _uiState.update { it.copy(contract = null) }
-    }
-
-    fun clearShifts() {
-        _uiState.update { it.copy(shifts = emptyList()) }
     }
 
     fun clearError() {

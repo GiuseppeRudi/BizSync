@@ -59,7 +59,6 @@ fun GiornoHeaderCard(giornoSelezionato: LocalDate, dayOfWeek: DayOfWeek) {
     }
 }
 
-// Funzioni utility
 fun getNomeGiorno(giorno: DayOfWeek): String {
     return when (giorno) {
         DayOfWeek.MONDAY -> "Lunedì"

@@ -156,8 +156,8 @@ class ShiftsManagementViewModel @Inject constructor(
                 currentAzienda?.let { azienda ->
                     _uiState.update { it.copy(isLoading = true) }
 
-                    val startDate = fromDate ?: LocalDate.of(2020, 1, 1) // Data molto indietro per "tutti"
-                    val endDate = LocalDate.now().plusDays(30) // Include turni futuri
+                    val startDate = fromDate ?: LocalDate.of(2020, 1, 1)
+                    val endDate = LocalDate.now().plusDays(30)
 
                     // Sincronizza da Firebase
                     turnoRepository.syncTurniForUserInRange(user.uid, azienda.idAzienda, startDate, endDate)

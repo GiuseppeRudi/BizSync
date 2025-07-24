@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -47,14 +47,13 @@ fun DipartimentoHeader(
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            // Top row con back button e titolo
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onBack) {
                     Icon(
-                        Icons.Default.ArrowBack,
+                        Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Indietro",
                         tint = MaterialTheme.colorScheme.onPrimaryContainer
                     )
@@ -77,7 +76,6 @@ fun DipartimentoHeader(
                 }
             }
 
-            // Orari di apertura
             orari?.let { (inizio, fine) ->
                 Spacer(modifier = Modifier.height(12.dp))
 

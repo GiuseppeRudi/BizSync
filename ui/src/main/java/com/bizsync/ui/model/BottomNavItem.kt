@@ -1,7 +1,6 @@
 package com.bizsync.ui.model
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.DateRange

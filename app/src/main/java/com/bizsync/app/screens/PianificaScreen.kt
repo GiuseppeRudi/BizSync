@@ -152,7 +152,7 @@ fun PianificaDipendentiCore(
                 val dipartimento = dipartimenti.find { it.nomeArea == dipendentePassato.dipartimento}
 
                 if(dipartimento != null)
-                    employeeVM.inizializzaDatiEmployee(userState.user.uid, userState.azienda.idAzienda, dipartimento)
+                    employeeVM.inizializzaDatiEmployee(userState.user.uid,  dipartimento)
             }
         }
 
@@ -772,9 +772,7 @@ fun PianificaManagerCore(
             pianificaVM.syncTurniAvvio(weekStart)
             managerVM.setTurniSettimanali(weekStart,userState.azienda.idAzienda)
 
-            managerVM.inizializzaDatiWeeklyRiferimento(userState.azienda.idAzienda,
-                weeklyShiftRiferimento.dipendentiAttivi
-            )
+            managerVM.inizializzaDatiWeeklyRiferimento(weeklyShiftRiferimento.dipendentiAttivi)
         }
     }
 

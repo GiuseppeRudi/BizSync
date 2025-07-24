@@ -44,7 +44,6 @@ import java.time.LocalDate
 import java.util.UUID
 
 
-// Componente per le note (usando i nuovi modelli di dati)
 @Composable
 fun NoteSection(
     note: List<Nota>,
@@ -276,7 +275,7 @@ fun NoteDialog(
                         expanded = showTipoDropdown,
                         onDismissRequest = { showTipoDropdown = false }
                     ) {
-                        TipoNota.values().forEach { tipo ->
+                        TipoNota.entries.forEach { tipo ->
                             val tipoUi = tipo.toUiNota()
                             DropdownMenuItem(
                                 onClick = {
@@ -304,7 +303,7 @@ fun NoteDialog(
                         id = nota?.id ?: UUID.randomUUID().toString(),
                         testo = testo,
                         tipo = tipoSelezionato,
-                        autore = "", // Qui dovresti passare l'ID dell'utente corrente
+                        autore = "",
                         createdAt = nota?.createdAt ?: LocalDate.now(),
                         updatedAt = LocalDate.now()
                     )

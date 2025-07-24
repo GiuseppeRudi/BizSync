@@ -4,18 +4,15 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.orchestrator.BadgeOrchestrator
-import com.bizsync.backend.repository.TimbraturaRepository
 import com.bizsync.backend.repository.WeeklyShiftRepository
 import com.bizsync.cache.dao.TimbraturaDao
 import com.bizsync.cache.dao.TurnoDao
-import com.bizsync.cache.dao.UserDao
 import com.bizsync.cache.mapper.toDomain
 import com.bizsync.cache.mapper.toDomainList
 import com.bizsync.domain.constants.enumClass.*
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.*
 import com.bizsync.domain.utils.WeeklyPublicationCalculator
-import com.bizsync.domain.utils.WeeklyWindowCalculator
 import com.bizsync.ui.mapper.toDomain
 import com.bizsync.ui.model.UserState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -78,9 +75,7 @@ class EmployeeHomeViewModel @Inject constructor(
     val homeState = _homeState.asStateFlow()
 
     private val _timerState = MutableStateFlow<ProssimoTurno?>(null)
-    val timerState: StateFlow<ProssimoTurno?> = _timerState.asStateFlow()
 
-    // Job per gestire il timer
     private var timerJob: Job? = null
 
     fun initializeEmployee(userState: UserState) {
@@ -97,7 +92,6 @@ class EmployeeHomeViewModel @Inject constructor(
     private fun loadEmployeeHomeData() {
         Log.d(TAG, "loadEmployeeHomeData: start")
         viewModelScope.launch(Dispatchers.IO) {
-            // 🎯 AGGIORNA LOADING SU MAIN THREAD
             withContext(Dispatchers.Main) {
                 _homeState.update { it.copy(isLoading = true) }
             }
@@ -107,19 +101,16 @@ class EmployeeHomeViewModel @Inject constructor(
                 if (user.uid.isNotEmpty()) {
                     Log.d(TAG, "Loading data for user=${user.uid}")
 
-                    // 🚀 ESEGUI TUTTE LE OPERAZIONI IN PARALLELO
                     val loadTodayTurnoDeferred = async { loadTodayTurnoSuspend(user.uid) }
                     val loadTimbratureOggiDeferred = async { loadTimbratureOggiSuspend(user.uid) }
                     val loadShiftPublicationDeferred = async { loadShiftPublicationInfoSuspend() }
                     val loadTimbratureFunzionanteDeferred = async { loadTimbratureFunzionanteSuspend() }
 
-                    // 🔄 ASPETTA CHE TUTTE LE OPERAZIONI FINISCANO
                     loadTodayTurnoDeferred.await()
                     loadTimbratureOggiDeferred.await()
                     loadShiftPublicationDeferred.await()
                     loadTimbratureFunzionanteDeferred.await()
 
-                    // 🎯 AVVIA IL TIMER SOLO DOPO CHE I DATI SONO CARICATI
                     startTurnoTimer()
 
                     withContext(Dispatchers.Main) {
@@ -146,13 +137,11 @@ class EmployeeHomeViewModel @Inject constructor(
         }
     }
 
-    // 🔧 VERSIONE SUSPEND DI loadTodayTurno
     private suspend fun loadTodayTurnoSuspend(userId: String) {
         Log.d(TAG, "loadTodayTurnoSuspend: start for userId=$userId")
         try {
             val today = LocalDate.now()
 
-            // 1) Prendo i turni di oggi - ESEGUITO SU IO DISPATCHER
             val turniOggiEntities = turnoDao
                 .getTurniByDateAndUser(today)
                 .first()
@@ -162,8 +151,8 @@ class EmployeeHomeViewModel @Inject constructor(
                 val turnoEntity = turniOggiEntities.first()
                 Log.d(TAG, "loadTodayTurnoSuspend: using turnoEntity=$turnoEntity")
 
-                val startOfDay = today.atStartOfDay().toString()         // "2025-07-23T00:00"
-                val endOfDay = today.atTime(23, 59, 59).toString()       // "2025-07-23T23:59:59"
+                val startOfDay = today.atStartOfDay().toString()
+                val endOfDay = today.atTime(23, 59, 59).toString()
 
                 // 2) Prendo le timbrature di oggi per l'utente - ESEGUITO SU IO DISPATCHER
                 val timbratureEntities = timbratureDao
@@ -171,15 +160,12 @@ class EmployeeHomeViewModel @Inject constructor(
 
                 Log.d(TAG, "loadTodayTurnoSuspend: DAO returned ${timbratureEntities.size} timbratureOggi")
 
-                // 3) Mappo in domain
                 val turnoDomain = turnoEntity.toDomain()
                 val timbratureDomain = timbratureEntities.toDomainList()
                 Log.d(TAG, "loadTodayTurnoSuspend: mapped to domain models")
 
-                // 4) Creo dettagli e aggiorno lo stato
                 val turnoWithDetails = createTurnoWithDetails(turnoDomain, timbratureDomain)
 
-                // 🎯 AGGIORNA LO STATO SUL MAIN THREAD
                 withContext(Dispatchers.Main) {
                     _homeState.update { prev ->
                         val newState = prev.copy(todayTurno = turnoWithDetails)
@@ -201,14 +187,12 @@ class EmployeeHomeViewModel @Inject constructor(
         }
     }
 
-    // 🔧 VERSIONE SUSPEND DI loadTimbratureOggi
     private suspend fun loadTimbratureOggiSuspend(userId: String) {
         Log.d(TAG, "loadTimbratureOggiSuspend: start for userId=$userId")
         try {
             val today = LocalDate.now()
-            val startOfDay = today.atStartOfDay().toString()         // "2025-07-23T00:00"
-            val endOfDay = today.atTime(23, 59, 59).toString()       // "2025-07-23T23:59:59"
-            // ✅ OPERAZIONE DATABASE SU IO DISPATCHER
+            val startOfDay = today.atStartOfDay().toString()
+            val endOfDay = today.atTime(23, 59, 59).toString()
             val timbratureEntities = timbratureDao
                 .getTimbratureByDateAndUser(startOfDay, endOfDay, userId)
 
@@ -217,7 +201,6 @@ class EmployeeHomeViewModel @Inject constructor(
             val timbratureDomain = timbratureEntities.toDomainList()
             Log.d(TAG, "loadTimbratureOggiSuspend: Mapped to domain models")
 
-            // 🎯 AGGIORNA LO STATO SUL MAIN THREAD
             withContext(Dispatchers.Main) {
                 _homeState.update { prev ->
                     val newState = prev.copy(timbratureOggi = timbratureDomain)
@@ -278,7 +261,6 @@ class EmployeeHomeViewModel @Inject constructor(
         }
     }
 
-    // 🔧 VERSIONE SUSPEND DI loadTimbratureFunzionante
     private suspend fun loadTimbratureFunzionanteSuspend() {
         Log.d(TAG, "loadTimbratureFunzionanteSuspend: start")
         try {
@@ -316,7 +298,6 @@ class EmployeeHomeViewModel @Inject constructor(
         }
     }
 
-    // 🔧 TIMER SISTEMATO CON DISPATCHER CORRETTO
     private fun startTurnoTimer() {
         // Cancella il timer precedente se esiste
         timerJob?.cancel()
@@ -327,7 +308,6 @@ class EmployeeHomeViewModel @Inject constructor(
                 try {
                     when (val result = badgeOrchestrator.getProssimoTurno(_homeState.value.user.uid)) {
                         is Resource.Success -> {
-                            // 🎯 AGGIORNA GLI STATI SUL MAIN THREAD
                             withContext(Dispatchers.Main) {
                                 _timerState.value = result.data
                                 _homeState.update {
@@ -360,12 +340,11 @@ class EmployeeHomeViewModel @Inject constructor(
                     }
                 }
 
-                delay(30000) // Aggiorna ogni 30 secondi
+                delay(30000)
             }
         }
     }
 
-    // 🔧 onTimbra SISTEMATO
     fun onTimbra(
         tipoTimbratura: TipoTimbratura,
         latitudine: Double? = null,
@@ -379,7 +358,7 @@ class EmployeeHomeViewModel @Inject constructor(
 
             val turno = _homeState.value.prossimoTurno?.turno
             if (turno == null) {
-                Log.e("VIEWMODEL_DEBUG", "❌ Turno è null - impossibile procedere")
+                Log.e("VIEWMODEL_DEBUG", " Turno è null - impossibile procedere")
                 withContext(Dispatchers.Main) {
                     _homeState.update {
                         it.copy(error = "Nessun turno disponibile per la timbratura")
@@ -390,7 +369,6 @@ class EmployeeHomeViewModel @Inject constructor(
 
             Log.d("VIEWMODEL_DEBUG", "Turno trovato: ${turno.id} - ${turno.titolo}")
 
-            // 🎯 AGGIORNA LOADING SU MAIN THREAD
             withContext(Dispatchers.Main) {
                 _homeState.update { it.copy(isLoading = true) }
             }
@@ -420,12 +398,11 @@ class EmployeeHomeViewModel @Inject constructor(
                             }
                         }
 
-                        // 🔄 RICARICA LE TIMBRATURE
                         loadTimbratureOggiSuspend(_homeState.value.user.uid)
                         loadTimbratureFunzionanteSuspend()
                     }
                     is Resource.Error -> {
-                        Log.e("VIEWMODEL_DEBUG", "❌ Errore nella creazione timbratura: ${result.message}")
+                        Log.e("VIEWMODEL_DEBUG", " Errore nella creazione timbratura: ${result.message}")
                         withContext(Dispatchers.Main) {
                             _homeState.update {
                                 it.copy(
@@ -436,14 +413,14 @@ class EmployeeHomeViewModel @Inject constructor(
                         }
                     }
                     else -> {
-                        Log.w("VIEWMODEL_DEBUG", "⚠️ Stato loading ricevuto")
+                        Log.w("VIEWMODEL_DEBUG", "⚠ Stato loading ricevuto")
                         withContext(Dispatchers.Main) {
                             _homeState.update { it.copy(isLoading = false) }
                         }
                     }
                 }
             } catch (e: Exception) {
-                Log.e("VIEWMODEL_DEBUG", "🚨 Eccezione in onTimbra: ${e.message}", e)
+                Log.e("VIEWMODEL_DEBUG", " Eccezione in onTimbra: ${e.message}", e)
                 withContext(Dispatchers.Main) {
                     _homeState.update {
                         it.copy(
@@ -456,7 +433,6 @@ class EmployeeHomeViewModel @Inject constructor(
         }
     }
 
-    // 🔧 UTILITY FUNCTIONS
     fun daysUntilNextFriday(date: LocalDate): Int {
         val todayValue = date.dayOfWeek.value        // lun=1 … dom=7
         val fridayValue = DayOfWeek.FRIDAY.value     // 5
@@ -474,7 +450,7 @@ class EmployeeHomeViewModel @Inject constructor(
 
         // Calcola ritardi e anticipi
         val minutiRitardo = if (haEntrata) {
-            val orarioEntrata = entrataTimbratura!!.dataOraTimbratura.toLocalTime()
+            val orarioEntrata = entrataTimbratura.dataOraTimbratura.toLocalTime()
             val orarioPrevisto = turno.orarioInizio
             if (orarioEntrata.isAfter(orarioPrevisto)) {
                 orarioPrevisto.until(orarioEntrata, java.time.temporal.ChronoUnit.MINUTES).toInt()
@@ -482,7 +458,7 @@ class EmployeeHomeViewModel @Inject constructor(
         } else 0
 
         val minutiAnticipo = if (haUscita) {
-            val orarioUscita = uscitaTimbratura!!.dataOraTimbratura.toLocalTime()
+            val orarioUscita = uscitaTimbratura.dataOraTimbratura.toLocalTime()
             val orarioFinePrevisto = turno.orarioFine
             if (orarioUscita.isBefore(orarioFinePrevisto)) {
                 orarioUscita.until(orarioFinePrevisto, java.time.temporal.ChronoUnit.MINUTES).toInt()
@@ -496,7 +472,7 @@ class EmployeeHomeViewModel @Inject constructor(
 
         val stato = when {
             haEntrata && haUscita -> StatoTurno.COMPLETATO
-            haEntrata && now.isAfter(turnoEnd) && !haUscita -> StatoTurno.ASSENTE
+            haEntrata && now.isAfter(turnoEnd) -> StatoTurno.ASSENTE
             haEntrata && now.isBefore(turnoEnd) -> StatoTurno.IN_CORSO
             !haEntrata && now.isAfter(turnoStart.plusMinutes(15)) -> StatoTurno.IN_RITARDO
             !haEntrata && now.isAfter(turnoEnd) -> StatoTurno.ASSENTE
@@ -518,7 +494,6 @@ class EmployeeHomeViewModel @Inject constructor(
         return result
     }
 
-    // 🔧 PUBLIC FUNCTIONS
     fun setIsGettingLocation(isGetting: Boolean) {
         Log.d(TAG, "setIsGettingLocation: $isGetting")
         _homeState.update { it.copy(isGettingLocation = isGetting) }
@@ -534,14 +509,6 @@ class EmployeeHomeViewModel @Inject constructor(
         _homeState.update { it.copy(showSuccess = false) }
     }
 
-    fun refreshData() {
-        Log.d(TAG, "refreshData: refreshing data")
-        // 🚀 FERMA IL TIMER PRECEDENTE E RIAVVIA IL CARICAMENTO
-        timerJob?.cancel()
-        loadEmployeeHomeData()
-    }
-
-    // 🔧 CLEANUP
     override fun onCleared() {
         super.onCleared()
         Log.d(TAG, "onCleared: cancelling timer job")

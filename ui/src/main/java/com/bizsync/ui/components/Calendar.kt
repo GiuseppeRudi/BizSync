@@ -57,10 +57,8 @@ fun Calendar(pianificaVM: PianificaViewModel) {
     val selectionData = pianificaState.selectionData
     val weeklyShift = pianificaState.weeklyShiftRiferimento
 
-    // ✅ Stato per il range della settimana di riferimento
     var rangeSettimana by remember { mutableStateOf<Pair<LocalDate, LocalDate>?>(null) }
 
-    // ✅ Status della settimana corrente
     var weeklyShiftStatus by remember { mutableStateOf<WeeklyShiftStatus?>(null) }
 
     LaunchedEffect(weeklyShift) {
@@ -97,7 +95,7 @@ fun Calendar(pianificaVM: PianificaViewModel) {
                         } ?: false,
                         weeklyShiftStatus = if (rangeSettimana?.let { range ->
                                 day.date >= range.first && day.date <= range.second
-                            } == true) weeklyShiftStatus else null, // ✅ Passa lo status solo se il giorno è nella settimana
+                            } == true) weeklyShiftStatus else null,
                         onClick = { pianificaVM.onSelectionDataChanged(it) }
                     )
                 },
@@ -114,15 +112,14 @@ fun Day(
     isCurrentDay: Boolean = false,
     selected: Boolean = false,
     isInWeekRange: Boolean = false,
-    weeklyShiftStatus: WeeklyShiftStatus? = null, // ✅ Nuovo parametro per lo status
+    weeklyShiftStatus: WeeklyShiftStatus? = null,
     onClick: (LocalDate) -> Unit = {},
 ) {
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
 
-    // ✅ Logica colori aggiornata con status del WeeklyShift
     val backgroundColor = when {
-        selected -> Color(0xFF6200EE)           // Viola - Massima priorità (giorno selezionato)
+        selected -> Color(0xFF6200EE)
         isInWeekRange && weeklyShiftStatus != null -> {
             when (weeklyShiftStatus) {
                 WeeklyShiftStatus.PUBLISHED -> Color(0xFF4CAF50)     // Verde - Pubblicata
@@ -148,7 +145,6 @@ fun Day(
         else -> Color.Transparent
     }
 
-    // ✅ Colore del testo adattato al background
     val textColor = when {
         selected || isInWeekRange -> Color.White
         else -> Color.White
@@ -158,12 +154,12 @@ fun Day(
         selected -> Color.White
         isInWeekRange && weeklyShiftStatus != null -> {
             when (weeklyShiftStatus) {
-                WeeklyShiftStatus.PUBLISHED -> Color(0xFFE8F5E8)     // Verde molto chiaro
-                WeeklyShiftStatus.DRAFT -> Color(0xFFFFF3E0)         // Giallo molto chiaro
-                WeeklyShiftStatus.NOT_PUBLISHED -> Color(0xFFFFEBEE) // Rosso molto chiaro
+                WeeklyShiftStatus.PUBLISHED -> Color(0xFFE8F5E8)
+                WeeklyShiftStatus.DRAFT -> Color(0xFFFFF3E0)
+                WeeklyShiftStatus.NOT_PUBLISHED -> Color(0xFFFFEBEE)
             }
         }
-        isInWeekRange -> Color(0xFFE8F5E8)     // Verde molto chiaro di default
+        isInWeekRange -> Color(0xFFE8F5E8)
         else -> Color.LightGray
     }
 
@@ -206,11 +202,10 @@ fun Day(
                 color = dayTextColor,
             )
 
-            // ✅ Indicatore visivo aggiuntivo per la settimana di riferimento con colore status
             if (isInWeekRange && !selected) {
                 val indicatorColor = when (weeklyShiftStatus) {
                     WeeklyShiftStatus.PUBLISHED -> Color.White
-                    WeeklyShiftStatus.DRAFT -> Color(0xFF333333)      // Scuro per contrasto con giallo
+                    WeeklyShiftStatus.DRAFT -> Color(0xFF333333)
                     WeeklyShiftStatus.NOT_PUBLISHED -> Color.White
                     null -> Color.White
                 }

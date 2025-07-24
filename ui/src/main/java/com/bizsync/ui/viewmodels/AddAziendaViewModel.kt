@@ -30,7 +30,7 @@ class AddAziendaViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(AddAziendaState())
     val uiState: StateFlow<AddAziendaState> = _uiState
 
-    fun aggiungiAzienda(idUtente: String) {
+    fun aggiungiAzienda() {
         viewModelScope.launch(Dispatchers.IO) {
             Log.d("ADD_AZIENDA_DEBUG", "=== INIZIO CREAZIONE AZIENDA ===")
 
@@ -47,7 +47,7 @@ class AddAziendaViewModel @Inject constructor(
 
             when (result) {
                 is Resource.Success -> {
-                    Log.d("ADD_AZIENDA_DEBUG", "✅ Azienda creata con successo. ID: ${result.data}")
+                    Log.d("ADD_AZIENDA_DEBUG", "Azienda creata con successo. ID: ${result.data}")
                     _uiState.update {
                         it.copy(
                             azienda = it.azienda.copy(idAzienda = result.data),
@@ -56,11 +56,11 @@ class AddAziendaViewModel @Inject constructor(
                     }
                 }
                 is Resource.Error -> {
-                    Log.e("ADD_AZIENDA_DEBUG", "❌ Errore creazione azienda: ${result.message}")
+                    Log.e("ADD_AZIENDA_DEBUG", " Errore creazione azienda: ${result.message}")
                     _uiState.update { it.copy(resultMsg = result.message) }
                 }
                 else -> {
-                    Log.e("ADD_AZIENDA_DEBUG", "❌ Stato loading inaspettato")
+                    Log.e("ADD_AZIENDA_DEBUG", " Stato loading inaspettato")
                     _uiState.update { it.copy(resultMsg = "Errore nella creazione dell'azienda") }
                 }
             }
@@ -95,7 +95,6 @@ class AddAziendaViewModel @Inject constructor(
         )
     }
 
-    // NUOVE FUNZIONI PER GESTIRE L'INDIRIZZO
 
     fun onIndirizzoChanged(newValue: String) {
         _uiState.update {
@@ -196,7 +195,7 @@ class AddAziendaViewModel @Inject constructor(
         }
     }
 
-    private suspend fun geocodeAddress(context: Context, address: String): List<Address> {
+    private fun geocodeAddress(context: Context, address: String): List<Address> {
         return try {
             if (!Geocoder.isPresent()) {
                 throw IOException("Servizio di geocodifica non disponibile")

@@ -23,7 +23,6 @@ import androidx.compose.ui.unit.sp
 import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.domain.constants.enumClass.EmployeeSection
 import com.bizsync.domain.model.Turno
-import com.bizsync.ui.components.BizSyncCompactLoader
 import com.bizsync.ui.model.UserUi
 import com.bizsync.ui.viewmodels.EmployeeManagementViewModel
 import java.time.LocalDate
@@ -134,10 +133,7 @@ fun ShiftsScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    BizSyncCompactLoader(
-                        message = if (isHistorical) "Caricamento turni storici..."
-                        else "Caricamento turni programmati..."
-                    )
+                    LoadingIndicator()
                 }
             }
             shifts.isEmpty() -> {

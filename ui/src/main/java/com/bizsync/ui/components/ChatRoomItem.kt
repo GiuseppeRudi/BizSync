@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.Computer
@@ -25,7 +26,6 @@ import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.SupportAgent
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.Workspaces
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Card
@@ -82,7 +82,6 @@ fun ChatRoomItem(
                             ChatType.GENERALE -> Color(0xFF3498DB)
                             ChatType.DIPARTIMENTO -> getDepartmentColor(chat.dipartimento , dipartimenti)
                             ChatType.PRIVATA -> Color(0xFF95A5A6)
-                            else -> {Color(0xFF95A5A6)}
                         }
                     ),
                 contentAlignment = Alignment.Center
@@ -92,7 +91,6 @@ fun ChatRoomItem(
                         ChatType.GENERALE -> Icons.Default.Public
                         ChatType.DIPARTIMENTO -> getDepartmentIcon(chat.dipartimento, dipartimenti )
                         ChatType.PRIVATA -> Icons.Default.Person
-                        else -> {Icons.Default.Person}
                     },
                     contentDescription = null,
                     tint = Color.White,
@@ -188,7 +186,7 @@ val departmentIcons = listOf(
     Icons.Default.People,
     Icons.Default.Computer,
     Icons.Default.Campaign,
-    Icons.Default.TrendingUp,
+    Icons.AutoMirrored.Filled.TrendingUp,
     Icons.Default.Engineering,
     Icons.Default.Build,
     Icons.Default.SupportAgent,
@@ -203,7 +201,7 @@ fun getDepartmentIcon(department: String?, dipartimenti: List<AreaLavoro>): Imag
     return if (index in departmentIcons.indices) {
         departmentIcons[index]
     } else {
-        Icons.Default.Group // fallback, non dovrebbe mai servire se max è 10
+        Icons.Default.Group
     }
 }
 
@@ -226,7 +224,7 @@ fun getDepartmentColor(department: String?, dipartimenti: List<AreaLavoro>): Col
     return if (index in departmentColors.indices) {
         departmentColors[index]
     } else {
-        Color.Gray // fallback
+        Color.Gray
     }
 }
 

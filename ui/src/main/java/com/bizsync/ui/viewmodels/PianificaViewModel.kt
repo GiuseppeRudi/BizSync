@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.orchestrator.TurnoOrchestrator
-import com.bizsync.backend.repository.TurnoRepository
 import com.bizsync.backend.repository.WeeklyShiftRepository
 import com.bizsync.cache.dao.TurnoDao
 import com.bizsync.cache.dao.UserDao
@@ -14,7 +13,6 @@ import com.bizsync.domain.constants.enumClass.WeeklyShiftStatus
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.AreaLavoro
 import com.bizsync.domain.model.Azienda
-import com.bizsync.domain.model.Turno
 import com.bizsync.domain.model.WeeklyShift
 import com.bizsync.domain.utils.WeeklyWindowCalculator
 import com.bizsync.domain.utils.WeeklyPublicationCalculator
@@ -31,7 +29,6 @@ import javax.inject.Inject
 
     @HiltViewModel
     class PianificaViewModel @Inject constructor(
-        private val turnoRepository: TurnoRepository,
         private val weeklyShiftRepository: WeeklyShiftRepository,
         private val turnoOrchestrator: TurnoOrchestrator,
         private val turnoDao : TurnoDao,
@@ -74,13 +71,13 @@ import javax.inject.Inject
 
                 viewModelScope.launch {
                     val weekStart = WeeklyWindowCalculator.getWeekStartFromDate(selectionDate)
-                    Log.d(TAG, "📆 Recupero turni per settimana con start: $weekStart")
+                    Log.d(TAG, " Recupero turni per settimana con start: $weekStart")
 
 
                     try {
                         when (val result = weeklyShiftRepository.getWeeklyShiftCorrente(weekStart)) {
                             is Resource.Success -> {
-                                Log.d(TAG, "✅ Weekly shift corrente trovato: ${result.data}")
+                                Log.d(TAG, " Weekly shift corrente trovato: ${result.data}")
                                 _uistate.update {
                                     it.copy(
                                         weeklyShiftAttuale = result.data
@@ -89,7 +86,7 @@ import javax.inject.Inject
                             }
 
                             is Resource.Empty -> {
-                                Log.d(TAG, "📭 Nessun weekly shift presente per la settimana selezionata")
+                                Log.d(TAG, " Nessun weekly shift presente per la settimana selezionata")
                                 _uistate.update {
                                     it.copy(
                                         weeklyShiftAttuale = null
@@ -98,7 +95,7 @@ import javax.inject.Inject
                             }
 
                             is Resource.Error -> {
-                                Log.e(TAG, "❌ Errore nel recupero weekly shift corrente: ${result.message}")
+                                Log.e(TAG, " Errore nel recupero weekly shift corrente: ${result.message}")
                                 _uistate.update {
                                     it.copy(
                                         errorMsg = result.message,
@@ -108,7 +105,7 @@ import javax.inject.Inject
                             }
                         }
                     } catch (e: Exception) {
-                        Log.e(TAG, "❌ Errore imprevisto nel recupero dei dati", e)
+                        Log.e(TAG, " Errore imprevisto nel recupero dei dati", e)
                         _uistate.update {
                             it.copy(
                                 errorMsg = e.message ?: "Errore sconosciuto",
@@ -136,7 +133,7 @@ import javax.inject.Inject
 
         fun checkWeeklyPlanningStatus(idAzienda: String) {
             viewModelScope.launch {
-                Log.d(TAG, "🔍 Controllo pianificazione per azienda: $idAzienda")
+                Log.d(TAG, " Controllo pianificazione per azienda: $idAzienda")
 
                 _uistate.update { it.copy(isLoading = true, errorMsg = null) }
 
@@ -144,7 +141,7 @@ import javax.inject.Inject
                 val (canPublish, publishableWeek) = canPublishToday()
 
                 if (!canPublish) {
-                    Log.w(TAG, "⚠️ Non è possibile pubblicare turni al momento")
+                    Log.w(TAG, " Non è possibile pubblicare turni al momento")
                     _uistate.update {
                         it.copy(
                             isLoading = false,
@@ -160,7 +157,7 @@ import javax.inject.Inject
                 when (val result = checkWeeklyPlanningExists(idAzienda)) {
                     is Resource.Success -> {
                         val exists = result.data != null
-                        Log.d(TAG, "✅ Controllo completato - esiste pianificazione: $exists")
+                        Log.d(TAG, " Controllo completato - esiste pianificazione: $exists")
 
                         _uistate.update {
                             it.copy(
@@ -310,22 +307,20 @@ import javax.inject.Inject
                     // Calcolo range settimanale
                     val weekEnd = weekStart.plusDays(6)
 
-                    // 🔽 Ottieni i turni locali non sincronizzati nel range
+                    //  Ottieni i turni locali non sincronizzati nel range
                     val turniNonSync = turnoDao.getTurniInRangeNonSync(
                         weekStart = weekStart,
                         weekEnd = weekEnd
                     )
 
-                    // 🔍 Log
-                    Log.d(TAG, "📦 Turni non sincronizzati trovati: ${turniNonSync.size}")
+                    Log.d(TAG, " Turni non sincronizzati trovati: ${turniNonSync.size}")
 
-                    // ✅ Se esistono turni modificati → aggiorna stato
                     if (turniNonSync.isNotEmpty()) {
                         _uistate.update { it.copy(hasUnsavedChanges = true) }
                     }
 
                 } catch (e: Exception) {
-                    Log.e(TAG, "❌ Errore durante syncTurni: ${e.message}")
+                    Log.e(TAG, " Errore durante syncTurni: ${e.message}")
                     _uistate.update {
                         it.copy(errorMsg = "Errore nel controllo modifiche locali")
                     }
@@ -377,7 +372,7 @@ import javax.inject.Inject
 
                 weeklyShiftRepository.getWeeklyShift(idAzienda, publishableWeek)
             } catch (e: Exception) {
-                Log.e(TAG, "❌ Eccezione controllo pianificazione: ${e.message}")
+                Log.e(TAG, " Eccezione controllo pianificazione: ${e.message}")
                 Resource.Error(e.message ?: "Errore controllo pianificazione")
             }
         }
@@ -387,10 +382,10 @@ import javax.inject.Inject
             viewModelScope.launch {
                 try {
                     val dipendenti = userDao.getDipendentiFull()
-                    Log.d(TAG, "👥 Dipendenti caricati: ${dipendenti.size}")
+                    Log.d(TAG, " Dipendenti caricati: ${dipendenti.size}")
                     _uistate.update { it.copy(dipendenti = dipendenti.toDomainList()) }
                 } catch (e: Exception) {
-                    Log.e(TAG, "❌ Errore durante il recupero dei dipendenti: ${e.message}")
+                    Log.e(TAG, " Errore durante il recupero dei dipendenti: ${e.message}")
                     _uistate.update { it.copy(errorMsg = "Errore durante il caricamento dei dipendenti") }
                 }
             }
@@ -438,11 +433,6 @@ import javax.inject.Inject
         fun setOnBoardingDone(value: Boolean) {
             _uistate.update { it.copy(onBoardingDone = value) }
         }
-
-        fun addTurno(turno: Turno) {
-            _uistate.update { it.copy(itemsList = _uistate.value.itemsList + turno) }
-        }
-
 
         fun onSelectionDataChanged(newValue: LocalDate) {
             _uistate.update { it.copy(selectionData = newValue) }

@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bizsync.backend.repository.AbsenceRepository
 import com.bizsync.domain.constants.enumClass.AbsenceStatus
-import com.bizsync.domain.constants.enumClass.AbsenceTimeType
 import com.bizsync.domain.constants.enumClass.AbsenceType
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.Contratto
@@ -49,11 +48,6 @@ class AbsenceViewModel @Inject constructor(private val absenceRepository: Absenc
         }
     }
 
-    fun updateSelectedTimeType(timeType: AbsenceTimeType) {
-        _uiState.update { currentState ->
-            currentState.copy(selectedTimeType = timeType)
-        }
-    }
 
     fun updateAddAbsenceType(typeUi: AbsenceTypeUi) {
         val timeType = typeUi.type.getTimeType()
@@ -221,18 +215,10 @@ class AbsenceViewModel @Inject constructor(private val absenceRepository: Absenc
         }
     }
 
-
-    // Funzione per mostrare/nascondere dialog
-    fun setShowNewRequestDialog(show: Boolean) {
-        _uiState.update { it.copy(showNewRequestDialog = show) }
-    }
-
     // Funzione per cambiare tab selezionata
     fun setSelectedTab(index: Int) {
         _uiState.update { it.copy(selectedTab = index) }
     }
-
-
 
 
     fun updateAddAbsenceStartDate(date: LocalDate?) {
@@ -283,16 +269,8 @@ class AbsenceViewModel @Inject constructor(private val absenceRepository: Absenc
         }
     }
 
-    // Crea un metodo helper per calcolare i giorni
     fun calculateTotalDaysInt(startDate: LocalDate, endDate: LocalDate): Int {
         return ChronoUnit.DAYS.between(startDate, endDate).toInt() + 1
-    }
-
-
-
-
-    fun setIsFullDay(value: Boolean) {
-        _uiState.value = _uiState.value.copy(isFullDay = value)
     }
 
     fun setShowStartDatePicker(show: Boolean) {
@@ -312,25 +290,4 @@ class AbsenceViewModel @Inject constructor(private val absenceRepository: Absenc
         _uiState.value = _uiState.value.copy(resultMsg = null)
     }
 
-    // Funzioni legacy mantenute
-    fun addAbsence(newAbsence: AbsenceUi) {
-        _uiState.value = _uiState.value.copy(
-            absences = _uiState.value.absences + newAbsence
-        )
-    }
-
-    fun updateAbsence(updated: AbsenceUi) {
-        _uiState.value = _uiState.value.copy(
-            absences = _uiState.value.absences.map {
-                if (it.id == updated.id) updated else it
-            }
-        )
-    }
-
-    fun setError(message: String?) {
-        _uiState.value = _uiState.value.copy(
-            resultMsg = message,
-            statusMsg = DialogStatusType.ERROR
-        )
-    }
 }

@@ -21,7 +21,6 @@ import kotlinx.coroutines.withContext
 import java.time.DayOfWeek
 import java.time.LocalDate
 import javax.inject.Inject
-import kotlin.text.ifEmpty
 
 
 data class TodayStats(
@@ -73,7 +72,6 @@ class ManagerHomeViewModel @Inject constructor(
     private val timbratureDao: TimbraturaDao,
     private val userDao: UserDao,
     private val  weeklyShiftRepository : WeeklyShiftRepository
-//    private val shiftPublicationDao: ShiftPublicationDao // Nuovo DAO per tracciare le pubblicazioni
 ) : ViewModel() {
 
     private val _homeState = MutableStateFlow(ManagerHomeState())
@@ -100,7 +98,6 @@ class ManagerHomeViewModel @Inject constructor(
             }
         }
     }
-    // 🔧 FUNZIONE CARICAMENTO AGGIORNATA
     private suspend fun loadTodayStats(azienda : Azienda) {
         try {
             val today = LocalDate.now()
@@ -108,7 +105,7 @@ class ManagerHomeViewModel @Inject constructor(
             // Prendi tutti i turni di oggi
             val todayShifts = turnoDao.getTurniByDate(today).first()
 
-            val startOfDay = today.atStartOfDay().toString()         // "2025-07-23T00:00"
+            val startOfDay = today.atStartOfDay().toString()
             val endOfDay = today.atTime(23, 59, 59).toString()
             // Prendi tutte le timbrature di oggi
             val todayTimbrature = timbratureDao.getTimbratureByDate(startOfDay,endOfDay).first()
@@ -145,39 +142,38 @@ class ManagerHomeViewModel @Inject constructor(
         val today = LocalDate.now()
         val dayOfWeek = today.dayOfWeek
 
-        Log.d("TodayStats", "📅 Calcolo statistiche per il giorno: $today ($dayOfWeek)")
+        Log.d("TodayStats", " Calcolo statistiche per il giorno: $today ($dayOfWeek)")
 
-        // 1️⃣ TURNI TOTALI ASSEGNATI OGGI
         val turniTotaliAssegnati = todayShifts.size
-        Log.d("TodayStats", "✅ Turni totali assegnati oggi: $turniTotaliAssegnati")
+        Log.d("TodayStats", " Turni totali assegnati oggi: $turniTotaliAssegnati")
 
-        // 2️⃣ UTENTI ATTIVI OGGI (con turni assegnati)
+        // UTENTI ATTIVI OGGI (con turni assegnati)
         val utentiAttiviOggi = todayShifts
             .flatMap { it.idDipendenti }
             .distinct()
             .size
-        Log.d("TodayStats", "👥 Utenti attivi oggi (con turni): $utentiAttiviOggi")
+        Log.d("TodayStats", " Utenti attivi oggi (con turni): $utentiAttiviOggi")
 
-        // 3️⃣ Dipartimenti con turni e orari (usando orari dell'azienda)
+        //  Dipartimenti con turni e orari (usando orari dell'azienda)
         val dipartimentiConTurni = todayShifts
             .groupBy { it.dipartimento }
             .mapValues { (dipartimento, turni) ->
 
-                Log.d("DipartimentoCheck", "🔍 Analizzo dipartimento: $dipartimento con ${turni.size} turni")
+                Log.d("DipartimentoCheck", " Analizzo dipartimento: $dipartimento con ${turni.size} turni")
 
                 val areaLavoro = azienda.areeLavoro.find { it.nomeArea == dipartimento }
 
                 if (areaLavoro == null) {
-                    Log.w("DipartimentoCheck", "⚠️ Nessuna areaLavoro trovata per: $dipartimento")
+                    Log.w("DipartimentoCheck", "Nessuna areaLavoro trovata per: $dipartimento")
                 } else {
-                    Log.d("DipartimentoCheck", "✅ Area trovata: ${areaLavoro.nomeArea}")
+                    Log.d("DipartimentoCheck", " Area trovata: ${areaLavoro.nomeArea}")
                 }
 
                 val orari = areaLavoro?.orariSettimanali?.get(dayOfWeek)
                 if (orari == null) {
-                    Log.w("OrariCheck", "⚠️ Nessun orario per $dayOfWeek in area: ${areaLavoro?.nomeArea}")
+                    Log.w("OrariCheck", " Nessun orario per $dayOfWeek in area: ${areaLavoro?.nomeArea}")
                 } else {
-                    Log.d("OrariCheck", "⏰ Orari per $dayOfWeek: apertura=${orari.first}, chiusura=${orari.second}")
+                    Log.d("OrariCheck", " Orari per $dayOfWeek: apertura=${orari.first}, chiusura=${orari.second}")
                 }
 
                 DipartimentoInfo(
@@ -192,7 +188,6 @@ class ManagerHomeViewModel @Inject constructor(
         val dipartimentiDetails = dipartimentiConTurni.values.toList()
         Log.d("TodayStats", "🏢 Dipartimenti aperti oggi: $dipartimentiAperti")
 
-        // 4️⃣ ANALISI STATO TURNI
         val turniConStato = todayShifts.map { turno ->
             val timbratureTurno = todayTimbrature.filter { it.idTurno == turno.id }
             val haEntrata = timbratureTurno.any { it.tipoTimbratura == TipoTimbratura.ENTRATA }
@@ -212,10 +207,9 @@ class ManagerHomeViewModel @Inject constructor(
         val turniIniziati = turniConStato.count { it == "INIZIATO" }
         val turniDaIniziare = turniConStato.count { it == "DA_INIZIARE" }
 
-        Log.d("TodayStats", "✅ Turni completati: $turniCompletati")
-        Log.d("TodayStats", "⏳ Turni iniziati: $turniIniziati")
-        Log.d("TodayStats", "🕒 Turni da iniziare: $turniDaIniziare")
-
+        Log.d("TodayStats", " Turni completati: $turniCompletati")
+        Log.d("TodayStats", " Turni iniziati: $turniIniziati")
+        Log.d("TodayStats", " Turni da iniziare: $turniDaIniziare")
         return TodayStats(
             turniTotaliAssegnati = turniTotaliAssegnati,
             dipartimentiAperti = dipartimentiAperti,
@@ -321,25 +315,6 @@ class ManagerHomeViewModel @Inject constructor(
         val fridayValue = DayOfWeek.FRIDAY.value     // 5
         return (fridayValue - todayValue + 7) % 7
     }
-
-
-    fun markShiftsAsPublished() {
-        viewModelScope.launch {
-            try {
-
-                _homeState.update {
-                    it.copy(shiftsPublishedThisWeek = true)
-                }
-
-            } catch (e: Exception) {
-                _homeState.update {
-                    it.copy(error = "Errore nella marcatura pubblicazione: ${e.message}")
-                }
-            }
-        }
-    }
-
-
 
     fun clearError() {
         _homeState.update { it.copy(error = null) }

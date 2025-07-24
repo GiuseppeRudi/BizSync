@@ -11,7 +11,7 @@ import com.bizsync.domain.model.AreaLavoro
 import com.bizsync.domain.model.TurnoFrequente
 import com.bizsync.domain.constants.sealedClass.RuoliAzienda
 import com.bizsync.domain.model.Contratto
-import com.bizsync.domain.utils.toDomain
+import com.bizsync.ui.mapper.toDomain
 import com.bizsync.ui.components.DialogStatusType
 import com.bizsync.ui.mapper.toUi
 import com.bizsync.ui.model.InvitoUi
@@ -90,9 +90,6 @@ class UserViewModel @Inject constructor(
         _uiState.update { it.copy(resultMsg = null, statusMsg = DialogStatusType.ERROR) }
     }
 
-    fun changeContract(contratto: Contratto) {
-        _uiState.update { it.copy(contratto = contratto) }
-    }
 
     fun checkUser(userId: String) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -179,7 +176,6 @@ class UserViewModel @Inject constructor(
 
                             is Error -> _uiState.update { it.copy(resultMsg = loaded.message) }
                             is Empty -> _uiState.update { it.copy(resultMsg = "Azienda non trovata") }
-                            else -> _uiState.update { it.copy(resultMsg = "Errore sconosciuto") }
                         }
                     } else {
                         _uiState.update { it.copy(checkUser = false) }
@@ -189,7 +185,6 @@ class UserViewModel @Inject constructor(
 
                 is Error -> _uiState.update { it.copy(resultMsg = result.message) }
                 is Empty -> _uiState.update { it.copy(hasLoadedUser = true , checkUser = false) }
-                else -> _uiState.update { it.copy(resultMsg = "Errore sconosciuto") }
             }
         }
     }
@@ -249,9 +244,6 @@ class UserViewModel @Inject constructor(
                         is Empty -> {
                             _uiState.update { it.copy(resultMsg = "Azienda non trovata", statusMsg = DialogStatusType.ERROR) }
                         }
-                        else -> {
-                            _uiState.update { it.copy(resultMsg = "Errore sconosciuto", statusMsg = DialogStatusType.ERROR) }
-                        }
                     }
 
 
@@ -281,10 +273,7 @@ class UserViewModel @Inject constructor(
             _uiState.value = UserState()
         }
 
-        fun aggiornaAzienda(idAzienda: String) {
-            val currentUser = _uiState.value.user
-            _uiState.update { it.copy(user = currentUser.copy(idAzienda = idAzienda)) }
-        }
+
 
         fun change() {
 

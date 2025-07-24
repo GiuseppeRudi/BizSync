@@ -27,7 +27,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bizsync.domain.model.AreaLavoro
 import com.bizsync.domain.model.Turno
-import com.google.android.gms.common.util.DataUtils
 import java.time.LocalDate
 import java.time.LocalTime
 

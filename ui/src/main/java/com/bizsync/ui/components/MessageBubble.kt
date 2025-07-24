@@ -75,7 +75,6 @@ fun MessageBubble(
                 Column(
                     modifier = Modifier.padding(12.dp)
                 ) {
-                    // Icona per annunci
                     if (message.tipo == MessageType.ANNOUNCEMENT) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically

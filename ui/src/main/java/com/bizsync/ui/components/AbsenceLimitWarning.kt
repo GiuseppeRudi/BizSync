@@ -31,7 +31,7 @@ import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 
 
-// Data class per le informazioni sui limiti
+
 data class AbsenceLimitInfo(
     val type: String,
     val currentUsed: Int,
@@ -41,18 +41,19 @@ data class AbsenceLimitInfo(
     val unit: String,
     val exceedsLimit: Boolean
 )
+
 @Composable
 fun AbsenceLimitWarning(
     selectedType: AbsenceTypeUi?,
-    totalDays: Int?, // ← NULLABLE
-    totalHours: Int?, // Per ROL
+    totalDays: Int?,
+    totalHours: Int?,
     contratto: Contratto?
 ) {
     if (selectedType == null || contratto == null) return
 
     val warningInfo = when (selectedType.type) {
         AbsenceType.VACATION -> {
-            val requestedDays = totalDays ?: 0 // ← GESTISCE NULL
+            val requestedDays = totalDays ?: 0
             val currentUsed = contratto.ferieUsate
             val maxAllowed = contratto.ccnlInfo.ferieAnnue
             val totalAfterRequest = currentUsed + requestedDays
@@ -86,7 +87,7 @@ fun AbsenceLimitWarning(
         }
 
         AbsenceType.SICK_LEAVE -> {
-            val requestedDays = totalDays ?: 0 // ← GESTISCE NULL
+            val requestedDays = totalDays ?: 0
             val currentUsed = contratto.malattiaUsata
             val maxAllowed = contratto.ccnlInfo.malattiaRetribuita
             val totalAfterRequest = currentUsed + requestedDays
@@ -105,7 +106,6 @@ fun AbsenceLimitWarning(
         else -> null
     }
 
-    // Resto del codice UI rimane uguale
     warningInfo?.let { info ->
         Card(
             modifier = Modifier
@@ -113,9 +113,9 @@ fun AbsenceLimitWarning(
                 .padding(vertical = 8.dp),
             colors = CardDefaults.cardColors(
                 containerColor = if (info.exceedsLimit) {
-                    Color(0xFFFFEBEE) // Rosso chiaro per warning
+                    Color(0xFFFFEBEE)
                 } else {
-                    Color(0xFFE8F5E8) // Verde chiaro per info positiva
+                    Color(0xFFE8F5E8)
                 }
             ),
             border = androidx.compose.foundation.BorderStroke(
@@ -220,9 +220,8 @@ fun AbsenceLimitWarning(
     }
 }
 
-// Aggiorna anche la funzione helper
 fun calculateRequestedHours(
-    totalDays: Int?, // ← NULLABLE
+    totalDays: Int?,
     isFullDay: Boolean,
     startTime: LocalTime?,
     endTime: LocalTime?,
@@ -256,16 +255,14 @@ fun calculateMultiDayHours(
     startDate: LocalDate?,
     endDate: LocalDate?
 ): Int {
-    // Implementazione semplificata - in un caso reale dovresti considerare
-    // le ore lavorative effettive per ogni giorno
     return if (startDate != null && endDate != null) {
         val daysBetween = ChronoUnit.DAYS.between(startDate, endDate).toInt()
-        when {
-            daysBetween == 0 -> {
+        when (daysBetween) {
+            0 -> {
                 // Stesso giorno
                 java.time.Duration.between(startTime, endTime).toHours().toInt()
             }
-            daysBetween == 1 -> {
+            1 -> {
                 // Due giorni
                 val firstDayHours = java.time.Duration.between(startTime, LocalTime.of(17, 0)).toHours()
                 val secondDayHours = java.time.Duration.between(LocalTime.of(9, 0), endTime).toHours()

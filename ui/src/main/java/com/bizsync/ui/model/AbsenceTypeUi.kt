@@ -14,7 +14,6 @@ data class AbsenceTypeUi(
     val requiresApproval: Boolean
 )
 
-// Extension function per AbsenceType
 fun AbsenceType.getTimeType(): AbsenceTimeType {
     return when (this) {
         AbsenceType.VACATION,

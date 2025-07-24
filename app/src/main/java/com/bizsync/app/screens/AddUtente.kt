@@ -143,7 +143,7 @@ fun AddUtente(onChooseAzienda: () -> Unit) {
             canProceed = addutenteviewmodel.canProceedToNextStep(currentStep),
             onPrevious = { addutenteviewmodel.onCurrentStepDown() },
             onNext = { addutenteviewmodel.onCurrentStepUp() },
-            onComplete = { addutenteviewmodel.addUserAndPropaga(userviewmodel) },
+            onComplete = { addutenteviewmodel.addUserAndPropaga() },
             isLoading = uiState.isLoading
         )
     }

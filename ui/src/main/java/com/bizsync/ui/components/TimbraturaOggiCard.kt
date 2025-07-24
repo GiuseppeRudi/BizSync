@@ -12,11 +12,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Login
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.LocationOff
-import androidx.compose.material.icons.filled.Login
-import androidx.compose.material.icons.filled.Logout
-import androidx.compose.material.icons.filled.PauseCircle
-import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
@@ -80,8 +78,8 @@ fun TimbraturaMiniCard(timbratura: Timbratura) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 imageVector = when (timbratura.tipoTimbratura) {
-                    TipoTimbratura.ENTRATA -> Icons.Default.Login
-                    TipoTimbratura.USCITA -> Icons.Default.Logout
+                    TipoTimbratura.ENTRATA -> Icons.AutoMirrored.Filled.Login
+                    TipoTimbratura.USCITA -> Icons.AutoMirrored.Filled.Logout
                 },
                 contentDescription = null,
                 tint = if (timbratura.isAnomala()) Color.Red else MaterialTheme.colorScheme.primary

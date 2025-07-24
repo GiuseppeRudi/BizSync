@@ -10,12 +10,11 @@ data class InvitoUi (
     val idAzienda: String = "",
     val manager: Boolean = false,
 
-    // Campi modificati/aggiunti
-    val posizioneLavorativa: String = "", // era nomeRuolo
-    val dipartimento: String = "", // nuovo - selezionato dalle AreaLavoro
-    val settoreAziendale: String = "", // nuovo - preso dall'oggetto Azienda
-    val tipoContratto: String = "", // nuovo - Full Time, Part Time, ecc.
-    val oreSettimanali: String = "", // nuovo - ore settimanali di lavoro
+    val posizioneLavorativa: String = "",
+    val dipartimento: String = "",
+    val settoreAziendale: String = "",
+    val tipoContratto: String = "",
+    val oreSettimanali: String = "",
 
     val ccnlInfo : Ccnlnfo = Ccnlnfo(),
 
