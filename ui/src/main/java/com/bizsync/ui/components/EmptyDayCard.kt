@@ -1,5 +1,6 @@
 package com.bizsync.ui.components
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -30,8 +31,11 @@ fun EmptyDayCard(dayOfWeek: DayOfWeek) {
         )
     ) {
         Column(
-            modifier = Modifier.padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
             Icon(
                 imageVector = Icons.Default.EventBusy,
@@ -51,6 +55,7 @@ fun EmptyDayCard(dayOfWeek: DayOfWeek) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+
     }
 }
 

@@ -166,7 +166,6 @@ fun GestioneTurniDipartimentoScreen(
 
                         Spacer(modifier = Modifier.width(8.dp))
 
-                        // FloatingActionButton per aggiungere turno
                         FloatingActionButton(
                             onClick = onCreateShift,
                             modifier = Modifier.size(40.dp) // opzionale per rendere più piccoli
