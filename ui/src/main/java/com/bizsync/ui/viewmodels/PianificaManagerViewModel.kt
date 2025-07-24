@@ -1026,6 +1026,22 @@ class PianificaManagerViewModel @Inject constructor(
         }
     }
 
+    fun applicaTurnoFrequente(turno: TurnoFrequente) {
+        aggiornaTitolo(turno.nome)
+
+        runCatching {
+            val inizio = LocalTime.parse(turno.oraInizio)
+            val fine = LocalTime.parse(turno.oraFine)
+
+            aggiornaOrarioInizio(inizio)
+            aggiornaOrarioFine(fine)
+
+            Log.d("TurnoFrequente", "✅ Applicato turno frequente: ${turno.nome}")
+        }.onFailure {
+            Log.e("TurnoFrequente", "❌ Errore parsing orari: ${it.message}")
+        }
+    }
+
     /**
      * Salva il turno corrente
      */

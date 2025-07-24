@@ -98,9 +98,7 @@ fun PianificaScreen() {
             // Schermata "Inizia Pubblicazione" solo per manager
             IniziaPubblicazioneScreen(
                 publishableWeek = pianificaState.publishableWeek,
-                onStartPlanning = {
-                    pianificaVM.createWeeklyPlanning(azienda.idAzienda, userId)
-                }
+                onStartPlanning = { pianificaVM.createWeeklyPlanning(azienda.toDomain(), userId) }
             )
         }
 
@@ -151,7 +149,7 @@ fun PianificaDipendentiCore(
     val dipartimento = employeeState.dipartimentoEmployee
     // Inizializza i dati del dipendente
     LaunchedEffect(Unit) {
-        val dipartimenti = userState.azienda.areeLavoro
+        val dipartimenti = weeklyShiftAttuale?.dipartimentiAttivi ?: emptyList()
         val dipartimento = dipartimenti.find { it.nomeArea == userState.user.dipartimento}
         if(dipartimento != null)
         employeeVM.inizializzaDatiEmployee(userState.user.uid, userState.azienda.idAzienda, dipartimento)
@@ -693,7 +691,6 @@ fun PianificaManagerCore(
 
 
     val userState by userVM.uiState.collectAsState()
-    val dipartimenti = userState.azienda.areeLavoro
 
     val pianificaState by pianificaVM.uistate.collectAsState()
     val selectionData = pianificaState.selectionData
@@ -701,6 +698,8 @@ fun PianificaManagerCore(
     val weeklyisIdentical = pianificaState.weeklyisIdentical
     val weeklyShiftRiferimento = pianificaState.weeklyShiftRiferimento
     val weeklyShiftAttuale = pianificaState.weeklyShiftAttuale
+
+    val dipartimenti = weeklyShiftAttuale?.dipartimentiAttivi ?: emptyList()
 
     LaunchedEffect(weeklyShiftRiferimento, weeklyShiftAttuale) {
         if(weeklyShiftRiferimento != null && weeklyShiftAttuale != null && weeklyShiftAttuale == weeklyShiftRiferimento)

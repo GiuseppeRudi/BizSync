@@ -10,6 +10,8 @@ data class WeeklyShiftDto(
     val createdAt: Timestamp? = null,
     val updatedAt: Timestamp? = null,
     val status: String = "NOT_PUBLISHED",
+    val dipartimentiAttivi: List<AreaLavoroDto> = emptyList(),
+
 
     // Metadati aggiuntivi
     val weekEnd: String = "", // ISO format "2025-07-21" (domenica)

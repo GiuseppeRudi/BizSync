@@ -21,7 +21,6 @@ import java.time.format.DateTimeFormatter
 fun IniziaPubblicazioneScreen(
     publishableWeek: LocalDate?,
     onStartPlanning: () -> Unit,
-    onGoToGestioneAziendale: () -> Unit = {} // Callback per navigare alla gestione aziendale
 ) {
     val userViewModel = LocalUserViewModel.current
     val userState by userViewModel.uiState.collectAsState()
@@ -72,7 +71,6 @@ fun IniziaPubblicazioneScreen(
             }
         }
 
-        // Spiegazione orari
         item {
             Card(
                 colors = CardDefaults.cardColors(
@@ -101,6 +99,14 @@ fun IniziaPubblicazioneScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "I turni della settimana saranno pianificati utilizzando gli orari di apertura e chiusura configurati per ogni dipartimento.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Per Apportare Modifiche all'orario e/o ai giorni di apertura di ogni dipartimento visitare la sezione Gestione Azienda.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -160,19 +166,6 @@ fun IniziaPubblicazioneScreen(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Pulsante per modificare orari
-                OutlinedButton(
-                    onClick = onGoToGestioneAziendale,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Settings,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Modifica Orari Dipartimenti")
-                }
 
                 // Pulsante principale
                 Button(

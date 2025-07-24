@@ -11,6 +11,7 @@ import com.bizsync.domain.constants.enumClass.PianificaScreenManager
 import com.bizsync.domain.constants.enumClass.WeeklyShiftStatus
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.AreaLavoro
+import com.bizsync.domain.model.Azienda
 import com.bizsync.domain.model.Turno
 import com.bizsync.domain.model.WeeklyShift
 import com.bizsync.domain.utils.WeeklyWindowCalculator
@@ -197,13 +198,13 @@ import javax.inject.Inject
         /**
          * Crea una nuova pianificazione settimanale
          */
-        fun createWeeklyPlanning(idAzienda: String, userId: String) {
+        fun createWeeklyPlanning(azienda: Azienda, userId: String) {
             viewModelScope.launch {
-                Log.d(TAG, "💾 Creazione nuova pianificazione per azienda: $idAzienda")
+                Log.d(TAG, "💾 Creazione nuova pianificazione per azienda: ${azienda.idAzienda}")
 
                 _uistate.update { it.copy(isLoading = true, errorMsg = null) }
 
-                when (val result = createWeeklyPlanningInternal(idAzienda, userId)) {
+                when (val result = createWeeklyPlanningInternal(azienda, userId)) {
                     is Resource.Success -> {
                         Log.d(TAG, "✅ Pianificazione creata con successo")
                         _uistate.update {
@@ -430,13 +431,14 @@ import javax.inject.Inject
         /**
          * Crea una nuova pianificazione settimanale (logica interna)
          */
-        private suspend fun createWeeklyPlanningInternal(idAzienda: String, userId: String): Resource<WeeklyShift> {
+        private suspend fun createWeeklyPlanningInternal(azienda: Azienda, userId: String): Resource<WeeklyShift> {
             return try {
                 val publishableWeek = WeeklyPublicationCalculator.getPublishableWeekStart()
                     ?: return Resource.Error("Errore calcolo settimana pubblicabile")
 
                 val weeklyShift = WeeklyShift(
-                    idAzienda = idAzienda,
+                    idAzienda = azienda.idAzienda,
+                    dipartimentiAttivi = azienda.areeLavoro,
                     weekStart = publishableWeek,
                     createdBy = userId,
                     createdAt = LocalDateTime.now(),

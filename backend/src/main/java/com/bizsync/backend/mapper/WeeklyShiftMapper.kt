@@ -24,7 +24,9 @@ fun WeeklyShift.toDto(): WeeklyShiftDto {
         updatedAt = null,
         publishedAt = null,
         finalizedAt = null,
-        notes = ""
+        notes = "",
+        dipartimentiAttivi = dipartimentiAttivi.toDtoList()
+
     )
 }
 
@@ -36,7 +38,8 @@ fun WeeklyShiftDto.toDomain(id: String): WeeklyShift {
         weekStart = LocalDate.parse(weekStart),
         createdBy = createdBy,
         createdAt = createdAt?.toLocalDateTime() ?: LocalDateTime.MIN,
-        status = WeeklyShiftStatus.valueOf(status)
+        status = WeeklyShiftStatus.valueOf(status),
+        dipartimentiAttivi = dipartimentiAttivi.toDomainList()
     )
 }
 

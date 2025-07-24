@@ -1,5 +1,6 @@
 package com.bizsync.app.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -28,12 +29,15 @@ import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.domain.constants.enumClass.ZonaLavorativa
 import com.bizsync.domain.model.AreaLavoro
 import com.bizsync.domain.model.DipendentiGiorno
+import com.bizsync.domain.model.TurnoFrequente
 import com.bizsync.domain.model.User
 import com.bizsync.ui.components.NoteSection
 import com.bizsync.ui.components.PauseManagerDialog
 import com.bizsync.ui.components.TitoloTurnoField
 import com.bizsync.ui.viewmodels.PianificaManagerViewModel
 import java.time.DayOfWeek
+import java.time.Duration
+import android.util.Log
 import java.time.LocalTime
 
 // Estensione per compatibilità con il codice esistente
@@ -61,13 +65,12 @@ fun TurnoScreen(
 
 
 
+    val turniFrequenti = userState.azienda.turniFrequenti
 
     LaunchedEffect(giornoSelezionato) {
         managerVM.setturniDipartimento(giornoSelezionato?.dayOfWeek ?: DayOfWeek.MONDAY, dipartimento.nomeArea)
     }
 
-    // Gestione fullscreen
-    val fullScreen by scaffoldVM.isFullScreen.collectAsState()
     LaunchedEffect(Unit) {
         scaffoldVM.onFullScreenChanged(true)
     }
@@ -101,11 +104,25 @@ fun TurnoScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick ={managerVM.pulisciTurnoInModifica()
-                                            onBack() }) {
+                    IconButton(
+                        onClick = {
+                            managerVM.pulisciTurnoInModifica()
+                            onBack()
+                        }
+                    ) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Indietro")
                     }
                 },
+                actions = {
+                    if (turniFrequenti.isNotEmpty()) {
+                        TurniFrequentiSelectorCompact(
+                            turniFrequenti = turniFrequenti,
+                            onTurnoFrequenteSelezionato = { turno ->
+                                managerVM.applicaTurnoFrequente(turno)
+                            }
+                        )
+                    }
+                }
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -117,17 +134,50 @@ fun TurnoScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
-            // Campo titolo
-            TitoloTurnoField(
-                value = turnoCorrente.titolo,
-                onValueChange = { managerVM.aggiornaTitolo(it) },
-                isError = turnoCorrente.titolo.length > 50,
-                errorMessage = if (turnoCorrente.titolo.length > 50)
-                    "Il titolo non può superare i 50 caratteri" else ""
-            )
+
+
+
+                // Campo titolo
+                TitoloTurnoField(
+                    value = turnoCorrente.titolo,
+                    onValueChange = { managerVM.aggiornaTitolo(it) },
+                    isError = turnoCorrente.titolo.length > 50,
+                    errorMessage = if (turnoCorrente.titolo.length > 50)
+                        "Il titolo non può superare i 50 caratteri" else "",
+                )
+
+
+
+                // Messaggio informativo se non ci sono turni frequenti
+                if (turniFrequenti.isEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.Info,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Configura turni frequenti nell'azienda per velocizzare la creazione",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
 
             Spacer(Modifier.height(16.dp))
-
 
 
             TimeRangePicker(
@@ -286,6 +336,286 @@ fun TurnoScreen(
     }
 }
 
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TurniFrequentiDialog(
+    turniFrequenti: List<TurnoFrequente>,
+    onTurnoSelezionato: (TurnoFrequente) -> Unit,
+    onDismiss: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true
+        )
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .fillMaxHeight(0.7f),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Seleziona Turno Frequente",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    IconButton(onClick = onDismiss) {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = "Chiudi",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Info card
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Info,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Seleziona un turno per compilare automaticamente nome e orari",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Lista turni frequenti
+                if (turniFrequenti.isEmpty()) {
+                    // Stato vuoto
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                Icons.Default.EventBusy,
+                                contentDescription = null,
+                                modifier = Modifier.size(48.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Nessun turno frequente configurato",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(
+                            items = turniFrequenti,
+                            key = { it.id }
+                        ) { turno ->
+                            TurnoFrequenteCard(
+                                turno = turno,
+                                onClick = { onTurnoSelezionato(turno) }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun TurnoFrequenteCard(
+    turno: TurnoFrequente,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        ),
+        border = BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            // Nome del turno
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.WorkOutline,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = turno.nome,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Orari
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Orario inizio
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.PlayArrow,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "Inizio: ${turno.oraInizio}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                // Orario fine
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Stop,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "Fine: ${turno.oraFine}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Durata calcolata
+            val durata = remember(turno.oraInizio, turno.oraFine) {
+                try {
+                    val inizio = LocalTime.parse(turno.oraInizio)
+                    val fine = LocalTime.parse(turno.oraFine)
+                    val durataMinuti = Duration.between(inizio, fine).toMinutes()
+                    val ore = durataMinuti / 60
+                    val minuti = durataMinuti % 60
+                    "${ore}h ${minuti}m"
+                } catch (e: Exception) {
+                    "Durata non calcolabile"
+                }
+            }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.Timer,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = "Durata: $durata",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+    }
+}
+
+// 4. Versione compatta del selettore (solo icona)
+
+@Composable
+fun TurniFrequentiSelectorCompact(
+    turniFrequenti: List<TurnoFrequente>,
+    onTurnoFrequenteSelezionato: (TurnoFrequente) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var showDialog by remember { mutableStateOf(false) }
+
+    IconButton(
+        onClick = { showDialog = true },
+        modifier = modifier
+    ) {
+        Icon(
+            Icons.Default.Schedule,
+            contentDescription = "Turni frequenti",
+            tint = MaterialTheme.colorScheme.primary
+        )
+    }
+
+    if (showDialog) {
+        TurniFrequentiDialog(
+            turniFrequenti = turniFrequenti,
+            onTurnoSelezionato = { turno ->
+                onTurnoFrequenteSelezionato(turno)
+                showDialog = false
+            },
+            onDismiss = { showDialog = false }
+        )
+    }
+}
 
 
 
