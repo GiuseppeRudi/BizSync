@@ -1,6 +1,8 @@
 package com.bizsync.cache.dao
 
 import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.bizsync.cache.entity.AbsenceEntity
 import kotlinx.coroutines.flow.Flow
@@ -9,6 +11,11 @@ import java.time.LocalDate
 @Dao
 interface AbsenceDao {
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(absence: AbsenceEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(absences: List<AbsenceEntity>)
 
     @Query(
         """

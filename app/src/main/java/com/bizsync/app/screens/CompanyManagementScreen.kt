@@ -66,7 +66,7 @@ fun CompanyCore(
                 azienda = azienda,
                 onBackClick = { companyVm.setSelectedOperation(null) },
                 onSaveChanges = { updatedAzienda ->
-                    companyVm.updateAziendaDetails(updatedAzienda)
+//                    companyVm.updateAziendaDetails(updatedAzienda)
                     companyVm.setSelectedOperation(null)
                 },
                 isLoading = companyState.isLoading

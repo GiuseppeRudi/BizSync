@@ -9,6 +9,15 @@ import java.time.LocalDate
 @Dao
 interface TimbraturaDao {
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(timbrature: List<TimbraturaEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(timbratura: TimbraturaEntity)
+
+    @Update
+    suspend fun update(timbratura: TimbraturaEntity)
+
     @Query("DELETE FROM timbrature")
     suspend fun clearAll()
 
