@@ -4,7 +4,9 @@ import android.util.Log
 import com.bizsync.backend.dto.UserDto
 import com.bizsync.backend.mapper.toDomain
 import com.bizsync.backend.mapper.toDomainList
+import com.bizsync.backend.mapper.toDto
 import com.bizsync.backend.remote.UtentiFirestore
+import com.bizsync.cache.dao.UserDao
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.Invito
 import com.bizsync.domain.model.User
@@ -14,9 +16,29 @@ import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 
-class UserRepository @Inject constructor(private val db : FirebaseFirestore) {
+class UserRepository @Inject constructor(private val db : FirebaseFirestore, private val userDao: UserDao) {
 
 
+
+    suspend fun updateDipartimentoDipendenti(users: List<User>) {
+        try {
+            users.forEach { user ->
+                val userDto = user.toDto()
+
+                // Aggiorna Firebase
+                db.collection("utenti")
+                    .document(userDto.uid)
+                    .update("dipartimento", userDto.dipartimento)
+                    .await()
+
+                // Aggiorna Room
+                userDao.updateDipartimento(userDto.uid, userDto.dipartimento)
+            }
+        } catch (e: Exception) {
+            Log.e("DipendenteRepository", "Errore aggiornamento dipartimenti", e)
+            throw e
+        }
+    }
 
 
     suspend fun updateUser(user: User, uid: String): Boolean {

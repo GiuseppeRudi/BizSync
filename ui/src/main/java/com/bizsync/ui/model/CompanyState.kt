@@ -3,6 +3,7 @@ package com.bizsync.ui.model
 
 import com.bizsync.domain.constants.enumClass.CompanyOperation
 import com.bizsync.domain.model.AreaLavoro
+import com.bizsync.domain.model.User
 import com.bizsync.ui.components.DialogStatusType
 import java.time.DayOfWeek
 import java.time.LocalTime
@@ -34,4 +35,10 @@ data class CompanyState(
     val showGiornoPublicazioneDialog: Boolean = false,
     val hasGiornoPublicazioneChanges: Boolean = false,
     val hasGiornoPubblicato : Boolean = false,
+
+    val dipendenti: List<User> = emptyList(),
+    val dipendentiModificati: Map<String, User> = emptyMap(),
+    val selectedDipendente: User? = null,
+    val showDipartimentoDialog: Boolean = false,
+    val nuoviDipartimenti: List<AreaLavoro> = emptyList()
 )

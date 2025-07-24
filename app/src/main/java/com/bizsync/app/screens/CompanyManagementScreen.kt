@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.bizsync.app.navigation.LocalScaffoldViewModel
 import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.ui.model.AziendaUi
 import com.bizsync.ui.viewmodels.CompanyViewModel
@@ -53,6 +54,9 @@ fun CompanyCore(
     azienda: AziendaUi,
     onBackClick: () -> Unit
 ) {
+
+
+
     val userViewModel = LocalUserViewModel.current
     val userState by userViewModel.uiState.collectAsState()
     val companyState by companyVm.uiState.collectAsState()
@@ -72,6 +76,18 @@ fun CompanyCore(
                     companyVm.setSelectedOperation(null)
                 },
                 isLoading = companyState.isLoading
+            )
+        }
+
+        CompanyOperation.GESTIONE_ASSEGN_DEP -> {
+            EmployeeDepartmentManagement(
+                companyVm = companyVm,
+                idAzienda = azienda.idAzienda,
+                nuoviDipartimenti = companyState.nuoviDipartimenti.ifEmpty { azienda.areeLavoro },
+                onBackClick = { companyVm.setSelectedOperation(null) },
+                onSaveComplete = {
+                    companyVm.setSelectedOperation(null)
+                }
             )
         }
 
@@ -118,6 +134,10 @@ fun OperationSelectorScreen(
     onOperationSelected: (CompanyOperation) -> Unit,
     onBackClick: () -> Unit
 ) {
+    val scaffoldVm = LocalScaffoldViewModel.current
+    LaunchedEffect(Unit) { scaffoldVm.onFullScreenChanged(false) }
+
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -176,6 +196,15 @@ fun OperationSelectorScreen(
                     description = "Configura i turni ricorrenti",
                     icon = Icons.Default.Schedule,
                     onClick = { onOperationSelected(CompanyOperation.TURNI_FREQUENTI) }
+                )
+            }
+
+            item {
+                OperationCard(
+                    title = "Gestione Aree ai Dipendenti",
+                    description = "Verifica e riassegna dipartimenti dipendenti",
+                    icon = Icons.Default.People,
+                    onClick = { onOperationSelected(CompanyOperation.GESTIONE_ASSEGN_DEP) }
                 )
             }
 

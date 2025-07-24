@@ -39,6 +39,9 @@ class UserViewModel @Inject constructor(
         _uiState.update { it.copy(azienda = _uiState.value.azienda.copy(giornoPubblicazioneTurni = giorno)) }
     }
 
+    fun updateAree(aree: List<AreaLavoro>) {
+        _uiState.update { it.copy(azienda = _uiState.value.azienda.copy(areeLavoro = aree)) }
+    }
     fun aggiornaUser(modifiche : EditableUserFields)
     {
         val currentUser = _uiState.value.user

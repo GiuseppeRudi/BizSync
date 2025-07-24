@@ -1,4 +1,3 @@
-// 3. AGGIORNA DipartimentiManagementScreen.kt
 package com.bizsync.app.screens
 
 import android.util.Log
@@ -16,6 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.bizsync.app.navigation.LocalScaffoldViewModel
+import com.bizsync.app.navigation.LocalUserViewModel
+import com.bizsync.domain.constants.enumClass.CompanyOperation
 import com.bizsync.domain.model.AreaLavoro
 import com.bizsync.ui.components.AreaLavoroDialog
 import com.bizsync.ui.viewmodels.CompanyViewModel
@@ -39,6 +40,7 @@ fun DipartimentiManagementScreen(
     val uiState by companyVm.uiState.collectAsState()
     val scaffoldVM = LocalScaffoldViewModel.current
 
+    val userVM = LocalUserViewModel.current
     val areeModificate = uiState.areeModificate
     val orariModificati = uiState.orariSettimanaliModificati
     val showAddDialog = uiState.showAddDialog
@@ -60,86 +62,66 @@ fun DipartimentiManagementScreen(
         companyVm.setHasChanges(hasDiff)
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        // Top Bar (stesso codice esistente)
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
-            )
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    IconButton(onClick = {companyVm.setSelectedOperation(null)}) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Indietro"
-                        )
-                    }
+    val nuoviDipartimenti = uiState.nuoviDipartimenti
+    LaunchedEffect(nuoviDipartimenti) {
+        if(nuoviDipartimenti.isNotEmpty())
+        {
+            userVM.updateAree(nuoviDipartimenti)
+            companyVm.setSelectedOperation(CompanyOperation.GESTIONE_ASSEGN_DEP)
+        }
+    }
 
-                    Column {
-                        Text(
-                            text = "Gestione Dipartimenti",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "${areeModificate.size}/10 configurati",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text("Gestione Dipartimenti")
+                },
+                navigationIcon = {
+                    IconButton(onClick = { companyVm.setSelectedOperation(null) }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Indietro")
                     }
-                }
-
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                },
+                actions = {
                     if (areeModificate.size < 10) {
                         IconButton(
                             onClick = { companyVm.setShowAddDialog(true) },
                             enabled = !isLoading
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = "Aggiungi"
-                            )
+                            Icon(Icons.Default.Add, contentDescription = "Aggiungi")
                         }
                     }
 
                     if (hasChanges) {
-                        Button(
+                        IconButton(
                             onClick = { companyVm.onSaveChanges(idAzienda) },
                             enabled = !isLoading
                         ) {
                             if (isLoading) {
                                 CircularProgressIndicator(
-                                    modifier = Modifier.size(16.dp),
+                                    modifier = Modifier.size(18.dp),
                                     strokeWidth = 2.dp
                                 )
                             } else {
-                                Text("Salva")
+                                Icon(Icons.Default.Save, contentDescription = "Salva")
                             }
                         }
                     }
                 }
-            }
+            )
         }
+    ) { innerPadding ->
 
-        // Lista delle aree CON GESTIONE ORARI
         LazyColumn(
+            contentPadding = innerPadding,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+
+            item { ModificheInfoBanner() }
+
             items(
                 items = areeModificate,
                 key = { it.nomeArea }
@@ -211,6 +193,51 @@ fun DipartimentiManagementScreen(
     }
 }
 
+
+@Composable
+fun ModificheInfoBanner() {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Info,
+                contentDescription = "Informazione",
+                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                modifier = Modifier.size(24.dp)
+            )
+
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = "Modifiche in sospeso",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+
+                Text(
+                    text = "Le modifiche ai dipartimenti saranno effettive solo alla successiva pubblicazione dei turni settimanali.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                )
+            }
+        }
+    }
+}
 @Composable
 private fun AreaItemEditableWithOrari(
     area: AreaLavoro,

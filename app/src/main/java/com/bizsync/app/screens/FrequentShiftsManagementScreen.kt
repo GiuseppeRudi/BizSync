@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -28,9 +29,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -46,7 +49,7 @@ import com.bizsync.app.navigation.LocalScaffoldViewModel
 import com.bizsync.domain.model.TurnoFrequente
 import com.bizsync.ui.components.TurnoFrequenteDialog
 
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TurniFrequentiManagementScreen(
     currentTurni: List<TurnoFrequente>,
@@ -54,8 +57,7 @@ fun TurniFrequentiManagementScreen(
     onSaveChanges: (List<TurnoFrequente>) -> Unit,
     isLoading: Boolean
 ) {
-    // Stato locale per le modifiche
-    var turniModificati by remember { mutableStateOf(currentTurni.toMutableList()) }
+    var turniModificati by remember { mutableStateOf(currentTurni) }
     var showAddDialog by remember { mutableStateOf(false) }
     var editingTurno by remember { mutableStateOf<TurnoFrequente?>(null) }
     var hasChanges by remember { mutableStateOf(false) }
@@ -65,56 +67,23 @@ fun TurniFrequentiManagementScreen(
         hasChanges = turniModificati != currentTurni
     }
 
+
     val scaffoldVm = LocalScaffoldViewModel.current
     LaunchedEffect(Unit) { scaffoldVm.onFullScreenChanged(true) }
 
-    Column(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        // Top Bar
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
-            )
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text("Turni Frequenti")
+                },
+                navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Indietro"
-                        )
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Indietro")
                     }
-
-                    Column {
-                        Text(
-                            text = "Gestione Turni Frequenti",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "${turniModificati.size}/6 configurati",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    // Bottone Aggiungi
+                },
+                actions = {
                     if (turniModificati.size < 6) {
                         IconButton(
                             onClick = { showAddDialog = true },
@@ -134,22 +103,22 @@ fun TurniFrequentiManagementScreen(
                         ) {
                             if (isLoading) {
                                 CircularProgressIndicator(
-                                    modifier = Modifier.size(16.dp),
+                                    modifier = Modifier.size(18.dp),
                                     strokeWidth = 2.dp
                                 )
                             } else {
-                                Text("Salva")
+                                Icon(Icons.Default.Save, contentDescription = "Salva")
                             }
                         }
                     }
                 }
-            }
+            )
         }
-
-        // Lista dei turni
+    )  { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(padding)
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -195,7 +164,7 @@ fun TurniFrequentiManagementScreen(
         }
     }
 
-    // Dialog per aggiungere nuovo turno
+    // Dialog aggiunta
     if (showAddDialog) {
         TurnoFrequenteDialog(
             turno = null,
@@ -212,7 +181,7 @@ fun TurniFrequentiManagementScreen(
         )
     }
 
-    // Dialog per modificare turno esistente
+    // Dialog modifica
     if (editingTurno != null) {
         TurnoFrequenteDialog(
             turno = editingTurno,
@@ -230,6 +199,7 @@ fun TurniFrequentiManagementScreen(
         )
     }
 }
+
 
 
 @Composable

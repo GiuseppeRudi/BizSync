@@ -14,6 +14,9 @@ interface UserDao {
     @Query("SELECT * FROM utenti")
     suspend fun getDipendentiFull(): List<UserEntity>
 
+    @Query("UPDATE utenti SET dipartimento = :dipartimento WHERE uid = :uid")
+    suspend fun updateDipartimento(uid: String, dipartimento: String)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(users: List<UserEntity>)
 
