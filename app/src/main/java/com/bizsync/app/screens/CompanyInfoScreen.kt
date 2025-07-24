@@ -503,44 +503,7 @@ fun InfoCard(
     }
 }
 
-@Composable
-private fun InfoRow(
-    label: String,
-    value: String,
-    icon: ImageVector
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = BizSyncColors.OnSurfaceVariant,
-            modifier = Modifier.size(16.dp)
-        )
 
-        Spacer(modifier = Modifier.width(BizSyncDimensions.SpacingSmall))
-
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                color = BizSyncColors.OnSurfaceVariant
-            ),
-            modifier = Modifier.weight(1f)
-        )
-
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                color = BizSyncColors.OnSurface,
-                fontWeight = FontWeight.Medium
-            )
-        )
-    }
-}
 
 // Funzioni di supporto
 fun getDayOfWeekInItalian(dayOfWeek: DayOfWeek): String {
