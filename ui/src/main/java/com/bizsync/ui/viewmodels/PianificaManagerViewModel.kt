@@ -50,7 +50,7 @@ class PianificaManagerViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ManagerState())
     val uiState: StateFlow<ManagerState> = _uiState
 
-    // ========== GESTIONE LOADING E STATO GENERALE ==========
+
 
     fun setLoading(loading: Boolean) {
         _uiState.update { it.copy(loading = loading) }
@@ -59,7 +59,9 @@ class PianificaManagerViewModel @Inject constructor(
     fun generateTurniWithAI(
         dipartimento: AreaLavoro,
         giornoSelezionato: LocalDate,
-        descrizioneAggiuntiva: String = ""
+        descrizioneAggiuntiva: String = "",
+        idAzienda: String
+
     ) {
         viewModelScope.launch {
             try {
@@ -80,8 +82,7 @@ class PianificaManagerViewModel @Inject constructor(
                         turnoAI = turnoAI,
                         dipartimento = dipartimento.nomeArea,
                         giornoSelezionato = giornoSelezionato,
-                        // DA GUARDARE
-                        idAzienda = dipartimento.nomeArea
+                        idAzienda =  idAzienda
                     )
                 }
 
@@ -353,13 +354,11 @@ class PianificaManagerViewModel @Inject constructor(
     fun inizializzaDatiWeeklyRiferimento(idAzienda: String, dipendenti : List<User>) {
         viewModelScope.launch {
             try {
-//                val dipDeferred = async { userDao.getDipendenti(idAzienda).toDomainList() }
 
                 // LE ASSENZE MI SERVONO SOLO DELLA SETTIMANA DI RIFERIMENTO
-                val assDeferred = async { absenceDao.getAbsencesByAzienda(idAzienda).toDomainList() }
-                val contrDeferred = async { contrattiDao.getContratti(idAzienda).toDomainList() }
+                val assDeferred = async { absenceDao.getAbsences().toDomainList() }
+                val contrDeferred = async { contrattiDao.getContratti().toDomainList() }
 
-//                val dipendenti = dipDeferred.await()
                 val assenze = assDeferred.await()
                 val contratti = contrDeferred.await()
 

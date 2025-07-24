@@ -34,8 +34,7 @@ class AbsenceOrchestrator @Inject constructor(
                     Log.e("ABSENCE_ORCH", "❌ Errore durante forceSync: ${syncResult.message}")
                 }
 
-                // Recupera dalla cache (dao) dopo il force sync
-                val cachedEntities = absenceDao.getAbsencesByAzienda(idAzienda)  // Assumi che questa funzione esista
+                val cachedEntities = absenceDao.getAbsences()
                 Log.d("ABSENCE_ORCH", "📦 Recuperate ${cachedEntities.size} assenze dalla cache dopo forceSync")
                 Resource.Success(cachedEntities.toDomainList())
 
@@ -44,8 +43,7 @@ class AbsenceOrchestrator @Inject constructor(
 
                 when (val result = absenceSyncManager.syncIfNeeded(idAzienda,idEmployee)) {
                     is Resource.Success -> {
-                        // Prendi i dati direttamente dalla cache dopo il sync intelligente
-                        val cachedEntities = absenceDao.getAbsencesByAzienda(idAzienda)
+                        val cachedEntities = absenceDao.getAbsences()
                         val domainAbsences = cachedEntities.toDomainList()
                         Log.d("ABSENCE_ORCH", "✅ Sync completato, assenze recuperate dalla cache: ${domainAbsences.size}")
                         Resource.Success(domainAbsences)

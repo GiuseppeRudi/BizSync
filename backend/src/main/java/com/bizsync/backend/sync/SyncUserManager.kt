@@ -42,13 +42,13 @@ class SyncUserManager @Inject constructor(
                         Log.d(TAG, "✅ Cache aggiornata per azienda $idAzienda")
                     }
 
-                    val cachedEntities = userDao.getDipendenti(idAzienda)
+                    val cachedEntities = userDao.getDipendenti()
                     Resource.Success(cachedEntities)
                 }
 
                 is Resource.Error -> {
                     Log.e(TAG, "❌ Errore Firebase, uso cache: ${firebaseResult.message}")
-                    val cachedEntities = userDao.getDipendenti(idAzienda)
+                    val cachedEntities = userDao.getDipendenti()
                     Resource.Success(cachedEntities)
                 }
 
@@ -63,7 +63,7 @@ class SyncUserManager @Inject constructor(
         } catch (e: Exception) {
             Log.e("DIPENDENTI_DEBUG", "🚨 Errore in syncIfNeeded: ${e.message}")
             return try {
-                val cachedEntities = userDao.getDipendenti(idAzienda)
+                val cachedEntities = userDao.getDipendenti()
                 Resource.Success(cachedEntities)
             } catch (cacheError: Exception) {
                 Log.e("DIPENDENTI_DEBUG", "🛑 Errore nel fallback cache: ${cacheError.message}")
@@ -107,7 +107,7 @@ class SyncUserManager @Inject constructor(
         val TAG = "DIPENDENTI_DEBUG"
         return try {
             val savedHash = hashStorage.getDipendentiHash(idAzienda) ?: return false
-            val cachedData = userDao.getDipendenti(idAzienda)
+            val cachedData = userDao.getDipendenti()
             val currentCacheHash = cachedData.generateCacheHash()
 
             val isValid = savedHash == currentCacheHash

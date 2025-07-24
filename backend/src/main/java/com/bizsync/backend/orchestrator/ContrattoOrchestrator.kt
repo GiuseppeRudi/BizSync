@@ -66,7 +66,7 @@ class ContrattoOrchestrator @Inject constructor(
                     Log.e("CONTRATTI_DEBUG", "❌ Errore durante forceSync: ${syncResult.message}")
                 }
 
-                val cachedEntities = contrattoDao.getContratti(idAzienda)
+                val cachedEntities = contrattoDao.getContratti()
                 Log.d("CONTRATTI_DEBUG", "📦 Recuperati ${cachedEntities.size} contratti dalla cache dopo forceSync")
                 Resource.Success(cachedEntities.toDomainList())
             } else {
@@ -74,7 +74,7 @@ class ContrattoOrchestrator @Inject constructor(
 
                 when (val result = syncContrattoManager.syncIfNeeded(idAzienda)) {
                     is Resource.Success -> {
-                        val domainContratti = contrattoDao.getContratti(idAzienda).toDomainList()
+                        val domainContratti = contrattoDao.getContratti().toDomainList()
                         Log.d("CONTRATTI_DEBUG", "✅ Sync completato, contratti recuperati dalla cache: ${domainContratti.size}")
                         Resource.Success(domainContratti)
                     }

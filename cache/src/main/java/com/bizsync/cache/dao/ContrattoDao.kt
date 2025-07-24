@@ -35,8 +35,8 @@ interface ContrattoDao {
     @Query("DELETE FROM contratti")
     suspend fun deleteAll()
 
-    @Query("SELECT * FROM contratti WHERE idAzienda = :aziendaId")
-    suspend fun getContratti(aziendaId: String): List<ContrattoEntity>
+    @Query("SELECT * FROM contratti ")
+    suspend fun getContratti(): List<ContrattoEntity>
 
     @Query("SELECT COUNT(*) FROM contratti")
     suspend fun count(): Int

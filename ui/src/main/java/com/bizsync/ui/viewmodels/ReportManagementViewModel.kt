@@ -13,12 +13,8 @@ import com.bizsync.ui.model.ReportData
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bizsync.cache.mapper.toDomain
 import com.bizsync.cache.mapper.toDomainList
-import com.bizsync.domain.constants.enumClass.AbsenceStatus
-import com.bizsync.domain.constants.enumClass.AbsenceType
 import com.bizsync.domain.constants.enumClass.ReportFilter
-import com.bizsync.domain.model.*
 import com.bizsync.ui.model.CacheStatus
 import com.bizsync.ui.model.ReportsUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -127,12 +123,11 @@ class ReportsManagementViewModel @Inject constructor(
     private suspend fun loadDataFromCache() {
         try {
 
-            val idAzienda = "ZNTzPHOA2xyJMgymaFN7"
             // Carica tutti i dati dalla cache locale
-            val contratti = contrattoDao.getContratti(idAzienda)
-            val users = userDao.getDipendenti(idAzienda)
-            val absences = absenceDao.getAbsencesByAzienda(idAzienda)
-            val turni = turnoDao.getTurniByAzienda(idAzienda)
+            val contratti = contrattoDao.getContratti()
+            val users = userDao.getDipendenti()
+            val absences = absenceDao.getAbsences()
+            val turni = turnoDao.getTurni()
 
             val reportData = ReportData(
                 contratti = contratti.toDomainList(),

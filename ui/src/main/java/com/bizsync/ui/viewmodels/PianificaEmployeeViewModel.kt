@@ -185,7 +185,7 @@ class PianificaEmployeeViewModel @Inject constructor(
             try {
                 setLoading(true)
 
-                val colleghiDeferred = async { userDao.getDipendenti(idAzienda) }
+                val colleghiDeferred = async { userDao.getDipendenti() }
                 val assenzeDeferred = async { absenceDao.getAbsencesByUser(userId) }
 
                 val colleghiEntity = colleghiDeferred.await()

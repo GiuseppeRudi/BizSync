@@ -236,12 +236,11 @@ class EmployeeHomeViewModel @Inject constructor(
         }
     }
 
-    // 🔧 VERSIONE SUSPEND DI loadShiftPublicationInfo
     private suspend fun loadShiftPublicationInfoSuspend() {
         Log.d(TAG, "loadShiftPublicationInfoSuspend: start")
         try {
             val weekStartRiferimento = WeeklyPublicationCalculator.getReferenceWeekStart(LocalDate.now())
-            val idAzienda = _homeState.value.azienda.idAzienda.ifEmpty { "ZNTzPHOA2xyJMgymaFN7" }
+            val idAzienda = _homeState.value.azienda.idAzienda
 
             val publicationRecord = weeklyShiftRepository.getThisWeekPublishedShift(idAzienda, weekStartRiferimento)
             Log.d(TAG, "loadShiftPublicationInfoSuspend: publicationRecord=$publicationRecord")

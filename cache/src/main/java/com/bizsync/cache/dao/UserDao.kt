@@ -8,8 +8,8 @@ import com.bizsync.cache.entity.UserEntity
 
 @Dao
 interface UserDao {
-    @Query("SELECT * FROM utenti WHERE idAzienda = :aziendaId")
-    suspend fun getDipendenti(aziendaId: String): List<UserEntity>
+    @Query("SELECT * FROM utenti")
+    suspend fun getDipendenti(): List<UserEntity>
 
     @Query("SELECT * FROM utenti")
     suspend fun getDipendentiFull(): List<UserEntity>

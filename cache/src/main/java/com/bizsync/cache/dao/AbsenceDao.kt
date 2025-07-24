@@ -30,8 +30,8 @@ interface AbsenceDao {
     suspend fun deleteAbsencesBefore(beforeDate: LocalDate)
 
 
-    @Query("SELECT * FROM absences WHERE idAzienda = :idAzienda ORDER BY submittedDate DESC")
-    suspend fun getAbsencesByAzienda(idAzienda: String): List<AbsenceEntity>
+    @Query("SELECT * FROM absences ORDER BY submittedDate DESC")
+    suspend fun getAbsences(): List<AbsenceEntity>
 
     @Query("SELECT * FROM absences WHERE idUser = :idUser ORDER BY submittedDate DESC")
     suspend fun getAbsencesByUser(idUser: String): List<AbsenceEntity>

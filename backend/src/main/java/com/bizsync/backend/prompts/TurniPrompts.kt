@@ -75,13 +75,15 @@ object TurniPrompts {
 
             REGOLE DA RISPETTARE:
             1. Coprire tutto l'orario del dipartimento ( ${dipartimento.orariSettimanali.get(giornoSelezionato.dayOfWeek)?.first?.format(timeFormatter)} -  ${dipartimento.orariSettimanali.get(giornoSelezionato.dayOfWeek)?.second?.format(timeFormatter)})
-            2. NON superare le ore rimanenti settimanali per ogni dipendente
-            3. Rispettare eventuali assenze parziali dei dipendenti
-            4. Minimizzare i buchi di copertura
-            5. Evitare sovrapposizioni con turni esistenti
-            6. Preferire turni di 4-8 ore
-            7. Assicurare pause pranzo per turni > 6 ore
-            8. Distribuire equamente il carico tra i dipendenti disponibili
+            2. NON ASSEGNARE TURNI IN FASCIE D'ORARIO DOVE CE GIA LO STESSO DIPENDENTE CHE EFFETTUA TURNI GIA ESISTENTI
+            3. SE I TURNI SECONDO ME VANNO GIA BENE NON RESTITUIRE NULLA 
+            4. NON superare le ore rimanenti settimanali per ogni dipendente
+            5. Rispettare eventuali assenze parziali dei dipendenti
+            6. Minimizzare i buchi di copertura
+            7. Evitare sovrapposizioni con turni esistenti
+            8. Preferire turni di 4-8 ore
+            9. Assicurare pause pranzo per turni > 6 ore
+            10. Distribuire equamente il carico tra i dipendenti disponibili
 
             FORMATO RISPOSTA - Rispondi SOLO con un JSON valido:
             {

@@ -40,7 +40,7 @@ class ChatViewModel @Inject constructor(
         _uiState.update { it.copy(isLoading = true) }
 
         viewModelScope.launch {
-            val users = userDao.getDipendenti(user.idAzienda)
+            val users = userDao.getDipendenti()
             _uiState.update { it.copy(allEmployees = users.toDomainList(), isLoading = false, currentUser = user.toDomain()) }
         }
 

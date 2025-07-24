@@ -7,7 +7,6 @@ import com.bizsync.domain.utils.WeeklyWindowCalculator
 import com.bizsync.backend.repository.AbsenceRepository
 import com.bizsync.cache.dao.AbsenceDao
 import com.bizsync.cache.entity.AbsenceEntity
-import com.bizsync.cache.mapper.toDomainList
 import com.bizsync.cache.mapper.toEntityList
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.Absence
@@ -54,13 +53,13 @@ class AbsenceSyncManager @Inject constructor(
                         Log.d("ABSENCE_SYNC", "✅ CACHE ANCORA VALIDA NON CE DA AGGIORNARE $idAzienda")
                     }
 
-                    val cachedEntities = absenceDao.getAbsencesByAzienda(idAzienda)
+                    val cachedEntities = absenceDao.getAbsences()
                     Resource.Success(cachedEntities)
                 }
 
                 is Resource.Error -> {
                     Log.e("ABSENCE_SYNC", "❌ Errore Firebase assenze, uso cache: ${firebaseResult.message}")
-                    val cachedEntities = absenceDao.getAbsencesByAzienda(idAzienda)
+                    val cachedEntities = absenceDao.getAbsences()
                     Resource.Success(cachedEntities)
                 }
 
@@ -75,7 +74,7 @@ class AbsenceSyncManager @Inject constructor(
         } catch (e: Exception) {
             Log.e("ABSENCE_SYNC", "🚨 Errore in syncIfNeeded (assenze): ${e.message}")
             try {
-                val cachedEntities = absenceDao.getAbsencesByAzienda(idAzienda)
+                val cachedEntities = absenceDao.getAbsences()
                 Resource.Success(cachedEntities)
             } catch (cacheError: Exception) {
                 Resource.Error("Errore sync e cache (assenze): ${e.message}")

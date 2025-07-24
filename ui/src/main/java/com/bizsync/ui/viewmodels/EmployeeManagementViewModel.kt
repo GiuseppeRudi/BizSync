@@ -43,7 +43,7 @@ class EmployeeManagementViewModel @Inject constructor(
             try {
                 _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-                val result = userDao.getDipendenti(idAzienda)
+                val result = userDao.getDipendenti()
                 val resultDomain = result.toDomainList()
                 _uiState.update { it.copy(employees = resultDomain.toUiList()) }
 

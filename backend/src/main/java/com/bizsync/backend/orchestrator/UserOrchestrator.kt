@@ -22,7 +22,7 @@ class UserOrchestrator @Inject constructor(
             if (forceRefresh) {
                 // Force sync
                 syncUserManager.forceSync(idAzienda, idUser)
-                val cachedEntities = userDao.getDipendenti(idAzienda)
+                val cachedEntities = userDao.getDipendenti()
                 Resource.Success(cachedEntities.toDomainList())
             } else {
                 // Sync intelligente con UNA SOLA chiamata Firebase

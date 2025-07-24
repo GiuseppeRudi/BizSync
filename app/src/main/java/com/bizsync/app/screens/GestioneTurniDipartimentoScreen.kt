@@ -34,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.bizsync.app.navigation.LocalScaffoldViewModel
+import com.bizsync.domain.constants.enumClass.WeeklyShiftStatus
 import com.bizsync.domain.model.AreaLavoro
 import com.bizsync.domain.model.Nota
 import com.bizsync.domain.model.Pausa
@@ -65,7 +66,7 @@ fun GestioneTurniDipartimentoScreen(
     val userViewModel = LocalUserViewModel.current
     val userState by userViewModel.uiState.collectAsState()
 
-
+    val idAzienda = userState.azienda.idAzienda
 
     val managerState by managerVM.uiState.collectAsState()
     val turniGioDip = managerState.turniGiornalieriDip
@@ -147,13 +148,14 @@ fun GestioneTurniDipartimentoScreen(
                         modifier = Modifier.weight(1f) // Occupa tutto lo spazio disponibile
                     )
 
-                    if (weeklyIsIdentical) {
+                    if (weeklyIsIdentical && weeklyShift?.status != WeeklyShiftStatus.PUBLISHED) {
                         // FloatingActionButton per AI
                         FloatingActionButton(
                             onClick = {
                                 managerVM.generateTurniWithAI(
                                     dipartimento = dipartimento,
-                                    giornoSelezionato = giornoSelezionato
+                                    giornoSelezionato = giornoSelezionato,
+                                    idAzienda = idAzienda
                                 )
                             },
                             containerColor = MaterialTheme.colorScheme.secondary,
@@ -180,15 +182,11 @@ fun GestioneTurniDipartimentoScreen(
                 items(turniGioDip) { turno ->
                     TurnoAssegnatoCard(
                         turno = turno,
-                        isIdentical = weeklyIsIdentical,
+                        isIdentical = weeklyIsIdentical && weeklyShift?.status != WeeklyShiftStatus.PUBLISHED,
                         onEdit = { managerVM.editTurno(turno.id)
                                  onCreateShift()
                                  },
-                        onDelete = {
-                            // Mostra dialog di conferma prima dell'eliminazione
-                            managerVM.deleteTurnoWithConfirmation(turno.id) {
-                                // Callback eseguito dopo la conferma
-                            }
+                        onDelete = { managerVM.deleteTurnoWithConfirmation(turno.id) {}
                         },
                         dipendenti = managerState.dipendenti.filter { it.uid in turno.idDipendenti }
                     )

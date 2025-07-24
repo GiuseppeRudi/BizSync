@@ -4,7 +4,6 @@ import com.bizsync.backend.hash.storage.TurniHashStorage
 
 
 import android.util.Log
-import com.bizsync.backend.hash.extensions.generateCacheHash
 import com.bizsync.backend.hash.extensions.generateDomainHash
 import com.bizsync.backend.repository.TurnoRepository
 import com.bizsync.cache.dao.TurnoDao
@@ -52,13 +51,13 @@ class SyncTurnoManager @Inject constructor(
                         Log.d("TURNI_DEBUG", "✅ Cache valida - nessun aggiornamento necessario")
                     }
 
-                    val cachedEntities = turnoDao.getTurniByAzienda(idAzienda)
+                    val cachedEntities = turnoDao.getTurni()
                     Resource.Success(cachedEntities)
                 }
 
                 is Resource.Error -> {
                     Log.e("TURNI_DEBUG", "❌ Errore Firebase turni, uso cache: ${firebaseResult.message}")
-                    val cachedEntities = turnoDao.getTurniByAzienda(idAzienda)
+                    val cachedEntities = turnoDao.getTurni()
                     Resource.Success(cachedEntities)
                 }
 
@@ -71,7 +70,7 @@ class SyncTurnoManager @Inject constructor(
         } catch (e: Exception) {
             Log.e("TURNI_DEBUG", "🚨 Errore in syncIfNeeded (turni): ${e.message}")
             try {
-                val cachedEntities = turnoDao.getTurniByAzienda(idAzienda)
+                val cachedEntities = turnoDao.getTurni()
                 Resource.Success(cachedEntities)
             } catch (cacheError: Exception) {
                 Resource.Error("Errore sia in sync che nella cache (turni): ${e.message}")

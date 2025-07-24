@@ -234,7 +234,7 @@ class TurnoOrchestrator @Inject constructor(
                     Log.e("TURNI_DEBUG", "❌ Errore durante forceSync: ${syncResult.message}")
                 }
 
-                val cachedEntities = turnoDao.getTurniByAzienda(idAzienda)
+                val cachedEntities = turnoDao.getTurni()
                 Log.d("TURNI_DEBUG", "📦 Recuperati ${cachedEntities.size} turni dalla cache dopo forceSync")
                 Resource.Success(cachedEntities.toDomainList())
             } else {
@@ -242,7 +242,7 @@ class TurnoOrchestrator @Inject constructor(
 
                 when (val result = syncTurnoManager.syncIfNeeded(idAzienda,idEmployee)) {
                     is Resource.Success -> {
-                        val domainTurni = turnoDao.getTurniByAzienda(idAzienda).toDomainList()
+                        val domainTurni = turnoDao.getTurni().toDomainList()
                         Log.d("TURNI_DEBUG", "✅ Sync completato, turni recuperati dalla cache: ${domainTurni.size}")
                         Resource.Success(domainTurni)
                     }
