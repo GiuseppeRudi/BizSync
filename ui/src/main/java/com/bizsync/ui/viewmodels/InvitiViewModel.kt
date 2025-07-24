@@ -36,16 +36,24 @@ class InvitiViewModel @Inject constructor(
 
 
 
-    fun fetchInvites(email : String) = viewModelScope.launch {
+    fun fetchInvites(email: String) = viewModelScope.launch {
+        val result = invitoRepository.getInvitesByEmail(email)
 
-        val result =  invitoRepository.getInvitesByEmail(email)
+        when (result) {
+            is Success -> {
+                onInvitesLoaded(result.data.toUiStateList())
+            }
 
-        when(result){
-            is Success -> { onInvitesLoaded(result.data.toUiStateList()) }
-            is Resource.Error -> { onInviteMsg(DialogStatusType.ERROR, result.message) }
-            is Resource.Empty -> { onInviteMsg(DialogStatusType.ERROR, "Nessun invito trovato") }
+            is Resource.Error -> {
+                _uiState.update { it.copy(isLoading = false) } // 🔧 <- aggiunto
+                onInviteMsg(DialogStatusType.ERROR, result.message)
+            }
+
+            is Resource.Empty -> {
+                _uiState.update { it.copy(isLoading = false) } // 🔧 <- aggiunto
+                onInviteMsg(DialogStatusType.ERROR, "Nessun invito trovato")
+            }
         }
-
     }
 
 

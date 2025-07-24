@@ -44,11 +44,12 @@ fun ChooseInvito(onTerminate: () -> Unit) {
     val updateInvite = inviteState.updateInvite
     val checkAcceptInvite = userState.checkAcceptInvite
 
-    LaunchedEffect(Unit) {
-        invitiVM.fetchInvites(user.email.toString())
+    LaunchedEffect(userState) {
+        if(userState.user.email.isNotEmpty())
+        invitiVM.fetchInvites(user.email)
     }
 
-    if(checkAcceptInvite == true){
+    if(checkAcceptInvite){
         onTerminate()
     }
 
@@ -290,12 +291,6 @@ private fun ModernInviteCard(
                     Text("Rifiuta")
                 }
 
-                OutlinedButton(
-                    onClick = onDetails,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text("Dettagli")
-                }
 
                 Button(
                     onClick = onAccept,

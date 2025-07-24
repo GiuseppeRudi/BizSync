@@ -24,10 +24,7 @@ fun ChooseAzienda(
     var visible by remember { mutableStateOf(false) }
 
 
-    val scaffoldVm = LocalScaffoldViewModel.current
-    LaunchedEffect(Unit) {
-        scaffoldVm.onFullScreenChanged(false)
-    }
+
 
     LaunchedEffect(Unit) {
         visible = true

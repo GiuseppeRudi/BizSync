@@ -5,7 +5,6 @@ import java.time.DayOfWeek
 import java.util.UUID
 import java.time.LocalTime
 
-// @Serializable
 data class AreaLavoro(
     var nomeArea: String = "",
 
@@ -16,7 +15,6 @@ data class AreaLavoro(
         DayOfWeek.THURSDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
         DayOfWeek.FRIDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0))
     )
-)
-{
-    constructor() : this("",emptyMap())
+) {
+    constructor() : this("", emptyMap())
 }

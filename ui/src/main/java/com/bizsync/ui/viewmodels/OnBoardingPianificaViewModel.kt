@@ -17,17 +17,30 @@ import java.time.DayOfWeek
 import java.time.LocalTime
 import javax.inject.Inject
 
-
 @HiltViewModel
-class OnBoardingPianificaViewModel @Inject constructor(private val aziendaRepository : AziendaRepository, private val OnBoardingPianificaRepository: OnBoardingPianificaRepository) : ViewModel() {
-
+class OnBoardingPianificaViewModel @Inject constructor(
+    private val aziendaRepository: AziendaRepository,
+    private val OnBoardingPianificaRepository: OnBoardingPianificaRepository
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(OnBoardingPianificaState())
     val uiState: StateFlow<OnBoardingPianificaState> = _uiState
 
+    // ========== FUNZIONI BASE ==========
+
     fun setStep(step: Int) {
         _uiState.update { it.copy(currentStep = step) }
     }
+
+    fun reset() {
+        _uiState.update { OnBoardingPianificaState() }
+    }
+
+    fun clearError() {
+        _uiState.update { it.copy(errorMsg = null) }
+    }
+
+    // ========== GESTIONE AREE ==========
 
     fun onNuovaAreaChangeName(name: String) {
         _uiState.update { it.copy(nuovaArea = it.nuovaArea.copy(nomeArea = name)) }
@@ -41,31 +54,6 @@ class OnBoardingPianificaViewModel @Inject constructor(private val aziendaReposi
         _uiState.update { it.copy(nuovaArea = AreaLavoro()) }
     }
 
-    fun reset(){
-        _uiState.update { OnBoardingPianificaState() }
-    }
-
-
-    fun generaAreeAi(nomeAzienda: String) {
-
-        viewModelScope.launch {
-            val aree = OnBoardingPianificaRepository.setAreaAi(nomeAzienda)
-            _uiState.update { it.copy(aree = aree, areePronte = true) }
-        }
-
-    }
-
-    fun generaTurniAi(nomeAzienda: String) {
-
-        viewModelScope.launch {
-            val turni = OnBoardingPianificaRepository.setTurniAi(nomeAzienda)
-
-            _uiState.update { it.copy(turni = turni, turniPronti = true) }
-        }
-
-    }
-
-
     fun onRimuoviAreaById(idDaRimuovere: String) {
         _uiState.update { state ->
             state.copy(
@@ -73,6 +61,220 @@ class OnBoardingPianificaViewModel @Inject constructor(private val aziendaReposi
             )
         }
     }
+
+    fun generaAreeAi(nomeAzienda: String) {
+        viewModelScope.launch {
+            val aree = OnBoardingPianificaRepository.setAreaAi(nomeAzienda)
+            _uiState.update { it.copy(aree = aree, areePronte = true) }
+        }
+    }
+
+    // ========== GESTIONE ORARI CON LOCALTIME ==========
+
+    fun onAreaSelectionChanged(areaId: String, isSelected: Boolean) {
+        _uiState.update { state ->
+            val newSelectedAree = if (isSelected) {
+                state.selectedAree + areaId
+            } else {
+                state.selectedAree - areaId
+            }
+
+            // Carica gli orari della prima area selezionata come template
+            val newOrariTemp = if (newSelectedAree.isNotEmpty()) {
+                val primaAreaSelezionata = state.aree.find { it.nomeArea == newSelectedAree.first() }
+                primaAreaSelezionata?.orariSettimanali?.ifEmpty {
+                    // Orari di default se l'area non ha orari configurati
+                    mapOf(
+                        DayOfWeek.MONDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
+                        DayOfWeek.TUESDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
+                        DayOfWeek.WEDNESDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
+                        DayOfWeek.THURSDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
+                        DayOfWeek.FRIDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0))
+                    )
+                } ?: mapOf(
+                    // Orari di default se l'area è null
+                    DayOfWeek.MONDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
+                    DayOfWeek.TUESDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
+                    DayOfWeek.WEDNESDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
+                    DayOfWeek.THURSDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
+                    DayOfWeek.FRIDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0))
+                )
+            } else {
+                emptyMap()
+            }
+
+            state.copy(
+                selectedAree = newSelectedAree,
+                orariTemp = newOrariTemp
+            )
+        }
+    }
+
+    fun deselectAllAree() {
+        _uiState.update { state ->
+            state.copy(
+                selectedAree = emptyList(),
+                orariTemp = emptyMap()
+            )
+        }
+    }
+
+    fun selectAllAreeNonConfigurate(areeNonConfigurateIds: List<String>) {
+        _uiState.update { currentState ->
+            currentState.copy(
+                selectedAree = areeNonConfigurateIds
+            )
+        }
+    }
+
+    fun onGiornoLavoroChanged(giorno: DayOfWeek, isLavorativo: Boolean) {
+        _uiState.update { state ->
+            val newOrariTemp = if (isLavorativo) {
+                // Aggiungi il giorno con orari di default se non esiste già
+                if (state.orariTemp.containsKey(giorno)) {
+                    state.orariTemp
+                } else {
+                    state.orariTemp + (giorno to (LocalTime.of(8, 0) to LocalTime.of(18, 0)))
+                }
+            } else {
+                // Rimuovi il giorno
+                state.orariTemp - giorno
+            }
+
+            state.copy(orariTemp = newOrariTemp)
+        }
+    }
+
+    fun onOrarioInizioChangedLocalTime(giorno: DayOfWeek, orarioInizio: LocalTime) {
+        _uiState.update { state ->
+            val orarioCorrente = state.orariTemp[giorno]
+            if (orarioCorrente != null) {
+                val newOrariTemp = state.orariTemp + (giorno to (orarioInizio to orarioCorrente.second))
+                state.copy(orariTemp = newOrariTemp)
+            } else {
+                state
+            }
+        }
+    }
+
+    fun onOrarioFineChangedLocalTime(giorno: DayOfWeek, orarioFine: LocalTime) {
+        _uiState.update { state ->
+            val orarioCorrente = state.orariTemp[giorno]
+            if (orarioCorrente != null) {
+                val newOrariTemp = state.orariTemp + (giorno to (orarioCorrente.first to orarioFine))
+                state.copy(orariTemp = newOrariTemp)
+            } else {
+                state
+            }
+        }
+    }
+
+    fun impostaOrariStandard() {
+        val orariStandard = mapOf(
+            DayOfWeek.MONDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
+            DayOfWeek.TUESDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
+            DayOfWeek.WEDNESDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
+            DayOfWeek.THURSDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
+            DayOfWeek.FRIDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0))
+        )
+
+        _uiState.update { state ->
+            state.copy(orariTemp = orariStandard)
+        }
+    }
+
+    fun resetOrariTemp() {
+        _uiState.update { state ->
+            state.copy(orariTemp = emptyMap())
+        }
+    }
+
+    fun marcaAreeConfigurateOrari(areeIds: List<String>) {
+        _uiState.update { currentState ->
+            currentState.copy(
+                areeOrariConfigurati = currentState.areeOrariConfigurati + areeIds.toSet()
+            )
+        }
+    }
+
+    fun salvaOrariSettimanali() {
+        _uiState.update { state ->
+            // Applica gli orari temporanei a tutte le aree selezionate
+            val areeAggiornate = state.aree.map { area ->
+                if (state.selectedAree.contains(area.nomeArea)) {
+                    area.copy(orariSettimanali = state.orariTemp)
+                } else {
+                    area
+                }
+            }
+
+            state.copy(
+                aree = areeAggiornate,
+                selectedAree = emptyList(), // Reset selezione dopo salvataggio
+                orariTemp = emptyMap() // Reset orari temporanei
+            )
+        }
+    }
+
+    // ========== FUNZIONI LEGACY PER RETROCOMPATIBILITÀ ==========
+
+    fun onOrarioInizioChanged(giorno: DayOfWeek, orarioInizio: String) {
+        try {
+            // Gestisci diversi formati di input
+            val time = when {
+                orarioInizio.matches(Regex("^\\d{1,2}:\\d{2}$")) -> {
+                    // Aggiungi zero iniziale se necessario (es: "8:00" -> "08:00")
+                    val parts = orarioInizio.split(":")
+                    val hour = parts[0].padStart(2, '0')
+                    val minute = parts[1]
+                    LocalTime.parse("$hour:$minute")
+                }
+                orarioInizio.matches(Regex("^\\d{2}:\\d{2}$")) -> {
+                    // Formato già corretto
+                    LocalTime.parse(orarioInizio)
+                }
+                else -> {
+                    // Fallback per formato non riconosciuto
+                    LocalTime.of(8, 0)
+                }
+            }
+
+            onOrarioInizioChangedLocalTime(giorno, time)
+        } catch (e: Exception) {
+            // In caso di errore, usa un orario di default
+            onOrarioInizioChangedLocalTime(giorno, LocalTime.of(8, 0))
+        }
+    }
+
+    fun onOrarioFineChanged(giorno: DayOfWeek, orarioFine: String) {
+        try {
+            // Gestisci diversi formati di input
+            val time = when {
+                orarioFine.matches(Regex("^\\d{1,2}:\\d{2}$")) -> {
+                    // Aggiungi zero iniziale se necessario (es: "8:00" -> "08:00")
+                    val parts = orarioFine.split(":")
+                    val hour = parts[0].padStart(2, '0')
+                    val minute = parts[1]
+                    LocalTime.parse("$hour:$minute")
+                }
+                orarioFine.matches(Regex("^\\d{2}:\\d{2}$")) -> {
+                    // Formato già corretto
+                    LocalTime.parse(orarioFine)
+                }
+                else -> {
+                    // Fallback per formato non riconosciuto
+                    LocalTime.of(18, 0)
+                }
+            }
+
+            onOrarioFineChangedLocalTime(giorno, time)
+        } catch (e: Exception) {
+            // In caso di errore, usa un orario di default
+            onOrarioFineChangedLocalTime(giorno, LocalTime.of(18, 0))
+        }
+    }
+
+    // ========== GESTIONE TURNI ==========
 
     fun onRimuoviTurnoById(idDaRimuovere: String) {
         _uiState.update { state ->
@@ -115,9 +317,14 @@ class OnBoardingPianificaViewModel @Inject constructor(private val aziendaReposi
         }
     }
 
-    fun clearError() {
-        _uiState.update { it.copy(errorMsg = null) }
+    fun generaTurniAi(nomeAzienda: String) {
+        viewModelScope.launch {
+            val turni = OnBoardingPianificaRepository.setTurniAi(nomeAzienda)
+            _uiState.update { it.copy(turni = turni, turniPronti = true) }
+        }
     }
+
+    // ========== COMPLETAMENTO SETUP ==========
 
     fun onComplete(idAzienda: String) {
         viewModelScope.launch {
@@ -142,142 +349,4 @@ class OnBoardingPianificaViewModel @Inject constructor(private val aziendaReposi
             }
         }
     }
-
-
-    // ========== NUOVE FUNZIONI PER ORARI SETTIMANALI ==========
-
-    fun onAreaSelectionChanged(areaId: String, isSelected: Boolean) {
-        _uiState.update { state ->
-            val newSelectedAree = if (isSelected) {
-                state.selectedAree + areaId
-            } else {
-                state.selectedAree - areaId
-            }
-
-            // Carica gli orari della prima area selezionata come template
-            val newOrariTemp = if (newSelectedAree.isNotEmpty()) {
-                val primaAreaSelezionata = state.aree.find { it.nomeArea == newSelectedAree.first() }
-                primaAreaSelezionata?.orariSettimanali?.ifEmpty {
-                    mapOf(
-                        DayOfWeek.MONDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
-                        DayOfWeek.TUESDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
-                        DayOfWeek.WEDNESDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
-                        DayOfWeek.THURSDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
-                        DayOfWeek.FRIDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0))
-                    )
-                } ?: mapOf(
-                    DayOfWeek.MONDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
-                    DayOfWeek.TUESDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
-                    DayOfWeek.WEDNESDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
-                    DayOfWeek.THURSDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0)),
-                    DayOfWeek.FRIDAY to (LocalTime.of(8, 0) to LocalTime.of(18, 0))
-                )
-            } else {
-                mapOf()
-            }
-
-
-            state.copy(
-                selectedAree = newSelectedAree,
-                orariTemp = newOrariTemp
-            )
-        }
-    }
-
-
-    fun deselectAllAree() {
-        _uiState.update { state ->
-            state.copy(
-                selectedAree = emptyList(),
-                orariTemp = mapOf()
-            )
-        }
-    }
-
-    fun onGiornoLavoroChanged(giorno: DayOfWeek, isLavorativo: Boolean) {
-        _uiState.update { state ->
-            val newOrariTemp = if (isLavorativo) {
-                // Aggiungi il giorno con orari di default se non esiste già
-                if (state.orariTemp.containsKey(giorno)) {
-                    state.orariTemp
-                } else {
-                    state.orariTemp + (giorno to (LocalTime.of(8, 0) to LocalTime.of(18, 0)))
-                }
-            } else {
-                // Rimuovi il giorno
-                state.orariTemp - giorno
-            }
-
-            state.copy(orariTemp = newOrariTemp)
-        }
-    }
-
-    fun onOrarioInizioChanged(giorno: DayOfWeek, orarioInizio: String) {
-        val nuovoOrarioInizio = LocalTime.parse(orarioInizio) // converto la stringa in LocalTime
-        _uiState.update { state ->
-            val orarioCorrente = state.orariTemp[giorno]
-            if (orarioCorrente != null) {
-                val newOrariTemp = state.orariTemp + (giorno to (nuovoOrarioInizio to orarioCorrente.second))
-                state.copy(orariTemp = newOrariTemp)
-            } else {
-                state
-            }
-        }
-    }
-
-    fun onOrarioFineChanged(giorno: DayOfWeek, orarioFine: String) {
-        val nuovoOrarioFine = LocalTime.parse(orarioFine)
-        _uiState.update { state ->
-            val orarioCorrente = state.orariTemp[giorno]
-            if (orarioCorrente != null) {
-                val newOrariTemp = state.orariTemp + (giorno to (orarioCorrente.first to nuovoOrarioFine))
-                state.copy(orariTemp = newOrariTemp)
-            } else {
-                state
-            }
-        }
-    }
-
-    fun marcaAreeConfigurateOrari(areeIds: List<String>) {
-        _uiState.update { currentState ->
-            currentState.copy(
-                areeOrariConfigurati = currentState.areeOrariConfigurati + areeIds.toSet()
-            )
-        }
-    }
-
-    // 3. Funzione per selezionare solo le aree non configurate
-    fun selectAllAreeNonConfigurate(areeNonConfigurateIds: List<String>) {
-        _uiState.update { currentState ->
-            currentState.copy(
-                selectedAree = areeNonConfigurateIds
-            )
-        }
-    }
-
-
-    fun salvaOrariSettimanali() {
-        _uiState.update { state ->
-            // Applica gli orari temporanei a tutte le aree selezionate
-            val areeAggiornate = state.aree.map { area ->
-                if (state.selectedAree.contains(area.nomeArea)) {
-                    area.copy(orariSettimanali = state.orariTemp)
-                } else {
-                    area
-                }
-            }
-
-            // Aggiungi le aree selezionate a quelle configurate
-            val nuoveAreeConfigurate = state.areeConOrariConfigurati + state.selectedAree
-
-            state.copy(
-                aree = areeAggiornate,
-                areeConOrariConfigurati = nuoveAreeConfigurate,
-                selectedAree = emptyList(), // Reset selezione dopo salvataggio
-                orariTemp = mapOf() // Reset orari temporanei
-            )
-        }
-    }
-
-
 }

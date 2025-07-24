@@ -25,11 +25,15 @@ class OnBoardingPianificaRepository @Inject constructor(private val json : Json 
 
             Log.d("TURNI_AI", "Risposta AI pulita: $cleanResponse")
 
-            // Parsing con kotlinx.serialization
-            val jsonList = json.decodeFromString<List<AreaLavoro>>(cleanResponse)
+            val areaNames = json.decodeFromString<List<String>>(cleanResponse)
 
-            Log.d("TURNI_AI", "Turni parsati: $jsonList")
-            jsonList
+            val areeLavoro = areaNames.map { nome ->
+                AreaLavoro(nomeArea = nome)
+            }
+
+
+            Log.d("TURNI_AI", "Turni parsati: $areeLavoro")
+            areeLavoro
 
         } catch (e: kotlinx.serialization.SerializationException) {
             Log.e("TURNI_AI", "Errore di serializzazione: ${e.message}")

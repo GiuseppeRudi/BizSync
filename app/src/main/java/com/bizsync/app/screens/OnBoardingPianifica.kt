@@ -1,17 +1,18 @@
 package com.bizsync.app.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -25,23 +26,23 @@ import com.bizsync.ui.components.UniversalCard
 import com.bizsync.ui.viewmodels.OnBoardingPianificaViewModel
 import com.bizsync.ui.viewmodels.ScaffoldViewModel
 import java.time.DayOfWeek
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.*
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SetupPianificaScreen(
     onSetupComplete: () -> Unit,
 ) {
-
-    val viewModel : OnBoardingPianificaViewModel = hiltViewModel()
+    val viewModel: OnBoardingPianificaViewModel = hiltViewModel()
     val pianificaState by viewModel.uiState.collectAsState()
     val currentStep = pianificaState.currentStep
     val scaffoldVM = LocalScaffoldViewModel.current
+
     LaunchedEffect(Unit) {
         scaffoldVM.onFullScreenChanged(true)
-
     }
 
     Column(
@@ -55,12 +56,13 @@ fun SetupPianificaScreen(
                 .fillMaxWidth()
                 .padding(bottom = 24.dp)
         )
+
         when (currentStep) {
-            0 -> { WelcomeStep(viewModel) }
-            1 -> { AreeLavoroStep(viewModel) }
-            2 -> { SelezioneAreeOrariStep(viewModel) }
-            3 -> { ModificaOrariStep(viewModel) }
-            4 -> { TurniFrequentiStep(viewModel,onSetupComplete,scaffoldVM) }
+            0 -> WelcomeStep(viewModel)
+            1 -> AreeLavoroStep(viewModel)
+            2 -> SelezioneAreeOrariStep(viewModel)
+            3 -> ConfigurazioneOrariStep(viewModel)
+            4 -> TurniFrequentiStep(viewModel, onSetupComplete, scaffoldVM)
         }
     }
 }
@@ -114,7 +116,7 @@ fun WelcomeStep(viewModel: OnBoardingPianificaViewModel) {
         Spacer(modifier = Modifier.height(48.dp))
 
         Button(
-            onClick = {viewModel.setStep(1)},
+            onClick = { viewModel.setStep(1) },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Inizia Configurazione")
@@ -135,7 +137,7 @@ fun AreeLavoroStep(viewModel: OnBoardingPianificaViewModel) {
 
     val userViewModel = LocalUserViewModel.current
     val userState by userViewModel.uiState.collectAsState()
-    val azienda  = userState.azienda
+    val azienda = userState.azienda
 
     LaunchedEffect(azienda) {
         if (!checkAreeDefualt) {
@@ -233,13 +235,15 @@ fun AreeLavoroStep(viewModel: OnBoardingPianificaViewModel) {
                                 viewModel.aggiungiArea()
                                 viewModel.resetNuovaArea()
                             },
-                            enabled = canAddArea
+                            enabled = canAddArea && nuovaArea.nomeArea.isNotBlank()
                         ) {
                             Icon(
                                 Icons.Default.Add,
                                 contentDescription = "Aggiungi",
-                                tint = if (canAddArea) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                tint = if (canAddArea && nuovaArea.nomeArea.isNotBlank())
+                                    MaterialTheme.colorScheme.primary
+                                else
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                             )
                         }
                     }
@@ -258,7 +262,7 @@ fun AreeLavoroStep(viewModel: OnBoardingPianificaViewModel) {
                     onClick = { viewModel.setStep(2) },
                     enabled = totalAree > 0
                 ) {
-                    Text("Continua")
+                    Text("Configura Orari")
                 }
             }
         }
@@ -270,7 +274,7 @@ fun SelezioneAreeOrariStep(viewModel: OnBoardingPianificaViewModel) {
     val pianificaState by viewModel.uiState.collectAsState()
     val aree = pianificaState.aree
     val selectedAree = pianificaState.selectedAree
-    val areeOrariConfigurati = pianificaState.areeOrariConfigurati // Nuova proprietà per tracciare le aree configurate
+    val areeOrariConfigurati = pianificaState.areeOrariConfigurati
 
     // Calcola le aree configurate e non configurate
     val areeConfigurate = aree.filter { areeOrariConfigurati.contains(it.nomeArea) }
@@ -333,12 +337,35 @@ fun SelezioneAreeOrariStep(viewModel: OnBoardingPianificaViewModel) {
         }
 
         if (selectedAree.isNotEmpty()) {
-            Text(
-                text = "${selectedAree.size} area/e selezionata/e per la prossima configurazione",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Schedule,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "${selectedAree.size} area/e selezionata/e per la configurazione orari",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
         }
 
         // Card per selezione aree
@@ -353,32 +380,68 @@ fun SelezioneAreeOrariStep(viewModel: OnBoardingPianificaViewModel) {
             ) {
                 // Sezione aree già configurate
                 if (areeConfigurate.isNotEmpty()) {
-                    Text(
-                        text = "✅ Aree già configurate:",
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Aree già configurate:",
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
 
-                    areeConfigurate.forEach { area ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Default.Check,
-                                contentDescription = "Configurata",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Text(
-                                text = area.nomeArea,
-                                modifier = Modifier.padding(start = 12.dp),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.primary
-                            )
+                    LazyColumn(
+                        modifier = Modifier.heightIn(max = 120.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        items(areeConfigurate) { area ->
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                                )
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Default.Check,
+                                        contentDescription = "Configurata",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Text(
+                                        text = area.nomeArea,
+                                        modifier = Modifier.padding(start = 12.dp),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontWeight = FontWeight.Medium
+                                    )
+
+                                    Spacer(modifier = Modifier.weight(1f))
+
+                                    // Mostra un riassunto degli orari
+                                    if (area.orariSettimanali.isNotEmpty()) {
+                                        val orariCount = area.orariSettimanali.size
+                                        Text(
+                                            text = "$orariCount giorni",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
 
@@ -391,11 +454,23 @@ fun SelezioneAreeOrariStep(viewModel: OnBoardingPianificaViewModel) {
 
                 // Sezione aree da configurare
                 if (areeNonConfigurate.isNotEmpty()) {
-                    Text(
-                        text = "Aree da configurare:",
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Schedule,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Aree da configurare:",
+                            fontWeight = FontWeight.Medium,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
 
                     Row(
                         modifier = Modifier
@@ -409,6 +484,12 @@ fun SelezioneAreeOrariStep(viewModel: OnBoardingPianificaViewModel) {
                             },
                             modifier = Modifier.weight(1f)
                         ) {
+                            Icon(
+                                Icons.Default.SelectAll,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
                             Text("Seleziona Tutte")
                         }
 
@@ -416,29 +497,49 @@ fun SelezioneAreeOrariStep(viewModel: OnBoardingPianificaViewModel) {
                             onClick = { viewModel.deselectAllAree() },
                             modifier = Modifier.weight(1f)
                         ) {
+                            Icon(
+                                Icons.Default.Clear,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
                             Text("Deseleziona")
                         }
                     }
 
                     LazyColumn {
                         items(areeNonConfigurate) { area ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                            Card(
+                                modifier = Modifier.padding(vertical = 2.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (selectedAree.contains(area.nomeArea))
+                                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                                    else
+                                        MaterialTheme.colorScheme.surface
+                                )
                             ) {
-                                Checkbox(
-                                    checked = selectedAree.contains(area.nomeArea),
-                                    onCheckedChange = { isChecked ->
-                                        viewModel.onAreaSelectionChanged(area.nomeArea, isChecked)
-                                    }
-                                )
-                                Text(
-                                    text = area.nomeArea,
-                                    modifier = Modifier.padding(start = 12.dp),
-                                    style = MaterialTheme.typography.bodyLarge
-                                )
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Checkbox(
+                                        checked = selectedAree.contains(area.nomeArea),
+                                        onCheckedChange = { isChecked ->
+                                            viewModel.onAreaSelectionChanged(area.nomeArea, isChecked)
+                                        }
+                                    )
+                                    Text(
+                                        text = area.nomeArea,
+                                        modifier = Modifier.padding(start = 12.dp),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = if (selectedAree.contains(area.nomeArea))
+                                            FontWeight.Medium
+                                        else
+                                            FontWeight.Normal
+                                    )
+                                }
                             }
                         }
                     }
@@ -449,22 +550,23 @@ fun SelezioneAreeOrariStep(viewModel: OnBoardingPianificaViewModel) {
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Icon(
-                            Icons.Default.Check,
+                            Icons.Default.TaskAlt,
                             contentDescription = "Completato",
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(48.dp)
                         )
                         Text(
-                            text = "Tutte le aree sono state configurate!",
+                            text = "Configurazione Completata!",
                             style = MaterialTheme.typography.headlineSmall,
                             color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Medium,
+                            fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(top = 16.dp)
                         )
                         Text(
-                            text = "Ora puoi procedere alla configurazione dei turni frequenti.",
+                            text = "Tutte le aree hanno gli orari configurati. Ora puoi procedere alla configurazione dei turni frequenti.",
                             style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(top = 8.dp)
+                            modifier = Modifier.padding(top = 8.dp),
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
                         )
                     }
                 }
@@ -477,12 +579,24 @@ fun SelezioneAreeOrariStep(viewModel: OnBoardingPianificaViewModel) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             OutlinedButton(onClick = { viewModel.setStep(1) }) {
+                Icon(
+                    Icons.Default.ArrowBack,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
                 Text("Indietro")
             }
 
             if (tutteAreeConfigurate) {
                 Button(onClick = { viewModel.setStep(4) }) {
                     Text("Continua ai Turni")
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Icon(
+                        Icons.Default.ArrowForward,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
                 }
             } else {
                 Button(
@@ -490,25 +604,28 @@ fun SelezioneAreeOrariStep(viewModel: OnBoardingPianificaViewModel) {
                     enabled = selectedAree.isNotEmpty()
                 ) {
                     Text("Configura Orari")
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Icon(
+                        Icons.Default.Schedule,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
                 }
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ModificaOrariStep(viewModel: OnBoardingPianificaViewModel) {
+fun ConfigurazioneOrariStep(viewModel: OnBoardingPianificaViewModel) {
     val pianificaState by viewModel.uiState.collectAsState()
     val selectedAree = pianificaState.selectedAree
     val orariTemp = pianificaState.orariTemp
-    val aree = pianificaState.aree
 
     val giorni = listOf(
         DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY,
         DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY, DayOfWeek.SUNDAY
     )
-
 
     Column(
         modifier = Modifier
@@ -522,12 +639,12 @@ fun ModificaOrariStep(viewModel: OnBoardingPianificaViewModel) {
         )
 
         Text(
-            text = "Imposta gli orari che verranno applicati a: ${selectedAree}",
+            text = "Imposta gli orari per: ${selectedAree.joinToString(", ")}",
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(vertical = 8.dp)
         )
 
-        // Card per configurazione orari
+        // Card con gli orari configurabili
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -535,74 +652,50 @@ fun ModificaOrariStep(viewModel: OnBoardingPianificaViewModel) {
                 .padding(vertical = 8.dp)
         ) {
             LazyColumn(
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                item {
-                    Text(
-                        text = "Seleziona i giorni lavorativi e imposta gli orari:",
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
-                }
-
                 items(giorni) { giorno ->
                     val nomeGiorno = giorno.getDisplayName(TextStyle.FULL, Locale.ITALIAN)
                     val orarioGiorno = orariTemp[giorno]
 
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Checkbox(
-                                checked = orarioGiorno != null,
-                                onCheckedChange = { isChecked ->
-                                    viewModel.onGiornoLavoroChanged(giorno, isChecked)
-                                }
-                            )
-
-                            Text(
-                                text = nomeGiorno.replaceFirstChar { it.uppercase() },
-                                modifier = Modifier.padding(start = 8.dp),
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = if (orarioGiorno != null) FontWeight.Medium else FontWeight.Normal
-                            )
+                    GiornoOrarioItem(
+                        nomeGiorno = nomeGiorno.replaceFirstChar { it.uppercase() },
+                        giorno = giorno,
+                        orarioGiorno = orarioGiorno,
+                        onGiornoLavoroChanged = { isLavorativo ->
+                            viewModel.onGiornoLavoroChanged(giorno, isLavorativo)
+                        },
+                        onOrarioInizioChanged = { nuovoOrario ->
+                            viewModel.onOrarioInizioChangedLocalTime(giorno, nuovoOrario)
+                        },
+                        onOrarioFineChanged = { nuovoOrario ->
+                            viewModel.onOrarioFineChangedLocalTime(giorno, nuovoOrario)
                         }
-
-                        if (orarioGiorno != null) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(start = 40.dp, top = 8.dp),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                OutlinedTextField(
-                                    value = orarioGiorno.first.toString(),
-                                    onValueChange = {
-                                        viewModel.onOrarioInizioChanged(giorno, it)
-                                    },
-                                    label = { Text("Inizio") },
-                                    modifier = Modifier.weight(1f),
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                                )
-
-                                OutlinedTextField(
-                                    value = orarioGiorno.second.toString(),
-                                    onValueChange = {
-                                        viewModel.onOrarioFineChanged(giorno, it)
-                                    },
-                                    label = { Text("Fine") },
-                                    modifier = Modifier.weight(1f),
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                                )
-                            }
-                        }
-                    }
+                    )
                 }
+            }
+        }
+
+        // Pulsanti azione rapida
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedButton(
+                onClick = { viewModel.impostaOrariStandard() },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("Orari Standard")
+            }
+
+            OutlinedButton(
+                onClick = { viewModel.resetOrariTemp() },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("Reset")
             }
         }
 
@@ -634,9 +727,100 @@ fun ModificaOrariStep(viewModel: OnBoardingPianificaViewModel) {
     }
 }
 
+@Composable
+fun GiornoOrarioItem(
+    nomeGiorno: String,
+    giorno: DayOfWeek,
+    orarioGiorno: Pair<LocalTime, LocalTime>?,
+    onGiornoLavoroChanged: (Boolean) -> Unit,
+    onOrarioInizioChanged: (LocalTime) -> Unit,
+    onOrarioFineChanged: (LocalTime) -> Unit
+) {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = if (orarioGiorno != null)
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+            else
+                MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            // Checkbox per giorno lavorativo
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = orarioGiorno != null,
+                    onCheckedChange = onGiornoLavoroChanged
+                )
+
+                Text(
+                    text = nomeGiorno,
+                    modifier = Modifier.padding(start = 8.dp),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = if (orarioGiorno != null) FontWeight.Bold else FontWeight.Normal,
+                    color = if (orarioGiorno != null)
+                        MaterialTheme.colorScheme.primary
+                    else
+                        MaterialTheme.colorScheme.onSurface
+                )
+            }
+
+            // Orari se il giorno è lavorativo
+            if (orarioGiorno != null) {
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // Orario di inizio
+                    TimePickerField(
+                        value = orarioGiorno.first,
+                        onValueChange = onOrarioInizioChanged,
+                        label = "Inizio",
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    // Orario di fine
+                    TimePickerField(
+                        value = orarioGiorno.second,
+                        onValueChange = onOrarioFineChanged,
+                        label = "Fine",
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                // Mostra durata
+                val durata = java.time.Duration.between(orarioGiorno.first, orarioGiorno.second)
+                val ore = durata.toHours()
+                val minuti = durata.toMinutes() % 60
+
+                Text(
+                    text = "Durata: ${ore}h ${minuti}m",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+        }
+    }
+}
+
+
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TurniFrequentiStep(viewModel: OnBoardingPianificaViewModel, onSetupComplete: () -> Unit,scaffoldVM: ScaffoldViewModel) {
+fun TurniFrequentiStep(
+    viewModel: OnBoardingPianificaViewModel,
+    onSetupComplete: () -> Unit,
+    scaffoldVM: ScaffoldViewModel
+) {
     val pianificaState by viewModel.uiState.collectAsState()
     val turni = pianificaState.turni
     val nuovoTurno = pianificaState.nuovoTurno
@@ -667,9 +851,10 @@ fun TurniFrequentiStep(viewModel: OnBoardingPianificaViewModel, onSetupComplete:
         }
     }
 
-    if(errorMsg != null) {
+    if (errorMsg != null) {
         StatusDialog(
-            message = errorMsg, onDismiss = { viewModel.clearError() },
+            message = errorMsg,
+            onDismiss = { viewModel.clearError() },
             statusType = DialogStatusType.ERROR
         )
     }
