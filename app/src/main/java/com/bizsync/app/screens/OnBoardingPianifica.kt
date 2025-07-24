@@ -1,6 +1,5 @@
 package com.bizsync.app.screens
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -27,7 +26,6 @@ import com.bizsync.ui.viewmodels.OnBoardingPianificaViewModel
 import com.bizsync.ui.viewmodels.ScaffoldViewModel
 import java.time.DayOfWeek
 import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.*
 
@@ -431,7 +429,6 @@ fun SelezioneAreeOrariStep(viewModel: OnBoardingPianificaViewModel) {
 
                                     Spacer(modifier = Modifier.weight(1f))
 
-                                    // Mostra un riassunto degli orari
                                     if (area.orariSettimanali.isNotEmpty()) {
                                         val orariCount = area.orariSettimanali.size
                                         Text(
@@ -452,7 +449,6 @@ fun SelezioneAreeOrariStep(viewModel: OnBoardingPianificaViewModel) {
                     }
                 }
 
-                // Sezione aree da configurare
                 if (areeNonConfigurate.isNotEmpty()) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -544,7 +540,6 @@ fun SelezioneAreeOrariStep(viewModel: OnBoardingPianificaViewModel) {
                         }
                     }
                 } else {
-                    // Tutte le aree sono configurate
                     Column(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally
@@ -573,14 +568,13 @@ fun SelezioneAreeOrariStep(viewModel: OnBoardingPianificaViewModel) {
             }
         }
 
-        // Pulsanti di navigazione
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             OutlinedButton(onClick = { viewModel.setStep(1) }) {
                 Icon(
-                    Icons.Default.ArrowBack,
+                    Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = null,
                     modifier = Modifier.size(16.dp)
                 )
@@ -593,7 +587,7 @@ fun SelezioneAreeOrariStep(viewModel: OnBoardingPianificaViewModel) {
                     Text("Continua ai Turni")
                     Spacer(modifier = Modifier.width(4.dp))
                     Icon(
-                        Icons.Default.ArrowForward,
+                        Icons.AutoMirrored.Filled.ArrowForward,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp)
                     )
@@ -661,7 +655,6 @@ fun ConfigurazioneOrariStep(viewModel: OnBoardingPianificaViewModel) {
 
                     GiornoOrarioItem(
                         nomeGiorno = nomeGiorno.replaceFirstChar { it.uppercase() },
-                        giorno = giorno,
                         orarioGiorno = orarioGiorno,
                         onGiornoLavoroChanged = { isLavorativo ->
                             viewModel.onGiornoLavoroChanged(giorno, isLavorativo)
@@ -730,7 +723,6 @@ fun ConfigurazioneOrariStep(viewModel: OnBoardingPianificaViewModel) {
 @Composable
 fun GiornoOrarioItem(
     nomeGiorno: String,
-    giorno: DayOfWeek,
     orarioGiorno: Pair<LocalTime, LocalTime>?,
     onGiornoLavoroChanged: (Boolean) -> Unit,
     onOrarioInizioChanged: (LocalTime) -> Unit,
@@ -749,7 +741,6 @@ fun GiornoOrarioItem(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            // Checkbox per giorno lavorativo
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -771,7 +762,6 @@ fun GiornoOrarioItem(
                 )
             }
 
-            // Orari se il giorno è lavorativo
             if (orarioGiorno != null) {
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -796,7 +786,6 @@ fun GiornoOrarioItem(
                     )
                 }
 
-                // Mostra durata
                 val durata = java.time.Duration.between(orarioGiorno.first, orarioGiorno.second)
                 val ore = durata.toHours()
                 val minuti = durata.toMinutes() % 60

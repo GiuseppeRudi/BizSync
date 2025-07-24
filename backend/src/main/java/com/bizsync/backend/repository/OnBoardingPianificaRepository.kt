@@ -6,12 +6,11 @@ import com.bizsync.backend.prompts.OnBoardingPianificaPrompts
 import com.bizsync.domain.model.AreaLavoro
 import com.bizsync.domain.model.TurnoFrequente
 import com.google.firebase.ai.GenerativeModel
-import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
 
-class OnBoardingPianificaRepository @Inject constructor(private val json : Json , private val db : FirebaseFirestore , private val ai : GenerativeModel  ) {
+class OnBoardingPianificaRepository @Inject constructor(private val json : Json, private val ai : GenerativeModel  ) {
 
     suspend fun setAreaAi(nomeAzienda: String): List<AreaLavoro> {
         return try {
@@ -20,7 +19,6 @@ class OnBoardingPianificaRepository @Inject constructor(private val json : Json 
             val response = ai.generateContent(prompt).text ?: ""
             Log.d("TURNI_AI", "Risposta AI grezza: $response")
 
-            // Pulisci la risposta da eventuali caratteri extra
             val cleanResponse = AiPrompts.cleanAiResponse(response)
 
             Log.d("TURNI_AI", "Risposta AI pulita: $cleanResponse")
@@ -42,12 +40,12 @@ class OnBoardingPianificaRepository @Inject constructor(private val json : Json 
 
         } catch (e: Exception) {
             Log.e("TURNI_AI", "Errore generico: ${e.message}")
-            getFallbackArea() // Fallback locale
+            getFallbackArea()
         }
     }
 
 
-    // 3. Funzione di fallback locale (opzionale ma consigliata)
+    // Funzione di fallback locale
     private fun getFallbackArea(): List<AreaLavoro> {
         Log.d("TURNI_AI", "Usando turni di fallback ")
         return listOf(
@@ -71,12 +69,10 @@ class OnBoardingPianificaRepository @Inject constructor(private val json : Json 
             val response = ai.generateContent(prompt).text ?: ""
             Log.d("TURNI_AI", "Risposta AI grezza: $response")
 
-            // Pulisci la risposta da eventuali caratteri extra
             val cleanResponse = AiPrompts.cleanAiResponse(response)
 
             Log.d("TURNI_AI", "Risposta AI pulita: $cleanResponse")
 
-            // Parsing con kotlinx.serialization usando l'injection Json
             val jsonList = json.decodeFromString<List<TurnoFrequente>>(cleanResponse)
 
             Log.d("TURNI_AI", "Turni parsati: $jsonList")
@@ -85,11 +81,11 @@ class OnBoardingPianificaRepository @Inject constructor(private val json : Json 
         } catch (e: kotlinx.serialization.SerializationException) {
             Log.e("TURNI_AI", "Errore di serializzazione: ${e.message}")
             Log.e("TURNI_AI", "Risposta che ha causato l'errore: ${ai.generateContent("").text}")
-            getFallbackTurni() // fallback locale per i turni
+            getFallbackTurni()
 
         } catch (e: Exception) {
             Log.e("TURNI_AI", "Errore generico: ${e.message}")
-            getFallbackTurni() // fallback locale per i turni
+            getFallbackTurni()
         }
     }
 
@@ -106,7 +102,6 @@ class OnBoardingPianificaRepository @Inject constructor(private val json : Json 
             TurnoFrequente(nome = "Turno Serale", oraInizio = "16:00", oraFine = "20:00")
         )
     }
-
 
 
 }

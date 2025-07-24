@@ -18,7 +18,6 @@ data class ContrattoEntity(
     val settoreAziendale: String = "",
     val dataInizio: String = "",
 
-    // Room non supporta direttamente tipi complessi, quindi si usa @Embedded
     @Embedded val ccnlInfo: CcnlnfoEntity = CcnlnfoEntity()
 )
 

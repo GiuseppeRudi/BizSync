@@ -24,12 +24,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.bizsync.app.navigation.LocalUserViewModel
-import com.bizsync.domain.model.Invito
 import com.bizsync.ui.components.StatusDialog
 import com.bizsync.ui.model.InvitoUi
 import com.bizsync.ui.viewmodels.InvitiViewModel
@@ -128,11 +126,10 @@ fun ChooseInvito(onTerminate: () -> Unit) {
 
                     items(invites.size) { index ->
                         val invite = invites[index]
-                        ModernInviteCard(
+                        InviteCard(
                             invite = invite,
-                            onAccept = { invitiVM.acceptInvite(invite,user.uid);
+                            onAccept = { invitiVM.acceptInvite(invite,user.uid)
                                 if (updateInvite == true){ userVM.onAcceptInvite(invite,inviteState.contratto) } },
-                            onDetails = { invitiVM.showDetails(invite) },
                             onDecline = { invitiVM.declineInvite(invite) }
                         )
                     }
@@ -146,10 +143,9 @@ fun ChooseInvito(onTerminate: () -> Unit) {
 }
 
 @Composable
-private fun ModernInviteCard(
+private fun InviteCard(
     invite: InvitoUi,
     onAccept: () -> Unit,
-    onDetails: () -> Unit,
     onDecline: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -450,7 +446,6 @@ private fun StatusBadge(status: com.bizsync.domain.constants.enumClass.StatusInv
             MaterialTheme.colorScheme.primary to "Accettato"
         com.bizsync.domain.constants.enumClass.StatusInvite.REJECTED ->
             MaterialTheme.colorScheme.error to "Rifiutato"
-        else -> MaterialTheme.colorScheme.outline to "Sconosciuto"
     }
 
     Surface(

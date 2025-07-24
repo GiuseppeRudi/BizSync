@@ -8,9 +8,6 @@ import java.time.Duration
 
 object PausaMapper {
 
-    /**
-     * Converte PausaDto in Pausa (domain model)
-     */
     fun PausaDto.toDomain(): Pausa {
         return Pausa(
             id = this.id,
@@ -21,9 +18,7 @@ object PausaMapper {
         )
     }
 
-    /**
-     * Converte Pausa (domain model) in PausaDto
-     */
+
     fun Pausa.toDto(): PausaDto {
         return PausaDto(
             id = this.id,
@@ -34,41 +29,30 @@ object PausaMapper {
         )
     }
 
-    /**
-     * Converte una lista di PausaDto in lista di Pausa
-     */
+
     fun List<PausaDto>.toDomain(): List<Pausa> {
         return this.map { it.toDomain() }
     }
 
-    /**
-     * Converte una lista di Pausa in lista di PausaDto
-     */
+
     fun List<Pausa>.toDto(): List<PausaDto> {
         return this.map { it.toDto() }
     }
 
-    /**
-     * Converte Long (minuti) in Duration
-     */
     private fun Long.toDuration(): Duration {
         return Duration.ofMinutes(this)
     }
 
-    /**
-     * Converte stringa in TipoPausa enum con fallback
-     */
+
     private fun String.toTipoPausa(): TipoPausa {
         return try {
             TipoPausa.valueOf(this.uppercase())
         } catch (e: IllegalArgumentException) {
-            // Fallback per valori non riconosciuti
             TipoPausa.PAUSA_PRANZO
         }
     }
 }
 
-// Extension functions per un uso più fluido
 /**
  * Extension function per convertire PausaDto in Pausa
  */

@@ -20,7 +20,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
@@ -105,7 +105,6 @@ fun EmployeeManagementScreen(
                 )
             )
     ) {
-        // Header con bottone indietro
         TopAppBar(
             title = {
                 Text(
@@ -117,7 +116,7 @@ fun EmployeeManagementScreen(
             navigationIcon = {
                 IconButton(onClick = onBackClick) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Indietro",
                         tint = Color(0xFF2C3E50)
                     )
@@ -125,7 +124,6 @@ fun EmployeeManagementScreen(
             }
         )
 
-        // Filtri
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -136,7 +134,6 @@ fun EmployeeManagementScreen(
             Column(
                 modifier = Modifier.padding(16.dp)
             ) {
-                // Barra di ricerca
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { employeeVM.updateSearchQuery(it) },
@@ -149,7 +146,6 @@ fun EmployeeManagementScreen(
                         .padding(bottom = 12.dp)
                 )
 
-                // Filtro dipartimento
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
@@ -168,7 +164,6 @@ fun EmployeeManagementScreen(
             }
         }
 
-        // Lista dipendenti
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
@@ -237,7 +232,6 @@ fun EmployeeCard(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // Info dipendente
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "${employee.nome} ${employee.cognome}",

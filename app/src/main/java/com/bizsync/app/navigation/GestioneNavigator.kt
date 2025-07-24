@@ -7,12 +7,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.bizsync.app.screens.*
 import com.bizsync.domain.constants.sealedClass.GestioneScreenRoute
-import com.bizsync.domain.model.AreaLavoro
-import com.bizsync.domain.model.Azienda
-import com.bizsync.domain.model.Contratto
-import com.bizsync.domain.model.TurnoFrequente
-import com.bizsync.domain.model.User
-import java.time.DayOfWeek
 
 @Composable
 fun GestioneNavigator(
@@ -26,10 +20,9 @@ fun GestioneNavigator(
         startDestination = GestioneScreenRoute.Main.route,
         modifier = modifier
     ) {
-        // Schermata principale con tutte le navigation functions
         composable(GestioneScreenRoute.Main.route) {
             MainManagementScreen(
-                // isManager navigation functions
+                // Manager navigation functions
                 onNavigateToEmployees = {
                     navController.navigate(GestioneScreenRoute.Employees.route)
                 },
@@ -153,8 +146,8 @@ fun GestioneNavigator(
             )
         }
 
-        // all’interno della tua NavHost…
-            composable(GestioneScreenRoute.CompanyInfo.route) { CompanyInfoScreen(onBackClick = { navController.popBackStack() },)
+            composable(GestioneScreenRoute.CompanyInfo.route) {
+                CompanyInfoScreen(onBackClick = { navController.popBackStack() })
         }
 
     }

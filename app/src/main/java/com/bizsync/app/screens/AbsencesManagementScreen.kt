@@ -1,17 +1,13 @@
 package com.bizsync.app.screens
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -20,7 +16,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -28,25 +23,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.domain.constants.enumClass.AbsenceStatus
 import com.bizsync.domain.constants.enumClass.AbsenceType
-import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.Contratto
-import com.bizsync.ui.components.DialogStatusType
-import com.bizsync.ui.components.TimeButton
-import com.bizsync.ui.components.DatePickerDialog
-import com.bizsync.ui.components.DateButton
-import com.bizsync.ui.components.StatusDialog
-
-import com.bizsync.ui.mapper.toUiData
 import com.bizsync.ui.model.AbsenceStatusUi
-import com.bizsync.ui.model.AbsenceTypeUi
 import com.bizsync.ui.model.AbsenceUi
-import com.bizsync.ui.model.PendingStats
 import com.bizsync.ui.viewmodels.AbsenceViewModel
-import kotlinx.coroutines.flow.map
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalTime
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 
@@ -119,7 +99,7 @@ private fun RequestsListContent(absenceVM: AbsenceViewModel, onBack: () -> Unit)
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
-                            Icons.Default.ArrowBack,
+                            Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Indietro",
                             tint = MaterialTheme.colorScheme.onSurface
                         )
@@ -154,7 +134,7 @@ private fun RequestsListContent(absenceVM: AbsenceViewModel, onBack: () -> Unit)
             ) {
                 Spacer(modifier = Modifier.height(24.dp)) // più spazio
 
-                contratto?.let {
+                contratto.let {
                     StatisticsCard(contratto = it, absenceVM)
                     Spacer(modifier = Modifier.height(24.dp))
                 }
@@ -186,16 +166,14 @@ private fun RequestsListContent(absenceVM: AbsenceViewModel, onBack: () -> Unit)
                     .padding(paddingValues),
                 contentPadding = PaddingValues(
                     top = 24.dp,
-                    bottom = 80.dp, // spazio per eventuali bottoni
+                    bottom = 80.dp,
                     start = 16.dp,
                     end = 16.dp
                 ),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 item {
-                    contratto?.let {
-                        StatisticsCard(contratto = it, absenceVM)
-                    }
+                    StatisticsCard(contratto = contratto, absenceVM)
                 }
 
                 item {
@@ -231,7 +209,6 @@ private fun RequestsListContent(absenceVM: AbsenceViewModel, onBack: () -> Unit)
 
 
 
-// Aggiorna StatisticsCard per calcolare anche le richieste pending
 @Composable
 private fun StatisticsCard(contratto: Contratto, absenceVM: AbsenceViewModel) {
 
@@ -314,7 +291,6 @@ private fun StatisticsCard(contratto: Contratto, absenceVM: AbsenceViewModel) {
 
 
 
-// StatisticProgressRow potenziata con pending
 @Composable
 private fun EnhancedStatisticProgressRow(
     label: String,
@@ -348,7 +324,6 @@ private fun EnhancedStatisticProgressRow(
                 )
             }
 
-            // Mostra approved + pending / max
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     "$approved",
@@ -361,7 +336,7 @@ private fun EnhancedStatisticProgressRow(
                         " + $pending",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
-                        color = Color(0xFFFF9800) // Arancione per pending
+                        color = Color(0xFFFF9800)
                     )
                 }
                 Text(
@@ -375,7 +350,6 @@ private fun EnhancedStatisticProgressRow(
 
         Spacer(modifier = Modifier.height(6.dp))
 
-        // Barra di progresso con sezioni
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -385,7 +359,6 @@ private fun EnhancedStatisticProgressRow(
                     RoundedCornerShape(4.dp)
                 )
         ) {
-            // Progresso approvato (verde)
             val approvedProgress = if (max > 0) (approved.toFloat() / max.toFloat()).coerceIn(0f, 1f) else 0f
             if (approvedProgress > 0) {
                 Box(
@@ -399,7 +372,6 @@ private fun EnhancedStatisticProgressRow(
                 )
             }
 
-            // Progresso pending (arancione) - si sovrappone a quello approvato
             val totalProgress = if (max > 0) (total.toFloat() / max.toFloat()).coerceIn(0f, 1f) else 0f
             if (pending > 0 && totalProgress > approvedProgress) {
                 Box(
@@ -446,7 +418,6 @@ private fun EnhancedStatisticProgressRow(
                 )
             }
 
-            // Seconda riga: dettaglio approvato vs pending (solo se ci sono pending)
             if (pending > 0) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -484,6 +455,7 @@ private fun EnhancedStatisticProgressRow(
         }
     }
 }
+
 @Composable
 private fun AbsenceRequestCard(request: AbsenceUi) {
     Card(
@@ -558,7 +530,7 @@ private fun AbsenceRequestCard(request: AbsenceUi) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Total days/hours - aggiornato per gestire nullable
+            // Total days/hours
             val totalText = when (request.typeUi.type) {
                 AbsenceType.ROL -> {
                     request.formattedTotalHours ?: "0 ore"

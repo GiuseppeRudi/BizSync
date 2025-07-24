@@ -7,7 +7,6 @@ import com.bizsync.cache.entity.AbsenceEntity
 import com.bizsync.domain.model.Absence
 import com.bizsync.cache.mapper.toDomain
 
-// FUNZIONE HASH SEMPLICE PER DOMAIN ABSENCE
 fun Absence.generateAbsenceHash(): String {
     val absenceString = listOf(
         id,
@@ -31,7 +30,6 @@ fun Absence.generateAbsenceHash(): String {
     return HashManager.generateHash(absenceString)
 }
 
-// HASH PER LISTE - SEMPRE TRAMITE DOMAIN
 fun List<AbsenceDto>.generateFirebaseHash(): String {
     // DTO → Domain → Hash
     val domainAbsences = this.map { it.toDomain() }
@@ -49,7 +47,6 @@ fun List<Absence>.generateDomainHash(): String {
     return generateDomainAbsencesHash(this)
 }
 
-// FUNZIONE CENTRALE PER HASH LISTE DOMAIN
 private fun generateDomainAbsencesHash(absences: List<Absence>): String {
     return HashManager.generateHashFromList(absences) { absence ->
         absence.generateAbsenceHash()

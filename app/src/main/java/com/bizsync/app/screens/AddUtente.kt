@@ -19,7 +19,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.ContactMail
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -30,6 +29,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -57,7 +57,6 @@ fun AddUtente(onChooseAzienda: () -> Unit) {
     val currentStep = uiState.currentStep
     val isUserAdded = uiState.isUserAdded
 
-    // Imposta automaticamente i dati da Firebase Auth
     LaunchedEffect(Unit) {
         val currentUser = FirebaseAuth.getInstance().currentUser
         currentUser?.let { user ->
@@ -73,7 +72,6 @@ fun AddUtente(onChooseAzienda: () -> Unit) {
         }
     }
 
-    // Dialog errore
     uiState.error?.let { error ->
         StatusDialog(
             message = error,
@@ -172,9 +170,11 @@ private fun StepHeader(currentStep: Int, totalSteps: Int) {
         Spacer(modifier = Modifier.height(16.dp))
 
         LinearProgressIndicator(
-            progress = currentStep.toFloat() / totalSteps.toFloat(),
-            modifier = Modifier.fillMaxWidth(),
-            color = MaterialTheme.colorScheme.primary
+        progress = { currentStep.toFloat() / totalSteps.toFloat() },
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.primary,
+        trackColor = ProgressIndicatorDefaults.linearTrackColor,
+        strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
         )
     }
 }
@@ -266,7 +266,6 @@ private fun StepOne(addutenteviewmodel: AddUtenteViewModel) {
                 isError = userState.cognome.isBlank()
             )
 
-            // Email (readonly - da Firebase Auth)
             OutlinedTextField(
                 value = userState.email,
                 onValueChange = { }, // Read-only

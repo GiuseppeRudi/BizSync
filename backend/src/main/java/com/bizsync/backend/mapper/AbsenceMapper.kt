@@ -8,7 +8,6 @@ import com.google.firebase.Timestamp
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import java.time.ZoneId
 import java.time.ZoneOffset
 
 
@@ -33,10 +32,8 @@ fun Absence.toDto(): AbsenceDto {
     )
 }
 
-// Estende List<Absence> per convertirla in List<AbsenceDto>
 fun List<Absence>.toDtoList(): List<AbsenceDto> = this.map { it.toDto() }
 
-// Estende List<AbsenceDto> per convertirla in List<Absence>
 fun List<AbsenceDto>.toDomainList(): List<Absence> = this.map { it.toDomain() }
 
 fun AbsenceDto.toDomain(): Absence {
@@ -63,7 +60,7 @@ fun AbsenceDto.toDomain(): Absence {
 }
 
 fun LocalDateTime.toTimestamp(): Timestamp {
-    val instant = this.atZone(ZoneOffset.UTC).toInstant() // Usa UTC invece di systemDefault
+    val instant = this.atZone(ZoneOffset.UTC).toInstant()
     return Timestamp(instant.epochSecond, instant.nano)
 }
 

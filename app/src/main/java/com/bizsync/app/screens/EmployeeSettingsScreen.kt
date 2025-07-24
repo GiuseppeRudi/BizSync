@@ -16,11 +16,11 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.ArrowBack
@@ -68,7 +68,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
@@ -95,12 +94,10 @@ fun EmployeeSettingsScreen(
 
     val user = userState.value.user.toDomain()
 
-    // Inizializza con l'utente passato
     LaunchedEffect(user) {
         viewModel.initializeWithUser(user)
     }
 
-    // Gestione messaggi di successo
     LaunchedEffect(uiState.successMessage) {
         uiState.successMessage?.let {
             delay(3000)
@@ -114,7 +111,6 @@ fun EmployeeSettingsScreen(
         }
     }
 
-    // Gestione back press con modifiche non salvate
     BackHandler(enabled = uiState.hasUnsavedChanges && !uiState.showConfirmDialog) {
         viewModel.showConfirmDialog()
     }
@@ -146,7 +142,7 @@ fun EmployeeSettingsScreen(
                             }
                         }
                     ) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Indietro")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Indietro")
                     }
                 },
                 actions = {
@@ -219,7 +215,6 @@ fun EmployeeSettingsScreen(
                     )
                 }
 
-                // Spazio aggiuntivo per il bottom bar
                 if (uiState.hasUnsavedChanges) {
                     item {
                         Spacer(modifier = Modifier.height(80.dp))
@@ -258,7 +253,6 @@ fun EmployeeSettingsScreen(
                 }
             }
 
-            // Loading overlay
             if (uiState.isSaving) {
                 Box(
                     modifier = Modifier
@@ -352,7 +346,6 @@ fun AccountInfoSection(user: User) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Foto profilo e nome
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()

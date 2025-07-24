@@ -22,10 +22,4 @@ class TurniHashStorage @Inject constructor(
         hashStorage.deleteHash("turni_$idAzienda")
     }
 
-
-    fun deleteLastSyncTime(idAzienda: String) {
-        hashStorage.deleteHash("turni_last_sync_$idAzienda")
-    }
-
-
 }

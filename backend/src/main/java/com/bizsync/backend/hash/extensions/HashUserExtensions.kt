@@ -32,7 +32,6 @@ fun List<User>.generateDomainHash(): String {
     return generateDomainUsersHash(this)
 }
 
-// FUNZIONE CENTRALE PER HASH LISTE DOMAIN
 private fun generateDomainUsersHash(users: List<User>): String {
     return HashManager.generateHashFromList(users) { user ->
         user.generateUserHash()

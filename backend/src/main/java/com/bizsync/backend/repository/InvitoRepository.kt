@@ -5,7 +5,6 @@ import com.bizsync.backend.dto.InvitoDto
 import com.bizsync.backend.mapper.toDomainList
 import com.bizsync.backend.mapper.toDto
 import com.bizsync.backend.remote.InvitiFirestore
-import com.bizsync.domain.constants.enumClass.StatusInvite
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.Invito
 import com.google.firebase.firestore.FirebaseFirestore
@@ -16,7 +15,7 @@ class InvitoRepository @Inject constructor(private val db : FirebaseFirestore)
 {
     suspend fun getInvitesByEmail(email: String): Resource<List<Invito>> {
         return try {
-            Log.d("INVITI_DEBUG", email.toString())
+            Log.d("INVITI_DEBUG", email)
 
             val snapshot = db.collection(InvitiFirestore.COLLECTION)
                 .whereEqualTo(InvitiFirestore.Fields.EMAIL, email)
@@ -46,7 +45,7 @@ class InvitoRepository @Inject constructor(private val db : FirebaseFirestore)
     suspend fun getInvitesByAzienda(idAzienda: String): Resource<List<Invito>> {
         return try {
 
-            Log.d("INVITI_DEBUG", "SONOQUA" + idAzienda)
+            Log.d("INVITI_DEBUG", "SONOQUA $idAzienda")
 
             val snapshot = db.collection(InvitiFirestore.COLLECTION)
                 .whereEqualTo(InvitiFirestore.Fields.ID_AZIENDA, idAzienda)
@@ -99,15 +98,12 @@ class InvitoRepository @Inject constructor(private val db : FirebaseFirestore)
                 )
                 .await()
 
-            Resource.Success(Unit)  // Successo senza dati specifici
+            Resource.Success(Unit)
 
         } catch (e: Exception) {
             Log.d("INVITO_DEBUG", e.toString())
             Resource.Error("Errore nell'aggiornamento dell'invito: ${e.message}")
         }
     }
-
-
-
 
 }

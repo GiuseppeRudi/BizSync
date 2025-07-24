@@ -41,7 +41,6 @@ class AziendaRepository @Inject constructor(private val db : FirebaseFirestore) 
 
     suspend fun updateGiornoPublicazioneTurni(idAzienda: String, nuovoGiorno: DayOfWeek): Resource<Unit> {
         return try {
-            // Converte DayOfWeek in stringa per Firebase
             val giornoString = nuovoGiorno.name
 
             db.collection(AziendeFirestore.COLLECTION)

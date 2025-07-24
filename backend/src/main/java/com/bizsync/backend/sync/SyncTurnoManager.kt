@@ -33,7 +33,7 @@ class SyncTurnoManager @Inject constructor(
 
             val savedHash = hashStorage.getTurniHash(idAzienda)
 
-            Log.d("TURNI_DEBUG", "🌐 Chiamata Firebase per turni azienda $idAzienda")
+            Log.d("TURNI_DEBUG", " Chiamata Firebase per turni azienda $idAzienda")
             val firebaseResult = turnoRepository.getTurniRangeByAzienda(idAzienda,startDate, endDate, idEmployee)
 
             when (firebaseResult) {
@@ -42,13 +42,13 @@ class SyncTurnoManager @Inject constructor(
                     val currentHash = firebaseData.generateDomainHash()
 
                     if (savedHash == null || savedHash != currentHash) {
-                        Log.d("TURNI_DEBUG", "🔄 Sync turni necessario per azienda $idAzienda")
+                        Log.d("TURNI_DEBUG", " Sync turni necessario per azienda $idAzienda")
                         Log.d("TURNI_DEBUG", "   Hash salvato: $savedHash")
                         Log.d("TURNI_DEBUG", "   Hash corrente: $currentHash")
 
                         performSyncWithData(idAzienda, firebaseData, currentHash,startDate,endDate)
                     } else {
-                        Log.d("TURNI_DEBUG", "✅ Cache valida - nessun aggiornamento necessario")
+                        Log.d("TURNI_DEBUG", " Cache valida - nessun aggiornamento necessario")
                     }
 
                     val cachedEntities = turnoDao.getTurni()
@@ -56,7 +56,7 @@ class SyncTurnoManager @Inject constructor(
                 }
 
                 is Resource.Error -> {
-                    Log.e("TURNI_DEBUG", "❌ Errore Firebase turni, uso cache: ${firebaseResult.message}")
+                    Log.e("TURNI_DEBUG", " Errore Firebase turni, uso cache: ${firebaseResult.message}")
                     val cachedEntities = turnoDao.getTurni()
                     Resource.Success(cachedEntities)
                 }
@@ -68,11 +68,11 @@ class SyncTurnoManager @Inject constructor(
                 }
             }
         } catch (e: Exception) {
-            Log.e("TURNI_DEBUG", "🚨 Errore in syncIfNeeded (turni): ${e.message}")
+            Log.e("TURNI_DEBUG", " Errore in syncIfNeeded (turni): ${e.message}")
             try {
                 val cachedEntities = turnoDao.getTurni()
                 Resource.Success(cachedEntities)
-            } catch (cacheError: Exception) {
+            } catch (e: Exception) {
                 Resource.Error("Errore sia in sync che nella cache (turni): ${e.message}")
             }
         }
@@ -106,9 +106,9 @@ class SyncTurnoManager @Inject constructor(
             turnoDao.insertAll(entities)
             hashStorage.saveTurniHash(idAzienda, newHash)
 
-            Log.d("TURNI_DEBUG", "✅ Sync turni completato - ${entities.size} turni - hash: $newHash")
+            Log.d("TURNI_DEBUG", " Sync turni completato - ${entities.size} turni - hash: $newHash")
         } catch (e: Exception) {
-            Log.e("TURNI_DEBUG", "❌ Errore durante il sync turni: ${e.message}")
+            Log.e("TURNI_DEBUG", " Errore durante il sync turni: ${e.message}")
             throw e
         }
     }

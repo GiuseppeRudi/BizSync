@@ -1,9 +1,9 @@
 package com.bizsync.app.screens
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -14,7 +14,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -37,10 +39,8 @@ import com.bizsync.ui.components.TitoloTurnoField
 import com.bizsync.ui.viewmodels.PianificaManagerViewModel
 import java.time.DayOfWeek
 import java.time.Duration
-import android.util.Log
 import java.time.LocalTime
 
-// Estensione per compatibilità con il codice esistente
 val Pausa.durataminuti: Long
     get() = durata.toMinutes()
 
@@ -81,11 +81,10 @@ fun TurnoScreen(
     LaunchedEffect(hasChangeShift) {
         if (hasChangeShift ) {
             onHasUnsavedChanges(true)
-            onBack() // Torna indietro dopo il salvataggio
+            onBack()
         }
     }
 
-    // Snackbar per messaggi
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(errorMessage) {
@@ -110,7 +109,7 @@ fun TurnoScreen(
                             onBack()
                         }
                     ) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Indietro")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Indietro")
                     }
                 },
                 actions = {
@@ -215,26 +214,24 @@ fun TurnoScreen(
                         )
                     }
                     Icon(
-                        Icons.Default.KeyboardArrowRight,
+                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
                         contentDescription = "Configura pause"
                     )
                 }
             }
 
-            // Dialog per gestire le pause
             if (managerState.showPauseDialog) {
                 PauseManagerDialog(managerVm = managerVM)
             }
 
             Spacer(Modifier.height(16.dp))
 
-            // Selezione dipendenti
             var showMembriDialog by remember { mutableStateOf(false) }
 
             MembriSelezionatiSummary(
                 dipendenti = managerState.dipendenti,
                 membriSelezionati = managerVM.getDipendentiSelezionati(),
-                zoneLavorativeAssegnate = managerVM.getZoneLavorativeAssegnate(), // Aggiungi questa linea
+                zoneLavorativeAssegnate = managerVM.getZoneLavorativeAssegnate(),
                 orarioInizio = turnoCorrente.orarioInizio,
                 orarioFine = turnoCorrente.orarioFine,
                 onClick = { showMembriDialog = true }
@@ -244,14 +241,14 @@ fun TurnoScreen(
                 showDialog = showMembriDialog,
                 disponibiliMembri = disponibilitaMembriTurno,
                 membriSelezionati = turnoCorrente.idDipendenti,
-                zoneLavorativeAssegnate = turnoCorrente.zoneLavorative, // Aggiungi questa linea
+                zoneLavorativeAssegnate = turnoCorrente.zoneLavorative,
                 orarioInizio = turnoCorrente.orarioInizio,
                 orarioFine = turnoCorrente.orarioFine,
                 onDismiss = { showMembriDialog = false },
                 onMembriUpdated = { nuoviIds ->
-                    managerVM.aggiornaDipendentiConZone(nuoviIds) // Usa la nuova funzione
+                    managerVM.aggiornaDipendentiConZone(nuoviIds)
                 },
-                onZonaLavorativaChanged = { idDipendente, zona -> // Aggiungi questo callback
+                onZonaLavorativaChanged = { idDipendente, zona ->
                     managerVM.aggiornaZonaLavorativaDipendente(idDipendente, zona)
                 }
             )
@@ -390,7 +387,6 @@ private fun TurniFrequentiDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Info card
                 Card(
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
@@ -419,7 +415,6 @@ private fun TurniFrequentiDialog(
 
                 // Lista turni frequenti
                 if (turniFrequenti.isEmpty()) {
-                    // Stato vuoto
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
@@ -504,13 +499,11 @@ private fun TurnoFrequenteCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Orari
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Orario inizio
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -528,7 +521,6 @@ private fun TurnoFrequenteCard(
                     )
                 }
 
-                // Orario fine
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -549,7 +541,6 @@ private fun TurnoFrequenteCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Durata calcolata
             val durata = remember(turno.oraInizio, turno.oraFine) {
                 try {
                     val inizio = LocalTime.parse(turno.oraInizio)
@@ -584,7 +575,6 @@ private fun TurnoFrequenteCard(
     }
 }
 
-// 4. Versione compatta del selettore (solo icona)
 
 @Composable
 fun TurniFrequentiSelectorCompact(
@@ -617,13 +607,11 @@ fun TurniFrequentiSelectorCompact(
     }
 }
 
-
-
 @Composable
 fun MembriSelezionatiSummary(
     dipendenti: List<User>,
     membriSelezionati: List<User>,
-    zoneLavorativeAssegnate: Map<String, ZonaLavorativa> = emptyMap(), // Nuovo parametro
+    zoneLavorativeAssegnate: Map<String, ZonaLavorativa> = emptyMap(),
     orarioInizio: LocalTime,
     orarioFine: LocalTime,
     onClick: () -> Unit
@@ -646,7 +634,7 @@ fun MembriSelezionatiSummary(
                     fontWeight = FontWeight.Medium
                 )
                 Icon(
-                    Icons.Default.KeyboardArrowRight,
+                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
                     contentDescription = "Gestisci membri"
                 )
             }
@@ -685,7 +673,6 @@ fun MembriSelezionatiSummary(
                             modifier = Modifier.weight(1f)
                         )
 
-                        // Chip per zona lavorativa
                         Surface(
                             color = zona.getChipColor(),
                             shape = RoundedCornerShape(12.dp),
@@ -725,7 +712,6 @@ fun MembriSelezionatiSummary(
     }
 }
 
-// Extension functions aggiuntive per ZonaLavorativa
 @Composable
 private fun ZonaLavorativa.getChipColor() = when (this) {
     ZonaLavorativa.IN_SEDE -> MaterialTheme.colorScheme.primaryContainer
@@ -746,7 +732,6 @@ private fun ZonaLavorativa.getShortName(): String = when (this) {
     ZonaLavorativa.TRASFERTA -> "Trasferta"
 }
 
-// Extension functions per ZonaLavorativa
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -917,10 +902,8 @@ fun MembriSelectionDialog(
 
                     Button(
                         onClick = {
-                            // Aggiorna i membri selezionati
                             onMembriUpdated(dipendentiSelezionatiInterni.toList())
 
-                            // Aggiorna le zone lavorative solo per i dipendenti selezionati
                             dipendentiSelezionatiInterni.forEach { idDipendente ->
                                 val zona = zoneTemporanee[idDipendente] ?: ZonaLavorativa.IN_SEDE
                                 onZonaLavorativaChanged(idDipendente, zona)
@@ -962,7 +945,7 @@ private fun DipendenteSelectionCard(
             }
         ),
         border = if (isSelected) {
-            androidx.compose.foundation.BorderStroke(
+            BorderStroke(
                 2.dp,
                 MaterialTheme.colorScheme.primary
             )

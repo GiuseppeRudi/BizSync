@@ -1,9 +1,7 @@
 package com.bizsync.backend.hash.storage
 
-import android.content.SharedPreferences
 import javax.inject.Inject
 import javax.inject.Singleton
-import androidx.core.content.edit
 import com.bizsync.backend.hash.HashStorage
 
 
@@ -12,7 +10,6 @@ class AbsenceHashStorage @Inject constructor(
     private val hashStorage: HashStorage
 ) {
 
-    // Salva l'hash delle assenze per una settimana specifica
     fun saveAbsenceHash(idAzienda: String, weekStart: String, hash: String) {
         hashStorage.saveHash("absence_hash_${idAzienda}_$weekStart", hash)
     }
@@ -28,7 +25,5 @@ class AbsenceHashStorage @Inject constructor(
         allKeys.filter { it.startsWith(prefix) }
             .forEach { hashStorage.deleteHash(it) }
     }
-
-
 
 }

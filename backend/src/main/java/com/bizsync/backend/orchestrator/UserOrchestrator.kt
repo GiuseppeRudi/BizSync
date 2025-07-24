@@ -1,8 +1,6 @@
 package com.bizsync.backend.orchestrator
 
 
-import com.bizsync.backend.hash.HashStorage
-import com.bizsync.backend.repository.UserRepository
 import com.bizsync.backend.sync.SyncUserManager
 import com.bizsync.cache.dao.UserDao
 import com.bizsync.cache.mapper.toDomainList
@@ -11,9 +9,7 @@ import com.bizsync.domain.model.User
 import javax.inject.Inject
 
 class UserOrchestrator @Inject constructor(
-    private val userRepository: UserRepository,
     private val userDao: UserDao,
-    private val hashStorage: HashStorage,
     private val syncUserManager: SyncUserManager
 ) {
 

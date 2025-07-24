@@ -9,12 +9,10 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -24,28 +22,24 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.bizsync.domain.constants.enumClass.WeeklyShiftStatus
 import com.bizsync.domain.model.WeeklyShift
-import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.time.format.TextStyle
 import java.util.*
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlanningHeader(
+    modifier: Modifier = Modifier,
     weeklyShift: WeeklyShift?,
     hasUnsavedChanges: Boolean = false,
     isLoading: Boolean = false,
     onSync: () -> Unit,
     onStatoSettimana: (WeeklyShiftStatus) -> Unit,
-    modifier: Modifier = Modifier
 ) {
     var showStatusDialog by remember { mutableStateOf(false) }
     var isExpanded by remember { mutableStateOf(true) } // Stato per mostrare/nascondere
@@ -61,7 +55,6 @@ fun PlanningHeader(
             Column(
                 modifier = Modifier.padding(16.dp)
             ) {
-                // Header con informazioni settimana e toggle button
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -104,7 +97,6 @@ fun PlanningHeader(
                     }
                 }
 
-                // Contenuto espandibile con animazione
                 AnimatedVisibility(
                     visible = isExpanded,
                     enter = expandVertically(
@@ -286,7 +278,7 @@ fun StatoSettimanaDialog(
                     )
                 }
 
-                items(WeeklyShiftStatus.values()) { status ->
+                items(WeeklyShiftStatus.entries.toTypedArray()) { status ->
                     StatoOption(
                         status = status,
                         isSelected = statoSelezionato == status,
@@ -417,42 +409,6 @@ fun StatoOption(
     }
 }
 
-// Funzioni helper
-fun getStatusIcon(status: WeeklyShiftStatus?): ImageVector {
-    return when (status) {
-        WeeklyShiftStatus.NOT_PUBLISHED -> Icons.Default.Visibility
-        WeeklyShiftStatus.DRAFT -> Icons.Default.Edit
-        WeeklyShiftStatus.PUBLISHED -> Icons.Default.PublishedWithChanges
-        null -> Icons.Default.Settings
-    }
-}
-
-fun getStatusDescription(status: WeeklyShiftStatus): String {
-    return when (status) {
-        WeeklyShiftStatus.NOT_PUBLISHED -> {
-            "• I turni rimangono privati e visibili solo a te\n" +
-                    "• Puoi continuare a modificarli liberamente\n" +
-                    "• La sincronizzazione salva le modifiche nel cloud ma non le condivide\n" +
-                    "• Ideale per la fase di pianificazione iniziale"
-        }
-        WeeklyShiftStatus.DRAFT -> {
-            "• I turni vengono automaticamente sincronizzati\n" +
-                    "• Diventano visibili ai dipendenti come \"bozza\"\n" +
-                    "• I dipendenti possono vedere e commentare i turni\n" +
-                    "• Puoi ancora modificarli dopo aver raccolto feedback\n" +
-                    "• Ideale per raccogliere opinioni prima della pubblicazione finale"
-        }
-        WeeklyShiftStatus.PUBLISHED -> {
-            "• I turni vengono automaticamente sincronizzati\n" +
-                    "• Diventano ufficiali e visibili a tutti i dipendenti\n" +
-                    "• NON potrai più modificarli una volta pubblicati\n" +
-                    "• I dipendenti riceveranno notifiche sui loro turni\n" +
-                    "• Questo è il passaggio finale e irreversibile"
-        }
-    }
-}
-
-// Data class helper per tuple a 4 elementi
 data class Quadruple<A, B, C, D>(
     val first: A,
     val second: B,
@@ -460,7 +416,6 @@ data class Quadruple<A, B, C, D>(
     val fourth: D
 )
 
-// Estensione per i colori di warning
 val ColorScheme.warningContainer: androidx.compose.ui.graphics.Color
     get() = primary.copy(alpha = 0.1f)
 

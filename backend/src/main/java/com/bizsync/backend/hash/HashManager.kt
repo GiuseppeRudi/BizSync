@@ -10,6 +10,7 @@ object HashManager {
             val hashBytes = digest.digest(data.toByteArray())
             hashBytes.joinToString("") { "%02x".format(it) }
         } catch (e: Exception) {
+            e.printStackTrace()
             ""
         }
     }

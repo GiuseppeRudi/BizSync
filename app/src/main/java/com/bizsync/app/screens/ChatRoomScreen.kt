@@ -21,11 +21,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Public
-import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -106,7 +106,7 @@ fun ChatRoomScreen(
                 )
             )
     ) {
-        // Header
+
         TopAppBar(
             title = {
                 Row(
@@ -121,7 +121,6 @@ fun ChatRoomScreen(
                                     ChatType.GENERALE -> Color(0xFF3498DB)
                                     ChatType.DIPARTIMENTO -> getDepartmentColor(chatRoom.dipartimento, dipartimenti )
                                     ChatType.PRIVATA -> Color(0xFF95A5A6)
-                                    else -> { Color(0xFF95A5A6)}
                                 }
                             ),
                         contentAlignment = Alignment.Center
@@ -131,7 +130,6 @@ fun ChatRoomScreen(
                                 ChatType.GENERALE -> Icons.Default.Public
                                 ChatType.DIPARTIMENTO -> getDepartmentIcon(chatRoom.dipartimento, dipartimenti )
                                 ChatType.PRIVATA -> Icons.Default.Person
-                                else -> { Icons.Default.Person}
                             },
                             contentDescription = null,
                             tint = Color.White,
@@ -153,7 +151,6 @@ fun ChatRoomScreen(
                                 ChatType.GENERALE -> "Tutti i dipendenti"
                                 ChatType.DIPARTIMENTO -> "Dipartimento ${chatRoom.dipartimento}"
                                 ChatType.PRIVATA -> "Chat privata"
-                                else -> {"Chat privata"}
                             },
                             color = Color(0xFF7F8C8D),
                             fontSize = 12.sp
@@ -164,7 +161,7 @@ fun ChatRoomScreen(
             navigationIcon = {
                 IconButton(onClick = onBackClick) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Indietro",
                         tint = Color(0xFF2C3E50)
                     )
@@ -192,7 +189,6 @@ fun ChatRoomScreen(
             }
         }
 
-        // Input area
         Surface(
             color = Color.White,
             shadowElevation = 8.dp
@@ -258,7 +254,7 @@ fun ChatRoomScreen(
                     contentColor = Color.White
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Send,
+                        imageVector = Icons.AutoMirrored.Filled.Send,
                         contentDescription = "Invia",
                         modifier = Modifier.size(20.dp)
                     )

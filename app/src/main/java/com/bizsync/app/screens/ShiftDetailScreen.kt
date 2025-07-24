@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,10 +24,8 @@ import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.domain.constants.enumClass.EmployeeSection
 import com.bizsync.domain.model.Turno
 import com.bizsync.ui.components.BizSyncCompactLoader
-import com.bizsync.ui.mapper.toDomain
 import com.bizsync.ui.model.UserUi
 import com.bizsync.ui.viewmodels.EmployeeManagementViewModel
-import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.*
@@ -44,9 +43,8 @@ fun ShiftsScreen(
 
     val userVm = LocalUserViewModel.current
     val userState by userVm.uiState.collectAsState()
-    // Stati per i filtri storici
+
     var selectedPeriod by remember { mutableStateOf(HistoricalPeriod.LAST_MONTH) }
-    var showDatePicker by remember { mutableStateOf(false) }
     var customStartDate by remember { mutableStateOf(LocalDate.now().minusMonths(1)) }
     var customEndDate by remember { mutableStateOf(LocalDate.now()) }
 
@@ -110,7 +108,7 @@ fun ShiftsScreen(
             navigationIcon = {
                 IconButton(onClick = { employeeVm.setCurrentSection(EmployeeSection.MAIN) }) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Indietro",
                         tint = Color(0xFF2C3E50)
                     )
@@ -127,11 +125,9 @@ fun ShiftsScreen(
                 selectedPeriod = selectedPeriod,
                 onPeriodSelected = { selectedPeriod = it },
                 dateRange = dateRange,
-                onCustomDateClick = { showDatePicker = true }
             )
         }
 
-        // Contenuto principale
         when {
             isLoading -> {
                 Box(
@@ -163,7 +159,6 @@ fun ShiftsScreen(
                         ShiftCard(shift = shift, isHistorical = isHistorical)
                     }
 
-                    // Footer con info di caricamento per turni storici
                     if (isHistorical && shifts.isNotEmpty()) {
                         item {
                             HistoricalInfoCard(dateRange = dateRange)
@@ -232,7 +227,6 @@ fun HistoricalFiltersCard(
     selectedPeriod: HistoricalPeriod,
     onPeriodSelected: (HistoricalPeriod) -> Unit,
     dateRange: Pair<LocalDate, LocalDate>,
-    onCustomDateClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -266,11 +260,10 @@ fun HistoricalFiltersCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Chips per i periodi
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(HistoricalPeriod.values()) { period ->
+                items(HistoricalPeriod.entries.toTypedArray()) { period ->
                     FilterChip(
                         onClick = { onPeriodSelected(period) },
                         label = { Text(period.displayName) },
@@ -507,7 +500,6 @@ fun EmptyShiftsState(isHistorical: Boolean, dateRange: Pair<LocalDate, LocalDate
     }
 }
 
-// Enum per i periodi storici
 enum class HistoricalPeriod(val displayName: String) {
     LAST_WEEK("Ultima settimana"),
     LAST_MONTH("Ultimo mese"),

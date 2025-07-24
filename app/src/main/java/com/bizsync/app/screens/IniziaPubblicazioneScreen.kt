@@ -1,5 +1,5 @@
 package com.bizsync.app.screens
-// Import necessari da aggiungere
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -41,7 +41,6 @@ fun IniziaPubblicazioneScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Header
         item {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -121,7 +120,6 @@ fun IniziaPubblicazioneScreen(
             }
         }
 
-        // Lista dipartimenti con orari
         if (dipartimenti.isNotEmpty()) {
             item {
                 Text(
@@ -167,14 +165,12 @@ fun IniziaPubblicazioneScreen(
             }
         }
 
-        // Pulsanti azione
         item {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
 
-                // Pulsante principale
                 Button(
                     onClick =  {   pianificaViewModel.createWeeklyPlanning(userState.azienda.toDomain(), userState.user.uid)},
                     modifier = Modifier.fillMaxWidth(),
@@ -211,7 +207,6 @@ private fun DipartimentoCard(dipartimento: AreaLavoro) {
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            // Header dipartimento
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically

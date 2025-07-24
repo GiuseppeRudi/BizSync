@@ -1,6 +1,5 @@
 package com.bizsync.backend.hash.storage
 
-// 3. ContrattiHashStorage.kt
 
 import com.bizsync.backend.hash.HashStorage
 import javax.inject.Inject
@@ -36,7 +35,6 @@ class ContrattiHashStorage @Inject constructor(
         hashStorage.deleteHash("contratti_last_sync_$idAzienda")
     }
 
-    // Salva hash di un singolo contratto (per update specifici)
     fun saveSingleContractHash(contractId: String, hash: String) {
         hashStorage.saveHash("contract_single_$contractId", hash)
     }
@@ -49,7 +47,6 @@ class ContrattiHashStorage @Inject constructor(
         hashStorage.deleteHash("contract_single_$contractId")
     }
 
-    // Pulisce tutta la cache per i contratti di un'azienda
     fun clearContrattiCache(idAzienda: String) {
         deleteContrattiHash(idAzienda)
         deleteLastSyncTime(idAzienda)

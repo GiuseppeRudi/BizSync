@@ -1,6 +1,5 @@
 package com.bizsync.backend.dto
 
-import com.google.firebase.firestore.Exclude
 
 data class AreaLavoroDto(
     val nomeArea: String,

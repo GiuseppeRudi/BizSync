@@ -8,7 +8,6 @@ object UserMapper {
 
     // Domain → DTO (per salvare su Firebase)
     fun toDto(domain: User): UserDto {
-        Log.d("USER_MAPPER", "Mapping User → UserDto: ${domain.uid}")
 
         return UserDto(
             uid = domain.uid,
@@ -30,8 +29,6 @@ object UserMapper {
 
     // DTO → Domain (per leggere da Firebase)
     fun toDomain(dto: UserDto): User {
-        Log.d("USER_MAPPER", "Mapping UserDto → User: ${dto.uid}")
-
         return User(
             uid = dto.uid,
             email = dto.email,

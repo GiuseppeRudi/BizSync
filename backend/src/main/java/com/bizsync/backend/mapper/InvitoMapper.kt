@@ -1,14 +1,11 @@
 package com.bizsync.backend.mapper
 
 import com.bizsync.backend.dto.InvitoDto
-import com.bizsync.backend.mapper.InvitoMapper.toDomain
 import com.bizsync.domain.model.Invito
 import com.bizsync.domain.utils.DateUtils.toFirebaseTimestamp
 import com.google.firebase.Timestamp
 
 object InvitoMapper {
-
-
 
         fun toDomain(dto: InvitoDto): Invito {
             return Invito(

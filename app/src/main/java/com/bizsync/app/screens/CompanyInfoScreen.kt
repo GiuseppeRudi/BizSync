@@ -1,5 +1,6 @@
 package com.bizsync.app.screens
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -24,7 +25,6 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Domain
-import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Euro
 import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.LocalHospital
@@ -43,9 +43,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.filled.SupervisorAccount
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.runtime.collectAsState
-
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -55,7 +55,6 @@ import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.domain.model.Azienda
 import com.bizsync.domain.model.Ccnlnfo
 import com.bizsync.domain.model.Contratto
-import com.bizsync.domain.model.User
 import com.bizsync.ui.theme.BizSyncColors
 import com.bizsync.ui.theme.BizSyncDimensions
 import java.time.DayOfWeek
@@ -69,7 +68,6 @@ fun CompanyInfoScreen(
 
     val userVM = LocalUserViewModel.current
     val userState by userVM.uiState.collectAsState()
-    val user = userState.user.toDomain()
     val contratto = userState.contratto
     val azienda = userState.azienda.toDomain()
 
@@ -79,6 +77,7 @@ fun CompanyInfoScreen(
             .background(BizSyncColors.Background)
             .padding(BizSyncDimensions.SpacingMedium)
     ) {
+
         // Header
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -247,6 +246,7 @@ fun ContractInfoCard(contratto: Contratto) {
     }
 }
 
+@SuppressLint("DefaultLocale")
 @Composable
 fun CcnlInfoCard(ccnlInfo: Ccnlnfo) {
     InfoCard(
@@ -451,10 +451,11 @@ fun BenefitUsageRow(
         Spacer(modifier = Modifier.height(4.dp))
 
         LinearProgressIndicator(
-            progress = if (total > 0) used.toFloat() / total.toFloat() else 0f,
-            modifier = Modifier.fillMaxWidth(),
-            color = color,
-            trackColor = color.copy(alpha = 0.2f)
+        progress = { if (total > 0) used.toFloat() / total.toFloat() else 0f },
+        modifier = Modifier.fillMaxWidth(),
+        color = color,
+        trackColor = color.copy(alpha = 0.2f),
+        strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
         )
     }
 }

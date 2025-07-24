@@ -3,9 +3,6 @@ package com.bizsync.backend.dto
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.Exclude
 
-/**
- * DTO per salvare/leggere la Timbratura su Firebase
- */
 data class TimbraturaDto(
     @get:Exclude
     val idFirebase: String = "",

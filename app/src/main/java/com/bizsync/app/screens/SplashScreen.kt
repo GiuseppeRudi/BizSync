@@ -7,7 +7,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,12 +20,10 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bizsync.app.R
 import kotlinx.coroutines.delay
-import kotlin.div
 
 @Composable
 fun SplashScreenWithProgress(
@@ -34,16 +31,12 @@ fun SplashScreenWithProgress(
     elapsedTime: Long,
     minimumDuration: Long
 ) {
-    // 📊 Calcola il progresso dell'animazione
     val animationProgress = (elapsedTime.toFloat() / minimumDuration).coerceIn(0f, 1f)
 
-    // 🎨 SplashScreen originale con alcune modifiche per mostrare il progresso
-    var isVisible by remember { mutableStateOf(false) }
     var showLogo by remember { mutableStateOf(false) }
     var showText by remember { mutableStateOf(false) }
     var showSubtitle by remember { mutableStateOf(false) }
 
-    // Animazioni infinite per effetti di background
     val infiniteTransition = rememberInfiniteTransition(label = "background")
 
     val backgroundRotation by infiniteTransition.animateFloat(
@@ -66,7 +59,6 @@ fun SplashScreenWithProgress(
         label = "pulse"
     )
 
-    // Animazione per il logo
     val logoScale by animateFloatAsState(
         targetValue = if (showLogo) 1f else 0f,
         animationSpec = spring(
@@ -91,7 +83,6 @@ fun SplashScreenWithProgress(
     )
 
     LaunchedEffect(Unit) {
-        isVisible = true
         delay(300)
         showLogo = true
         delay(800)
@@ -111,7 +102,6 @@ fun SplashScreenWithProgress(
             ),
         contentAlignment = Alignment.Center
     ) {
-        // Elementi decorativi di background
         repeat(3) { index ->
             Box(
                 modifier = Modifier
@@ -125,7 +115,6 @@ fun SplashScreenWithProgress(
             )
         }
 
-        // Cerchio pulsante dietro al logo
         Box(
             modifier = Modifier
                 .size(250.dp)
@@ -146,7 +135,6 @@ fun SplashScreenWithProgress(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Logo con animazioni
             AnimatedVisibility(
                 visible = showLogo,
                 enter = scaleIn(
@@ -171,7 +159,6 @@ fun SplashScreenWithProgress(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Testo principale con animazione
             AnimatedVisibility(
                 visible = showText,
                 enter = slideInVertically(
@@ -190,7 +177,6 @@ fun SplashScreenWithProgress(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Sottotitolo con animazione
             AnimatedVisibility(
                 visible = showSubtitle,
                 enter = slideInVertically(
@@ -210,7 +196,6 @@ fun SplashScreenWithProgress(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 🆕 INDICATORE DI CARICAMENTO MIGLIORATO
             AnimatedVisibility(
                 visible = showSubtitle,
                 enter = fadeIn(animationSpec = tween(800, delayMillis = 600))
@@ -250,12 +235,10 @@ fun LoadingIndicatorWithStatus(
     Column(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // 🔄 Indicatore originale (sempre animato)
         LoadingIndicator()
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 📊 Barra di progresso per l'animazione
         Box(
             modifier = Modifier
                 .width(120.dp)
@@ -283,7 +266,6 @@ fun LoadingIndicatorWithStatus(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // ✅ Indicatore stato dati
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {

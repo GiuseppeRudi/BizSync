@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -53,7 +54,6 @@ fun GiornoPublicazioneManagementScreen(
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        // Top Bar
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp),
@@ -74,7 +74,7 @@ fun GiornoPublicazioneManagementScreen(
                 ) {
                     IconButton(onClick = { companyVm.setSelectedOperation(null) }) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Indietro"
                         )
                     }
@@ -95,14 +95,12 @@ fun GiornoPublicazioneManagementScreen(
             }
         }
 
-        // Contenuto principale
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Card informativa
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
@@ -138,7 +136,6 @@ fun GiornoPublicazioneManagementScreen(
                 }
             }
 
-            // Card giorno attuale
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
@@ -223,7 +220,6 @@ fun GiornoPublicazioneManagementScreen(
         }
     }
 
-    // Dialog per selezione giorno
     if (showDialog && giornoTemp != null) {
         GiornoPublicazioneDialog(
             giornoAttuale = giornoAttualePublicazione,
@@ -305,7 +301,6 @@ fun GiornoPublicazioneDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Lista giorni
                 LazyColumn(
                     modifier = Modifier.height(300.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)

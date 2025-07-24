@@ -23,10 +23,10 @@ object RoomModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase {
         return Room.databaseBuilder(
-            context,
-            AppDatabase::class.java,
-            "bizsync_database"
-        ).fallbackToDestructiveMigration().build()
+                context,
+                AppDatabase::class.java,
+                "bizsync_database"
+            ).fallbackToDestructiveMigration(false).build()
     }
 
     @Provides

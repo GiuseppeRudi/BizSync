@@ -16,12 +16,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.PersonAdd
-import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.Button
@@ -91,7 +91,7 @@ fun CreateInviteScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Indietro"
                         )
                     }
@@ -107,7 +107,7 @@ fun CreateInviteScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .verticalScroll(scrollState)
-                .padding(16.dp),           // spazio interno
+                .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             // Progress indicator
@@ -155,7 +155,6 @@ fun FirstStepContent(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        // Header del primo step
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
@@ -201,19 +200,19 @@ fun FirstStepContent(
             isEmail = true
         )
 
-        // Campo Posizione Lavorativa (ex nomeRuolo)
+        // Campo Posizione Lavorativa
         EmailField(
-            value =  uiState.invite.posizioneLavorativa, // inviteState.invite.posizioneLavorativa
+            value =  uiState.invite.posizioneLavorativa,
             onValueChange = { inviteVM.setPosizioneLavorativa(it) },
             label = "Posizione Lavorativa",
             placeholder = "Es. Sviluppatore Frontend",
             leadingIcon = Icons.Default.Work
         )
 
-        // Selezione Dipartimento/Area di Lavoro
+        // Selezione Dipartimento
         DepartmentSelectionCard(
-            selectedDepartment = uiState.invite.dipartimento, // inviteState.invite.dipartimento
-            departments = azienda.areeLavoro, // azienda.areeLavoro
+            selectedDepartment = uiState.invite.dipartimento,
+            departments = azienda.areeLavoro,
             onDepartmentSelected = { inviteVM.setDipartimento(it) }
         )
 
@@ -225,19 +224,19 @@ fun FirstStepContent(
         // Tipo Contratto
         ContractTypeSection(
             selectedContractType = uiState.invite.tipoContratto,
-            onContractTypeSelected = { inviteVM.setTipoContratto(it) /* inviteVM.onTipoContrattoChanged(it) */ }
+            onContractTypeSelected = { inviteVM.setTipoContratto(it)}
         )
 
         // Ore Settimanali
         WeeklyHoursSection(
-            weeklyHours = uiState.invite.oreSettimanali, // inviteState.invite.oreSettimanali
-            onWeeklyHoursChanged = { inviteVM.setOreSettimanali(it)/* inviteVM.onOreSettimanaliChanged(it) */ }
+            weeklyHours = uiState.invite.oreSettimanali,
+            onWeeklyHoursChanged = { inviteVM.setOreSettimanali(it) }
         )
 
         // Sezione ruolo manageriale
         ManagerRoleSection(
-            isManager = uiState.invite.manager, // inviteState.invite.manager
-            onManagerChanged = { inviteVM.onManagerChanged(it) /* inviteVM.onManagerChanged(it) */ }
+            isManager = uiState.invite.manager,
+            onManagerChanged = { inviteVM.onManagerChanged(it) }
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -251,7 +250,7 @@ fun FirstStepContent(
             Text("Continua")
             Spacer(modifier = Modifier.width(8.dp))
             Icon(
-                Icons.Default.ArrowForward,
+                Icons.AutoMirrored.Filled.ArrowForward,
                 contentDescription = null,
                 modifier = Modifier.size(18.dp)
             )
@@ -267,7 +266,6 @@ fun SecondStepContent(
     val uiState by inviteVM.uiState.collectAsState()
 
     LaunchedEffect(Unit) {
-        // Auto-generate CCNL info when entering second step
         if (inviteVM.isCurrentStepValid() && uiState.ccnlnfo == Ccnlnfo()) {
             inviteVM.generateContractInfo()
         }
@@ -277,7 +275,6 @@ fun SecondStepContent(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        // Header del secondo step
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
@@ -408,7 +405,6 @@ fun SecondStepContent(
                 }
             }
         } else {
-            // Sostituiamo LazyColumn con Column normale per evitare problemi di vincoli infiniti
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -484,7 +480,6 @@ fun SecondStepContent(
 
         Spacer(modifier = Modifier.weight(1f))
 
-        // Pulsanti navigazione
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -495,7 +490,7 @@ fun SecondStepContent(
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Icon(
-                    Icons.Default.ArrowBack,
+                    Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = null,
                     modifier = Modifier.size(18.dp)
                 )
@@ -510,7 +505,7 @@ fun SecondStepContent(
                 enabled = !uiState.isLoading
             ) {
                 Icon(
-                    Icons.Default.Send,
+                    Icons.AutoMirrored.Filled.Send,
                     contentDescription = null,
                     modifier = Modifier.size(18.dp)
                 )

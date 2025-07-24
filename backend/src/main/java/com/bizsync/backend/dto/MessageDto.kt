@@ -12,7 +12,7 @@ data class MessageDto(
     val content: String = "",
     @ServerTimestamp
     val timestamp: Timestamp? = null,
-    val tipo: String = "text", // "text", "announcement", "system"
+    val tipo: String = "text",
     val lettoDa: List<String> = emptyList(),
-    val categoria: String? = null // "cambio_turno", etc.
+    val categoria: String? = null
 )

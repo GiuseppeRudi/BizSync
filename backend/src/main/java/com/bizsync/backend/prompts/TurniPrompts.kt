@@ -3,7 +3,6 @@ package com.bizsync.backend.prompts
 
 import com.bizsync.domain.model.*
 import java.time.LocalDate
-import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
 object TurniPrompts {
@@ -18,7 +17,6 @@ object TurniPrompts {
     ): String {
         val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
-        // Prepara info dipendenti disponibili
         val dipendentiInfo = dipendentiDisponibili.utenti.mapNotNull { user ->
             val stato = dipendentiDisponibili.statoPerUtente[user.uid] ?: return@mapNotNull null
             val statoSettimanaleUser = statoSettimanale[user.uid]
@@ -41,7 +39,6 @@ object TurniPrompts {
             """.trimIndent()
         }.joinToString(",\n")
 
-        // Prepara info turni esistenti
         val turniEsistentiInfo = turniEsistenti.joinToString(",\n") { turno ->
             """
             {
@@ -57,9 +54,9 @@ object TurniPrompts {
 
             DATI DEL DIPARTIMENTO:
             - Nome: ${dipartimento.nomeArea}
-            - Orario apertura: ${dipartimento.orariSettimanali.get(giornoSelezionato.dayOfWeek)?.first?.format(timeFormatter)}
-            - Orario chiusura: ${dipartimento.orariSettimanali.get(giornoSelezionato.dayOfWeek)?.second?.format(timeFormatter)}
-            - Giorno: ${giornoSelezionato.dayOfWeek} ${giornoSelezionato}
+            - Orario apertura: ${dipartimento.orariSettimanali[giornoSelezionato.dayOfWeek]?.first?.format(timeFormatter)}
+            - Orario chiusura: ${dipartimento.orariSettimanali[giornoSelezionato.dayOfWeek]?.second?.format(timeFormatter)}
+            - Giorno: ${giornoSelezionato.dayOfWeek} $giornoSelezionato
 
             DIPENDENTI DISPONIBILI:
             [
@@ -74,7 +71,7 @@ object TurniPrompts {
             ${if (descrizioneAggiuntiva.isNotEmpty()) "INDICAZIONI AGGIUNTIVE: $descrizioneAggiuntiva" else ""}
 
             REGOLE DA RISPETTARE:
-            1. Coprire tutto l'orario del dipartimento ( ${dipartimento.orariSettimanali.get(giornoSelezionato.dayOfWeek)?.first?.format(timeFormatter)} -  ${dipartimento.orariSettimanali.get(giornoSelezionato.dayOfWeek)?.second?.format(timeFormatter)})
+            1. Coprire tutto l'orario del dipartimento ( ${dipartimento.orariSettimanali[giornoSelezionato.dayOfWeek]?.first?.format(timeFormatter)} -  ${dipartimento.orariSettimanali[giornoSelezionato.dayOfWeek]?.second?.format(timeFormatter)})
             2. NON ASSEGNARE TURNI IN FASCIE D'ORARIO DOVE CE GIA LO STESSO DIPENDENTE CHE EFFETTUA TURNI GIA ESISTENTI
             3. SE I TURNI SECONDO ME VANNO GIA BENE NON RESTITUIRE NULLA 
             4. NON superare le ore rimanenti settimanali per ogni dipendente

@@ -7,14 +7,15 @@ import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.shape.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -31,10 +32,6 @@ import com.bizsync.ui.model.ReportData
 import com.bizsync.ui.viewmodels.ReportsManagementViewModel
 import java.text.DecimalFormat
 import java.time.LocalDate
-import java.time.YearMonth
-import java.time.format.DateTimeFormatter
-
-// Data classes per i report
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,14 +41,6 @@ fun ReportsManagementScreen(
     onBackClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
-
-    // Gestione errori
-    LaunchedEffect(uiState.error) {
-        uiState.error?.let { error ->
-            // Mostra snackbar o dialog di errore
-            // viewModel.clearError() dopo aver mostrato l'errore
-        }
-    }
 
     Scaffold(
         topBar = {
@@ -72,7 +61,7 @@ fun ReportsManagementScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Indietro")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Indietro")
                     }
                 },
                 actions = {
@@ -124,7 +113,6 @@ fun ReportsManagementScreen(
                     onDepartmentChange = { viewModel.updateSelectedDepartment(it) }
                 )
 
-                // Tab per diverse sezioni
                 TabRow(
                     selectedTabIndex = uiState.selectedTab,
                     modifier = Modifier.padding(horizontal = 16.dp)
@@ -153,7 +141,6 @@ fun ReportsManagementScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Contenuto basato sul tab selezionato
                 when (uiState.selectedTab) {
                     0 -> OverviewTab(
                         uiState.reportData,
@@ -178,7 +165,6 @@ fun ReportsManagementScreen(
                 }
             }
 
-            // Loading overlay
             if (uiState.isLoading) {
                 Box(
                     modifier = Modifier
@@ -242,7 +228,7 @@ fun FilterSection(
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(ReportFilter.values()) { filter ->
+                items(ReportFilter.entries.toTypedArray()) { filter ->
                     FilterChip(
                         selected = selectedFilter == filter,
                         onClick = { onFilterChange(filter) },
@@ -287,7 +273,6 @@ fun OverviewTab(
         modifier = Modifier.padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // KPI Cards
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -442,7 +427,6 @@ fun CostsTab(
     }
 }
 
-// Componenti grafici
 
 @Composable
 fun KPICard(
@@ -647,13 +631,14 @@ fun AbsenceTypeChart(
                     Spacer(modifier = Modifier.height(4.dp))
 
                     LinearProgressIndicator(
-                        progress = percentage / 100f,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(8.dp)
-                            .clip(RoundedCornerShape(4.dp)),
-                        color = typeColors[type] ?: Color.Gray,
-                        trackColor = Color.Gray.copy(alpha = 0.2f)
+                    progress = { percentage / 100f },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(4.dp)),
+                    color = typeColors[type] ?: Color.Gray,
+                    trackColor = Color.Gray.copy(alpha = 0.2f),
+                    strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
                     )
                 }
             }
@@ -723,13 +708,14 @@ fun LeaveUsageChart(
                             modifier = Modifier.width(50.dp)
                         )
                         LinearProgressIndicator(
-                            progress = usage.first / 100f,
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(6.dp)
-                                .clip(RoundedCornerShape(3.dp)),
-                            color = Color(0xFF3498DB),
-                            trackColor = Color.Gray.copy(alpha = 0.2f)
+                        progress = { usage.first / 100f },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp)),
+                        color = Color(0xFF3498DB),
+                        trackColor = Color.Gray.copy(alpha = 0.2f),
+                        strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
                         )
                         Text(
                             text = "${usage.first.toInt()}%",
@@ -752,13 +738,14 @@ fun LeaveUsageChart(
                             modifier = Modifier.width(50.dp)
                         )
                         LinearProgressIndicator(
-                            progress = usage.second / 100f,
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(6.dp)
-                                .clip(RoundedCornerShape(3.dp)),
-                            color = Color(0xFF9B59B6),
-                            trackColor = Color.Gray.copy(alpha = 0.2f)
+                        progress = { usage.second / 100f },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp)),
+                        color = Color(0xFF9B59B6),
+                        trackColor = Color.Gray.copy(alpha = 0.2f),
+                        strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
                         )
                         Text(
                             text = "${usage.second.toInt()}%",
@@ -773,85 +760,6 @@ fun LeaveUsageChart(
     }
 }
 
-@Composable
-fun MonthlyAbsenceTrend(
-    absences: List<Absence>,
-    modifier: Modifier = Modifier
-) {
-    val monthlyData = absences.groupBy {
-        YearMonth.from(it.startDate)
-    }.mapValues { it.value.size }
-        .toList()
-        .sortedBy { it.first }
-        .takeLast(6)
-
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = "Trend Assenze Mensili",
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            if (monthlyData.isNotEmpty()) {
-                val maxValue = monthlyData.maxOf { it.second }.toFloat()
-
-                Canvas(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(180.dp)
-                ) {
-                    val barWidth = size.width / (monthlyData.size * 1.5f)
-                    val spacing = barWidth * 0.5f
-
-                    monthlyData.forEachIndexed { index, (month, count) ->
-                        val barHeight = (count / maxValue) * size.height * 0.8f
-                        val x = index * (barWidth + spacing) + spacing
-
-                        // Barra
-                        drawRoundRect(
-                            color = Color(0xFF3498DB),
-                            topLeft = Offset(x, size.height - barHeight),
-                            size = androidx.compose.ui.geometry.Size(barWidth, barHeight),
-                            cornerRadius = CornerRadius(4.dp.toPx())
-                        )
-                    }
-                }
-
-                // Labels
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    monthlyData.forEach { (month, count) ->
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = month.format(DateTimeFormatter.ofPattern("MMM")),
-                                fontSize = 10.sp
-                            )
-                            Text(
-                                text = count.toString(),
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
 
 @Composable
 fun DepartmentCostChart(
@@ -903,7 +811,6 @@ fun DepartmentCostChart(
                         )
                     }
 
-                    // Mini grafico a barre
                     Box(
                         modifier = Modifier
                             .width(100.dp)
@@ -925,7 +832,6 @@ fun DepartmentCostChart(
     }
 }
 
-// Utility functions
 
 fun filterData(
     data: ReportData,
@@ -1269,98 +1175,6 @@ fun WeeklyShiftHeatmap(
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun TodayShiftsList(
-    turni: List<Turno>,
-    users: List<User>,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Turni di Oggi",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
-
-                Badge {
-                    Text(text = turni.size.toString())
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            if (turni.isEmpty()) {
-                Text(
-                    text = "Nessun turno programmato per oggi",
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(vertical = 16.dp)
-                )
-            } else {
-                turni.take(5).forEach { turno ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = turno.titolo,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium
-                                )
-                                Text(
-                                    text = "${turno.orarioInizio.format(DateTimeFormatter.ofPattern("HH:mm"))} - ${turno.orarioFine.format(DateTimeFormatter.ofPattern("HH:mm"))}",
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-
-                            Column(
-                                horizontalAlignment = Alignment.End
-                            ) {
-                                Text(
-                                    text = turno.dipartimento,
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    text = "${turno.idDipendenti.size} dip.",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
                     }
                 }
             }

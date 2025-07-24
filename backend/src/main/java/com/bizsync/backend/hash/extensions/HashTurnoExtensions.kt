@@ -26,11 +26,7 @@ fun Turno.generateTurnoHash(): String {
     return HashManager.generateHash(turnoString)
 }
 
-//// Hash da DTO list (Firebase)
-//fun List<TurnoDto>.generateFirebaseHash(): String {
-//    val domainTurni = this.map { it.toDomain() }
-//    return generateDomainTurniHash(domainTurni)
-//}
+
 
 // Hash da Entity list (Room)
 fun List<TurnoEntity>.generateCacheHash(): String {
@@ -43,7 +39,6 @@ fun List<Turno>.generateDomainHash(): String {
     return generateDomainTurniHash(this)
 }
 
-// Funzione centrale per generare hash da lista di Turno
 private fun generateDomainTurniHash(turni: List<Turno>): String {
     return HashManager.generateHashFromList(turni) { it.generateTurnoHash() }
 }

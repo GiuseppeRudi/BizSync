@@ -35,7 +35,7 @@ class AbsenceSyncManager @Inject constructor(
 
             val savedHash = absenceHashStorage.getAbsenceHash(idAzienda, currentWeekKey)
 
-            Log.d("ABSENCE_SYNC", "🌐 Chiamata Firebase per assenze azienda $idAzienda (settimana $currentWeekKey)")
+            Log.d("ABSENCE_SYNC", " Chiamata Firebase per assenze azienda $idAzienda (settimana $currentWeekKey)")
             val firebaseResult = absenceRepository.checkAbsenceChangesInWindow(idAzienda, startDate, endDate, idEmployee)
 
             when (firebaseResult) {
@@ -44,13 +44,13 @@ class AbsenceSyncManager @Inject constructor(
                     val currentHash = firebaseData.generateDomainHash()
 
                     if (savedHash == null || savedHash != currentHash) {
-                        Log.d("ABSENCE_SYNC", "🔄 Sync assenze necessario per azienda $idAzienda")
+                        Log.d("ABSENCE_SYNC", " Sync assenze necessario per azienda $idAzienda")
                         Log.d("ABSENCE_SYNC", "   Hash salvato: $savedHash")
                         Log.d("ABSENCE_SYNC", "   Hash corrente: $currentHash")
 
                         performSyncWithData(idAzienda, firebaseData, currentHash, currentWeekKey,startDate,endDate)
                     } else {
-                        Log.d("ABSENCE_SYNC", "✅ CACHE ANCORA VALIDA NON CE DA AGGIORNARE $idAzienda")
+                        Log.d("ABSENCE_SYNC", " CACHE ANCORA VALIDA NON CE DA AGGIORNARE $idAzienda")
                     }
 
                     val cachedEntities = absenceDao.getAbsences()
@@ -58,7 +58,7 @@ class AbsenceSyncManager @Inject constructor(
                 }
 
                 is Resource.Error -> {
-                    Log.e("ABSENCE_SYNC", "❌ Errore Firebase assenze, uso cache: ${firebaseResult.message}")
+                    Log.e("ABSENCE_SYNC", " Errore Firebase assenze, uso cache: ${firebaseResult.message}")
                     val cachedEntities = absenceDao.getAbsences()
                     Resource.Success(cachedEntities)
                 }
@@ -66,17 +66,17 @@ class AbsenceSyncManager @Inject constructor(
                 is Resource.Empty -> {
                     absenceDao.deleteByAziendaInDateRange(idAzienda,startDate.toString(), endDate.toString())
                     absenceHashStorage.saveAbsenceHash(idAzienda, currentWeekKey, "")
-                    Log.d("ABSENCE_SYNC", "📭 Nessuna assenza trovata")
+                    Log.d("ABSENCE_SYNC", " Nessuna assenza trovata")
                     Resource.Success(emptyList())
                 }
             }
 
         } catch (e: Exception) {
-            Log.e("ABSENCE_SYNC", "🚨 Errore in syncIfNeeded (assenze): ${e.message}")
+            Log.e("ABSENCE_SYNC", " Errore in syncIfNeeded (assenze): ${e.message}")
             try {
                 val cachedEntities = absenceDao.getAbsences()
                 Resource.Success(cachedEntities)
-            } catch (cacheError: Exception) {
+            } catch (e: Exception) {
                 Resource.Error("Errore sync e cache (assenze): ${e.message}")
             }
         }
@@ -112,10 +112,10 @@ class AbsenceSyncManager @Inject constructor(
 
             absenceHashStorage.saveAbsenceHash(idAzienda, weekKey, newHash)
 
-            Log.d("ABSENCE_SYNC", "✅ Sync assenze completato - ${entities.size} assenze - hash: $newHash")
+            Log.d("ABSENCE_SYNC", "Sync assenze completato - ${entities.size} assenze - hash: $newHash")
 
         } catch (e: Exception) {
-            Log.e("ABSENCE_SYNC", "❌ Errore durante sync assenze: ${e.message}")
+            Log.e("ABSENCE_SYNC", " Errore durante sync assenze: ${e.message}")
             throw e
         }
     }

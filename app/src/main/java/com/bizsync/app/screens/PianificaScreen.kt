@@ -1,14 +1,12 @@
 package com.bizsync.app.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EventBusy
 import androidx.compose.material.icons.filled.Schedule
 import com.bizsync.domain.utils.WeeklyWindowCalculator
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -16,12 +14,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.graphics.Color
-
-import androidx.compose.material3.TextButton
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.filled.Person
-
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -42,7 +37,6 @@ import com.bizsync.domain.model.Turno
 import com.bizsync.domain.model.User
 import com.bizsync.domain.model.WeeklyShift
 import com.bizsync.ui.components.SelectionDataEmptyCard
-import com.bizsync.ui.mapper.toDomain
 import com.bizsync.ui.viewmodels.DettagliGiornalieri
 import com.bizsync.ui.viewmodels.PianificaEmployeeViewModel
 import com.bizsync.ui.viewmodels.PianificaManagerViewModel
@@ -60,7 +54,6 @@ fun PianificaScreen() {
     val userState by userViewModel.uiState.collectAsState()
     val manager = userState.user.isManager
     val azienda = userState.azienda
-    val userId = userState.user.uid
     val weeklyPlanningExists = pianificaState.weeklyPlanningExists
 
 
@@ -137,7 +130,6 @@ fun PianificaDipendentiCore(
     val employeeVM: PianificaEmployeeViewModel = hiltViewModel()
     val employeeState by employeeVM.uiState.collectAsState()
 
-    // Per ora una struttura base
     LaunchedEffect(Unit) {
         scaffoldVM.onFullScreenChanged(false)
     }
@@ -229,7 +221,6 @@ fun PianificaDipendentiCore(
             )
         ) {
             if (employeeState.loading) {
-                // Stato di caricamento
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -237,14 +228,12 @@ fun PianificaDipendentiCore(
                     CircularProgressIndicator()
                 }
             } else if (employeeState.dettagliGiornalieri != null && employeeState.hasTurniGiornalieri) {
-                // Mostra i dettagli del giorno selezionato
                 DettagliGiornalieri(
                     dettagli = employeeState.dettagliGiornalieri!!,
                     turni = employeeState.turniGiornalieri,
                     colleghi = employeeState.colleghiTurno
                 )
             } else if (selectionData != null) {
-                // Nessun turno per la data selezionata, ma mostra info dipartimento
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -337,7 +326,6 @@ fun PianificaDipendentiCore(
                     }
                 }
             } else {
-                // Stato iniziale - nessuna data selezionata
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -377,115 +365,113 @@ fun PianificaDipendentiCore(
 }
 
 
-        @Composable
-        fun TurniHeaderCard(
-            statistiche: StatisticheSettimanali?,
-            weeklyShift: WeeklyShift?,
-            modifier: Modifier = Modifier
+@Composable
+fun TurniHeaderCard(
+    statistiche: StatisticheSettimanali?,
+    weeklyShift: WeeklyShift?,
+    modifier: Modifier = Modifier
+) {
+        Card(
+            modifier = modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer
+            )
         ) {
-
-
-            Card(
-                modifier = modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer
-                )
+            Column(
+                modifier = Modifier.padding(16.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        text = "I Miei Turni",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
+                Text(
+                    text = "I Miei Turni",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
 
+                Text(
+                    text = "Visualizza i tuoi turni assegnati",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                if (weeklyShift != null )
+                {
+                    val (weekStart, weekEnd) = WeeklyWindowCalculator.getWeekBounds(weeklyShift.weekStart)
+
+
+                    if(statistiche != null)
+                    {
+                        // Prima riga: Ore
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Ore assegnate: ${statistiche.oreAssegnate}h",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                            )
+                            Text(
+                                text = "Ore contrattuali: ${statistiche.oreContrattuali}h",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                            )
+                        }
+
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // Seconda riga: Periodo settimana
                     Text(
-                        text = "Visualizza i tuoi turni assegnati",
-                        style = MaterialTheme.typography.bodyMedium,
+                        text = "Settimana: ${weekStart.format(DateTimeFormatter.ofPattern("dd/MM"))} - ${weekEnd.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}",
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(2.dp))
 
-                    if (weeklyShift != null )
-                    {
-                        val (weekStart, weekEnd) = WeeklyWindowCalculator.getWeekBounds(weeklyShift.weekStart)
-
-
-                        if(statistiche != null)
-                        {
-                            // Prima riga: Ore
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    text = "Ore assegnate: ${statistiche.oreAssegnate}h",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
-                                )
-                                Text(
-                                    text = "Ore contrattuali: ${statistiche.oreContrattuali}h",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
-                                )
-                            }
-
-                        }
-
-                        Spacer(modifier = Modifier.height(4.dp))
-
-                        // Seconda riga: Periodo settimana
-                        Text(
-                            text = "Settimana: ${weekStart.format(DateTimeFormatter.ofPattern("dd/MM"))} - ${weekEnd.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
-                        )
-
-                        Spacer(modifier = Modifier.height(2.dp))
-
-                        // Terza riga: Status e data creazione
+                    // Terza riga: Status e data creazione
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Status con colore
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            // Status con colore
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                val (statusText, statusColor) = when (weeklyShift.status) {
-                                    WeeklyShiftStatus.PUBLISHED -> "Pubblicata" to Color(0xFF4CAF50)
-                                    WeeklyShiftStatus.DRAFT -> "Bozza" to Color(0xFFFF9800)
-                                    WeeklyShiftStatus.NOT_PUBLISHED -> "In lavorazione" to Color(0xFF9E9E9E)
-                                }
-
-                                Box(
-                                    modifier = Modifier
-                                        .size(6.dp)
-                                        .background(statusColor, CircleShape)
-                                )
-
-                                Text(
-                                    text = statusText,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
-                                )
+                            val (statusText, statusColor) = when (weeklyShift.status) {
+                                WeeklyShiftStatus.PUBLISHED -> "Pubblicata" to Color(0xFF4CAF50)
+                                WeeklyShiftStatus.DRAFT -> "Bozza" to Color(0xFFFF9800)
+                                WeeklyShiftStatus.NOT_PUBLISHED -> "In lavorazione" to Color(0xFF9E9E9E)
                             }
+
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .background(statusColor, CircleShape)
+                            )
 
                             Text(
-                                text = "Creata: ${weeklyShift.createdAt.format(DateTimeFormatter.ofPattern("dd/MM/yy"))}",
+                                text = statusText,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.6f)
+                                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
                             )
                         }
+
+                        Text(
+                            text = "Creata: ${weeklyShift.createdAt.format(DateTimeFormatter.ofPattern("dd/MM/yy"))}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.6f)
+                        )
                     }
-            }
+                }
         }
-            }
+    }
+}
 
 
 @Composable
@@ -501,7 +487,6 @@ fun DettagliGiornalieri(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
-            // Header con informazioni giornaliere
             Card(
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
@@ -584,7 +569,6 @@ fun DettagliGiornalieri(
             }
         }
 
-        // Lista dei turni
         items(turni) { turno ->
 
             TurnoAssegnatoCard(
@@ -594,7 +578,6 @@ fun DettagliGiornalieri(
             )
         }
 
-        // Colleghi del giorno
         if (dettagli.colleghi.isNotEmpty()) {
             item {
                 Card(
@@ -743,7 +726,6 @@ fun HeaderTurniManager(
 fun PianificaManagerCore(
     pianificaVM: PianificaViewModel,
 ) {
-    val scaffoldVM = LocalScaffoldViewModel.current
     val userVM = LocalUserViewModel.current
 
 

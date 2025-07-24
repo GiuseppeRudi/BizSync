@@ -6,6 +6,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Login
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -41,7 +44,6 @@ fun TimbratureManagementScreen(
     val userState by userVM.uiState.collectAsState()
     val idAzienda = userState.user.idAzienda
 
-    // DatePicker State
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = selectedDate.toEpochDay() * 24 * 60 * 60 * 1000
     )
@@ -50,7 +52,6 @@ fun TimbratureManagementScreen(
         managerHome.loadTimbrature(idAzienda, selectedDate, selectedDate)
     }
 
-    // DatePicker Dialog
     if (showDatePicker) {
         DatePickerDialog(
             onDateSelected = { dateMillis ->
@@ -94,14 +95,13 @@ fun TimbratureManagementScreen(
         )
     }
 
-    // Dettaglio timbratura - FIXED: Ora si chiude correttamente
     uiState.selectedTimbratura?.let { timbratura ->
         TimbraturaDetailDialog(
             timbratura = timbratura,
-            onDismiss = { managerHome.clearSelectedTimbratura() }, // FIXED
+            onDismiss = { managerHome.clearSelectedTimbratura() },
             onVerifica = {
                 managerHome.verificaTimbratura(timbratura.id)
-                managerHome.clearSelectedTimbratura() // Chiudi dialog dopo verifica
+                managerHome.clearSelectedTimbratura()
             }
         )
     }
@@ -111,12 +111,11 @@ fun TimbratureManagementScreen(
             TopAppBar(
                 title = { Text("Gestione Timbrature") },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) { // FIXED: Era { onBackClick }
-                        Icon(Icons.Default.ArrowBack, "Indietro")
+                    IconButton(onClick = onBackClick) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Indietro")
                     }
                 },
                 actions = {
-                    // Data corrente con indicatore
                     OutlinedButton(
                         onClick = { showDatePicker = true },
                         modifier = Modifier.padding(end = 8.dp)
@@ -149,7 +148,7 @@ fun TimbratureManagementScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Header con statistiche - Enhanced
+            // Header con statistiche
             TimbratureStatsCard(
                 totali = uiState.timbrature.size,
                 anomale = uiState.timbratureAnomale.size,
@@ -256,12 +255,12 @@ fun DatePickerDialog(
 
 @Composable
 fun TimbratureStatsCard(
+    modifier: Modifier = Modifier,
     totali: Int,
     anomale: Int,
     daVerificare: Int,
     data: LocalDate,
     isLoading: Boolean = false,
-    modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier
@@ -356,7 +355,7 @@ fun FilterChips(
         modifier = modifier.horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        FilterType.values().forEach { filter ->
+        FilterType.entries.forEach { filter ->
             FilterChip(
                 selected = selectedFilter == filter,
                 onClick = { onFilterChange(filter) },
@@ -392,11 +391,10 @@ fun TimbraturaCard(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icona tipo timbratura
             Icon(
                 imageVector = when (timbratura.tipoTimbratura) {
-                    TipoTimbratura.ENTRATA -> Icons.Default.Login
-                    TipoTimbratura.USCITA -> Icons.Default.Logout
+                    TipoTimbratura.ENTRATA -> Icons.AutoMirrored.Filled.Login
+                    TipoTimbratura.USCITA -> Icons.AutoMirrored.Filled.Logout
                 },
                 contentDescription = null,
                 modifier = Modifier.size(40.dp),
@@ -406,10 +404,9 @@ fun TimbraturaCard(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // Info timbratura
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Dipendente: ${timbratura.idDipendente}", // In prod mostrare nome
+                    text = "Dipendente: ${timbratura.idDipendente}",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )

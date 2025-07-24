@@ -88,7 +88,6 @@ fun PendingRequestsContent(
     }
 }
 
-// Aggiorna il PendingRequestCard per includere le info del contratto
 @Composable
 private fun PendingRequestCard(
     request: AbsenceUi,
@@ -111,7 +110,6 @@ private fun PendingRequestCard(
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            // Header with employee info
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -146,12 +144,10 @@ private fun PendingRequestCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Request details
             RequestDetailsSection(request)
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Contract impact section - NUOVO
             employeeContract?.let { contract ->
                 ContractImpactSection(
                     request = request,
@@ -160,7 +156,6 @@ private fun PendingRequestCard(
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // Action buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -207,7 +202,6 @@ private fun PendingRequestCard(
         }
     }
 
-    // Dialog for comments
     if (showDialog && dialogType != null) {
         ActionDialog(
             type = dialogType!!,
@@ -247,7 +241,6 @@ private fun ActionDialog(
         },
         text = {
             Column {
-                // Summary della richiesta
                 Card(
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
@@ -289,7 +282,6 @@ private fun ActionDialog(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Impact sul contratto se si approva
                 if (isApprove && contract != null) {
                     val impactInfo = calculateContractImpact(request, contract)
                     impactInfo?.let { impact ->
@@ -389,7 +381,6 @@ private fun ActionDialog(
     )
 }
 
-// Funzione helper per calcolare l'impatto
 private fun calculateContractImpact(
     request: AbsenceUi,
     contract: Contratto
@@ -446,11 +437,10 @@ private fun calculateContractImpact(
         else -> null
     }
 }
-// Componente per i dettagli della richiesta
+
 @Composable
 private fun RequestDetailsSection(request: AbsenceUi) {
     Column {
-        // Date range
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 imageVector = Icons.Default.DateRange,
@@ -466,7 +456,6 @@ private fun RequestDetailsSection(request: AbsenceUi) {
             )
         }
 
-        // Hours if available
         request.formattedHours?.let { hours ->
             Spacer(modifier = Modifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -509,7 +498,6 @@ private fun RequestDetailsSection(request: AbsenceUi) {
     }
 }
 
-// NUOVO: Componente per mostrare l'impatto sul contratto
 @Composable
 private fun ContractImpactSection(
     request: AbsenceUi,
@@ -670,7 +658,6 @@ private fun ContractImpactSection(
     }
 }
 
-// Data class per l'impatto sul contratto
 data class ContractImpact(
     val type: String,
     val currentUsed: Int,

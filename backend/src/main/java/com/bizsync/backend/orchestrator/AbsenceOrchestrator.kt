@@ -27,39 +27,39 @@ class AbsenceOrchestrator @Inject constructor(
     suspend fun getAbsences(idAzienda: String, idEmployee : String? , forceRefresh: Boolean = false): Resource<List<Absence>> {
         return try {
             if (forceRefresh) {
-                Log.d("ABSENCE_ORCH", "🔄 Force sync attivato per azienda $idAzienda")
+                Log.d("ABSENCE_ORCH", "Force sync attivato per azienda $idAzienda")
 
                 val syncResult = absenceSyncManager.forceSync(idAzienda, idEmployee)
                 if (syncResult is Resource.Error) {
-                    Log.e("ABSENCE_ORCH", "❌ Errore durante forceSync: ${syncResult.message}")
+                    Log.e("ABSENCE_ORCH", "Errore durante forceSync: ${syncResult.message}")
                 }
 
                 val cachedEntities = absenceDao.getAbsences()
-                Log.d("ABSENCE_ORCH", "📦 Recuperate ${cachedEntities.size} assenze dalla cache dopo forceSync")
+                Log.d("ABSENCE_ORCH", "Recuperate ${cachedEntities.size} assenze dalla cache dopo forceSync")
                 Resource.Success(cachedEntities.toDomainList())
 
             } else {
-                Log.d("ABSENCE_ORCH", "⚙️ Sync intelligente per azienda $idAzienda")
+                Log.d("ABSENCE_ORCH", "Sync intelligente per azienda $idAzienda")
 
                 when (val result = absenceSyncManager.syncIfNeeded(idAzienda,idEmployee)) {
                     is Resource.Success -> {
                         val cachedEntities = absenceDao.getAbsences()
                         val domainAbsences = cachedEntities.toDomainList()
-                        Log.d("ABSENCE_ORCH", "✅ Sync completato, assenze recuperate dalla cache: ${domainAbsences.size}")
+                        Log.d("ABSENCE_ORCH", " Sync completato, assenze recuperate dalla cache: ${domainAbsences.size}")
                         Resource.Success(domainAbsences)
                     }
                     is Resource.Error -> {
-                        Log.e("ABSENCE_ORCH", "❌ Errore sync intelligente: ${result.message}")
+                        Log.e("ABSENCE_ORCH", " Errore sync intelligente: ${result.message}")
                         Resource.Error(result.message)
                     }
                     is Resource.Empty -> {
-                        Log.d("ABSENCE_ORCH", "📭 Nessuna assenza disponibile da Firebase")
+                        Log.d("ABSENCE_ORCH", " Nessuna assenza disponibile da Firebase")
                         Resource.Success(emptyList())
                     }
                 }
             }
         } catch (e: Exception) {
-            Log.e("ABSENCE_ORCH", "🚨 Errore imprevisto nel recupero assenze: ${e.message}")
+            Log.e("ABSENCE_ORCH", " Errore imprevisto nel recupero assenze: ${e.message}")
             Resource.Error(e.message ?: "Errore nel recupero assenze")
         }
     }

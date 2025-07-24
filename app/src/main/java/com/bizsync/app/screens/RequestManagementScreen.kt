@@ -2,16 +2,10 @@ package com.bizsync.app.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-
-// Material Design 3
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
-
-// Runtime
 import androidx.compose.runtime.*
-
-// UI
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -30,7 +24,7 @@ import com.bizsync.ui.viewmodels.RequestViewModel
 fun RequestManagementScreen(
     onBackClick: () -> Unit,
 ) {
-    var selectedTab by remember { mutableStateOf(0) }
+    var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Richieste in Attesa", "Cronologia")
 
     val userVM = LocalUserViewModel.current
@@ -56,7 +50,6 @@ fun RequestManagementScreen(
             .fillMaxSize()
             .background(Color(0xFFF5F5F5))
     ) {
-        // Top Bar
         TopAppBar(
             title = {
                 Text(
@@ -68,7 +61,7 @@ fun RequestManagementScreen(
             navigationIcon = {
                 IconButton(onClick = onBackClick) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Indietro"
                     )
                 }
@@ -78,7 +71,6 @@ fun RequestManagementScreen(
             )
         )
 
-        // Tab Row
         TabRow(
             selectedTabIndex = selectedTab,
             containerColor = Color.White,

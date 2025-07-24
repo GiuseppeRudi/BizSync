@@ -12,47 +12,33 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.EventBusy
-import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Today
 import androidx.compose.material3.Badge
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.getValue
-
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.Assignment
-import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.Business
-import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DividerDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -67,8 +53,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.bizsync.app.navigation.LocalUserViewModel
-import com.bizsync.domain.constants.enumClass.HomeScreenRoute
 import com.bizsync.domain.constants.enumClass.TipoTimbratura
 import com.bizsync.domain.model.Azienda
 import com.bizsync.domain.model.Timbratura
@@ -92,14 +76,12 @@ import java.util.Locale
 fun ManagerHomeScreen(
     userState: UserState,
     viewModel: ManagerHomeViewModel = hiltViewModel(),
-    onNavigate: (HomeScreenRoute) -> Unit
 ) {
     val homeState by viewModel.homeState.collectAsState()
     val currentTime = remember {
         mutableStateOf(LocalDateTime.now())
     }
 
-    // Aggiorna l'orario ogni minuto
     LaunchedEffect(Unit) {
         while (true) {
             delay(60000) // 1 minuto
@@ -132,7 +114,6 @@ fun ManagerHomeScreen(
             ShiftPublicationAlert(
                 daysUntilPublication = homeState.daysUntilShiftPublication,
                 isPublished = homeState.shiftsPublishedThisWeek,
-                onMarkAsPublished = { viewModel.markShiftsAsPublished() }
             )
         }
 
@@ -143,7 +124,6 @@ fun ManagerHomeScreen(
                 isLoading = homeState.isLoading
             )
         }
-
 
 
         // Ultime timbrature
@@ -242,7 +222,6 @@ fun WelcomeHeader(
 fun ShiftPublicationAlert(
     daysUntilPublication: Int,
     isPublished: Boolean,
-    onMarkAsPublished: () -> Unit
 ) {
     if (isPublished) return
 
@@ -280,7 +259,7 @@ fun ShiftPublicationAlert(
         daysUntilPublication < 0 -> "⚠️ I turni dovevano essere pubblicati ${-daysUntilPublication} giorni fa!"
         daysUntilPublication == 0 -> "🚨 I turni devono essere pubblicati OGGI!"
         daysUntilPublication == 1 -> "⏰ I turni devono essere pubblicati DOMANI"
-        else -> "📅 ${daysUntilPublication} giorni alla pubblicazione dei turni"
+        else -> "📅 $daysUntilPublication giorni alla pubblicazione dei turni"
     }
 
     Card(
@@ -363,7 +342,6 @@ fun TodayStatsSection(
                     CircularProgressIndicator(modifier = Modifier.size(24.dp))
                 }
             } else {
-                // 📊 STATISTICHE PRINCIPALI
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
@@ -371,7 +349,7 @@ fun TodayStatsSection(
                         StatCard(
                             title = "Turni Assegnati",
                             value = todayStats.turniTotaliAssegnati.toString(),
-                            icon = Icons.Default.Assignment,
+                            icon = Icons.AutoMirrored.Filled.Assignment,
                             color = Color(0xFF2196F3),
                             subtitle = "Totali oggi"
                         )
@@ -398,7 +376,6 @@ fun TodayStatsSection(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 📈 STATO TURNI
                 Text(
                     text = "Stato Turni",
                     style = MaterialTheme.typography.titleMedium,
@@ -439,7 +416,6 @@ fun TodayStatsSection(
                     }
                 }
 
-                // 🏢 DETTAGLI DIPARTIMENTI (se ci sono)
                 if (todayStats.dipartimentiDetails.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -619,9 +595,9 @@ fun RecentTimbratureSection(
                     )
 
                     if (timbratureWithUser != recentTimbrature.take(5).last()) {
-                        Divider(
+                        HorizontalDivider(
                             modifier = Modifier.padding(vertical = 8.dp),
-                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                            thickness = DividerDefaults.Thickness, color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
                         )
                     }
                 }
@@ -751,7 +727,7 @@ fun TodayShiftsSection(
                 TextButton(onClick = onViewAll) {
                     Text("Vedi tutti")
                     Icon(
-                        Icons.Default.ArrowForward,
+                        Icons.AutoMirrored.Filled.ArrowForward,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp)
                     )

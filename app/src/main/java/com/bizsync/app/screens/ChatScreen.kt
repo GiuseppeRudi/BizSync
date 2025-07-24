@@ -16,6 +16,8 @@ import androidx.compose.ui.unit.dp
 import com.bizsync.domain.model.User
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -115,14 +117,13 @@ fun ChatRoomListScreen(
                 )
             )
     ) {
-        // Header
         TopAppBar(
             title = {
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Chat,
+                        imageVector = Icons.AutoMirrored.Filled.Chat,
                         contentDescription = null,
                         tint = Color(0xFF3498DB),
                         modifier = Modifier.size(24.dp)
@@ -146,7 +147,7 @@ fun ChatRoomListScreen(
             navigationIcon = {
                 IconButton(onClick = onBackClick) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Indietro",
                         tint = Color(0xFF2C3E50)
                     )

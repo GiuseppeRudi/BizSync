@@ -58,7 +58,6 @@ object TurnoEntityMapper {
         )
     }
 
-    // Serializzazione Note
     private fun serializeNote(note: List<Nota>): String {
         return try {
             json.encodeToString(note)
@@ -76,7 +75,6 @@ object TurnoEntityMapper {
         }
     }
 
-    // Serializzazione Pause
     private fun serializePause(pause: List<Pausa>): String {
         return try {
             json.encodeToString(pause)
@@ -94,7 +92,6 @@ object TurnoEntityMapper {
         }
     }
 
-    // Serializzazione Zone Lavorative
     private fun serializeZoneLavorative(zone: Map<String, ZonaLavorativa>): String {
         return try {
             json.encodeToString(zone)

@@ -12,7 +12,7 @@ fun AreaLavoro.toDto(): AreaLavoroDto {
             .mapValues { entry ->
                 val (start, end) = entry.value
                 mapOf(
-                    "start" to start.toString(),  // LocalTime to String "HH:mm:ss" o "HH:mm"
+                    "start" to start.toString(),
                     "end" to end.toString()
                 )
             }
@@ -27,7 +27,7 @@ fun AreaLavoroDto.toDomain(): AreaLavoro {
             try {
                 DayOfWeek.valueOf(it.key)
             } catch (e: Exception) {
-                DayOfWeek.MONDAY // fallback
+                DayOfWeek.MONDAY
             }
         }.mapValues { entry ->
             val orariMap = entry.value

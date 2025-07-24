@@ -31,7 +31,6 @@ fun List<Contratto>.generateDomainHash(): String {
     return generateDomainContrattiHash(this)
 }
 
-// Funzione centrale per hash lista di contratti
 private fun generateDomainContrattiHash(contratti: List<Contratto>): String {
     return HashManager.generateHashFromList(contratti) { it.generateContrattoHash() }
 }

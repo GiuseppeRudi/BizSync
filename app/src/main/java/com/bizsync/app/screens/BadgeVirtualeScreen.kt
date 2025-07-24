@@ -10,9 +10,10 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import android.graphics.Bitmap
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
 import com.google.zxing.common.BitMatrix
@@ -32,6 +33,8 @@ import com.bizsync.domain.constants.enumClass.HomeScreenRoute
 import com.bizsync.ui.viewmodels.HomeViewModel
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.set
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -70,7 +73,7 @@ fun BadgeVirtualeScreen(modifier: Modifier = Modifier, viewModel: HomeViewModel)
                     .align(Alignment.TopStart)
             ) {
                 Icon(
-                    imageVector = Icons.Default.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Indietro",
                     tint = Color.White
                 )
@@ -99,7 +102,6 @@ fun BadgeVirtualeScreen(modifier: Modifier = Modifier, viewModel: HomeViewModel)
                     )
                 ) {
                     Box {
-                        // Background pattern
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -120,7 +122,7 @@ fun BadgeVirtualeScreen(modifier: Modifier = Modifier, viewModel: HomeViewModel)
                                 .padding(24.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            // Logo azienda o spazio
+                            // Logo azienda
                             Spacer(modifier = Modifier.height(40.dp))
 
                             // Foto profilo con bordo
@@ -165,7 +167,6 @@ fun BadgeVirtualeScreen(modifier: Modifier = Modifier, viewModel: HomeViewModel)
 
                             Spacer(modifier = Modifier.height(20.dp))
 
-                            // Divider
                             HorizontalDivider(
                                 modifier = Modifier.fillMaxWidth(0.8f),
                                 color = MaterialTheme.colorScheme.outlineVariant
@@ -173,7 +174,6 @@ fun BadgeVirtualeScreen(modifier: Modifier = Modifier, viewModel: HomeViewModel)
 
                             Spacer(modifier = Modifier.height(20.dp))
 
-                            // Info row
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceEvenly
@@ -336,7 +336,7 @@ fun CurrentDateTime() {
 
 
 @Composable
-fun QRCodeImage(data: String, modifier: Modifier = Modifier.size(200.dp)) {
+fun QRCodeImage(data: String, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val qrBitmap by remember(data) {
         mutableStateOf(generateQRCodeBitmap(data).asImageBitmap())
@@ -358,11 +358,12 @@ fun generateQRCodeBitmap(text: String, size: Int = 512): Bitmap {
         size
     )
 
-    val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.RGB_565)
+    val bitmap = createBitmap(size, size, Bitmap.Config.RGB_565)
 
     for (x in 0 until size) {
         for (y in 0 until size) {
-            bitmap.setPixel(x, y, if (bitMatrix[x, y]) android.graphics.Color.BLACK else android.graphics.Color.WHITE)
+            bitmap[x, y] =
+                if (bitMatrix[x, y]) android.graphics.Color.BLACK else android.graphics.Color.WHITE
         }
     }
 

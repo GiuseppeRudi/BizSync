@@ -15,8 +15,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Euro
@@ -77,7 +77,6 @@ fun ContractDetailScreen(
                 )
             )
     ) {
-        // Header
         TopAppBar(
             title = {
                 Text(
@@ -89,7 +88,7 @@ fun ContractDetailScreen(
             navigationIcon = {
                 IconButton(onClick = {employeeVm.setCurrentSection(EmployeeSection.MAIN)}) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Indietro",
                         tint = Color(0xFF2C3E50)
                     )
@@ -107,7 +106,7 @@ fun ContractDetailScreen(
                 )
             }
         } else if (contract != null) {
-            ContractContent(contract!!)
+            ContractContent(contract)
         } else {
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -135,7 +134,7 @@ fun ContractContent(contract: Contratto) {
         item {
             SectionCard(
                 title = "Informazioni Generali",
-                icon = Icons.Default.Assignment,
+                icon = Icons.AutoMirrored.Filled.Assignment,
                 iconColor = Color(0xFF3498DB)
             ) {
                 InfoRow("Posizione", contract.posizioneLavorativa)
@@ -212,7 +211,6 @@ fun SectionCard(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            // Header della sezione
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(bottom = 16.dp)
@@ -242,7 +240,6 @@ fun SectionCard(
                 )
             }
 
-            // Contenuto della sezione
             content()
         }
     }

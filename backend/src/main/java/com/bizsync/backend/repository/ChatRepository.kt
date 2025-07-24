@@ -23,7 +23,6 @@ class ChatRepository @Inject constructor(
 ) {
     private val chatsCollection = firestore.collection("chats")
 
-    // Ottieni tutte le chat visibili all'utente
     fun getChatsForUser(user: User, allEmployees: List<User>): Flow<List<Chat>> = callbackFlow {
         val listener = chatsCollection
             .orderBy("ultimoMessaggioTimestamp", Query.Direction.DESCENDING)
@@ -62,7 +61,6 @@ class ChatRepository @Inject constructor(
         awaitClose { listener.remove() }
     }
 
-    // Ascolta i messaggi di una chat specifica
     fun getMessagesForChat(chatId: String, userId: String): Flow<List<Message>> = callbackFlow {
         val listener = chatsCollection
             .document(chatId)
@@ -92,7 +90,6 @@ class ChatRepository @Inject constructor(
         awaitClose { listener.remove() }
     }
 
-    // Invia un messaggio
     suspend fun sendMessage(
         chatId: String,
         senderId: String,
@@ -157,7 +154,6 @@ class ChatRepository @Inject constructor(
         return docRef.id
     }
 
-    // Ottieni il numero di messaggi non letti
     suspend fun getUnreadCount(chatId: String, userId: String): Int {
         return chatsCollection
             .document(chatId)
@@ -175,7 +171,7 @@ class ChatRepository @Inject constructor(
     // Inizializza le chat di default (generale e dipartimenti)
     suspend fun initializeDefaultChats(aziendaId: String, dipartimenti: List<String>) {
         // Chat generale
-        Log.d("ChatRepository", "Inizializzazione chat " + aziendaId)
+        Log.d("ChatRepository", "Inizializzazione chat $aziendaId")
 
         val generalChat = chatsCollection
             .whereEqualTo("tipo", "generale")
@@ -215,7 +211,6 @@ class ChatRepository @Inject constructor(
     }
 }
 
-// Extension functions per conversione
 private fun ChatDto.toDomainModel(currentUserId: String): Chat {
     return Chat(
         id = id,

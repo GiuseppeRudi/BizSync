@@ -21,9 +21,9 @@ data class TurnoEntity(
     val orarioInizio: LocalTime,
     val orarioFine: LocalTime,
     val dipartimento: String,
-    val zoneLavorativeJson: String = "{}", // Map<String, ZonaLavorativa> serializzata
-    val noteJson: String = "[]", // List<Nota> serializzata
-    val pauseJson: String = "[]", // List<Pausa> serializzata
+    val zoneLavorativeJson: String = "{}",
+    val noteJson: String = "[]",
+    val pauseJson: String = "[]",
     val isSynced: Boolean = false,
     val isDeleted: Boolean = false,
     val createdAt: Timestamp,

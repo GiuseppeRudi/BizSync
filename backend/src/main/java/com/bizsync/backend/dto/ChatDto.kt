@@ -7,7 +7,7 @@ import com.google.firebase.firestore.ServerTimestamp
 data class ChatDto(
     @DocumentId
     val id: String = "",
-    val tipo: String = "", // "generale", "dipartimento", "privata"
+    val tipo: String = "",
     val nome: String = "",
     val dipartimentoId: String? = null,
     val partecipanti: List<String> = emptyList(),

@@ -19,12 +19,9 @@ fun MainHomeScreen() {
     val homeState by viewModel.uiState.collectAsState()
     val currentScreen = homeState.currentScreen
 
-    // ViewModel creato UNA SOLA VOLTA
-    val userVm = LocalUserViewModel.current
-    val userState by userVm.uiState.collectAsState()
 
 
-    when (val screen = currentScreen) {
+    when (currentScreen) {
         HomeScreenRoute.Home -> HomeScreen(viewModel)
         HomeScreenRoute.Badge -> BadgeVirtualeScreen(modifier = Modifier.fillMaxSize(), viewModel) }
 }
@@ -45,10 +42,7 @@ fun HomeScreen(viewModel : HomeViewModel) {
     val userState by userVm.uiState.collectAsState()
 
     if (userState.user.isManager) {
-        ManagerHomeScreen(
-            userState = userState,
-            onNavigate = {}
-        )
+        ManagerHomeScreen(userState = userState,)
     } else {
         EmployeeHomeScreen(userState = userState, modifier = Modifier.fillMaxSize(), onNavigate = {viewModel.changeCurrentScreen(
             HomeScreenRoute.Badge)})

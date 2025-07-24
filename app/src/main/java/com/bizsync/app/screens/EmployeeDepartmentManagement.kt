@@ -1,15 +1,12 @@
 package com.bizsync.app.screens
 
-
-
-
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -72,7 +69,7 @@ fun EmployeeDepartmentManagement(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Indietro")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Indietro")
                     }
                 },
                 actions = {
@@ -115,7 +112,6 @@ fun EmployeeDepartmentManagement(
                 }
             }
 
-            // Statistiche
             item {
                 StatisticheDipendenti(
                     totaleDipendenti = dipendenti.size,
@@ -151,7 +147,6 @@ fun EmployeeDepartmentManagement(
                 )
             }
 
-            // Messaggio se non ci sono dipendenti
             if (dipendenti.isEmpty() && !isLoading) {
                 item {
                     Card(
@@ -373,7 +368,6 @@ fun DipendenteItem(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            // Prima riga: Info dipendente
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -430,7 +424,6 @@ fun DipendenteItem(
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-            // Seconda riga: Gestione dipartimento
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,

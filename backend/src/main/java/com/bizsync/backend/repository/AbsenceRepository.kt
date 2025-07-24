@@ -12,14 +12,11 @@ import com.bizsync.cache.mapper.toEntity
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.Absence
 import com.bizsync.domain.utils.DateUtils.toFirebaseTimestamp
-import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.toObject
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import java.time.LocalTime
-import java.time.ZoneId
-import java.util.Date
 import javax.inject.Inject
 
 class AbsenceRepository @Inject constructor(
@@ -35,7 +32,7 @@ class AbsenceRepository @Inject constructor(
         idEmployee: String?
     ): Resource<List<Absence>> {
         return try {
-            Log.d("ABSENCE_CHECK", "🔍 Check completo assenze dal $startDate al $endDate")
+            Log.d("ABSENCE_CHECK", " Check completo assenze dal $startDate al $endDate")
 
             val startTimestamp = startDate.toFirebaseTimestamp()
             val endTimestamp = endDate.atTime(LocalTime.MAX).toFirebaseTimestamp()
@@ -64,7 +61,7 @@ class AbsenceRepository @Inject constructor(
             }
 
         } catch (e: Exception) {
-            Log.e("ABSENCE_CHECK", "❌ Errore check completo: ${e.message}")
+            Log.e("ABSENCE_CHECK", " Errore check completo: ${e.message}")
             Resource.Error(e.message ?: "Errore sconosciuto")
         }
     }
@@ -101,7 +98,6 @@ class AbsenceRepository @Inject constructor(
                     doc.toObject<Absence>()?.copy(id = doc.id)
                 }
 
-//            absenceDao.clearAllAbsences()
             allAbsences.forEach { absence ->
                 absenceDao.insert(absence.toEntity())
             }
@@ -185,7 +181,6 @@ class AbsenceRepository @Inject constructor(
             Resource.Error(e.message ?: "Errore sconosciuto")
         }
     }
-
 
 }
 

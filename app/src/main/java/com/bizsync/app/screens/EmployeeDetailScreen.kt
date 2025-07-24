@@ -18,7 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.History
@@ -54,7 +54,6 @@ import com.bizsync.ui.viewmodels.EmployeeManagementViewModel
 
 
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EmployeeDetailScreen(
@@ -78,7 +77,6 @@ fun EmployeeDetailScreen(
                 )
             )
     ) {
-        // Header con titolo dinamico
         TopAppBar(
             title = {
                 Text(
@@ -103,7 +101,7 @@ fun EmployeeDetailScreen(
                     }
                 ) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Indietro",
                         tint = Color(0xFF2C3E50)
                     )
@@ -111,7 +109,6 @@ fun EmployeeDetailScreen(
             }
         )
 
-        // Contenuto che cambia in base alla sezione
         when (currentSection) {
             EmployeeSection.MAIN -> {
                 MainSection(
@@ -139,7 +136,6 @@ fun EmployeeDetailScreen(
         }
     }
 
-    // Dialog conferma licenziamento
     if (showFireDialog) {
         AlertDialog(
             onDismissRequest = { showFireDialog = false },
@@ -187,12 +183,10 @@ fun MainSection(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Profilo dipendente
         item {
             EmployeeProfileCard(employee)
         }
 
-        // Sezioni disponibili
         item {
             Text(
                 text = "Gestione",
@@ -203,7 +197,6 @@ fun MainSection(
             )
         }
 
-        // Contratto e CCNL
         item {
             SectionCard(
                 title = "Contratto e CCNL",
@@ -214,7 +207,6 @@ fun MainSection(
             )
         }
 
-        // Turni passati
         item {
             SectionCard(
                 title = "Turni Passati",
@@ -225,7 +217,6 @@ fun MainSection(
             )
         }
 
-        // Turni futuri
         item {
             SectionCard(
                 title = "Turni Futuri",
@@ -236,7 +227,6 @@ fun MainSection(
             )
         }
 
-        // Sezione azioni
         item {
             Text(
                 text = "Azioni",
@@ -247,7 +237,6 @@ fun MainSection(
             )
         }
 
-        // Licenziamento
         item {
             SectionCard(
                 title = "Licenziamento",
@@ -274,7 +263,6 @@ fun EmployeeProfileCard(employee: UserUi) {
                 .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Avatar
             EmployeeAvatar(
                 photoUrl = employee.photourl,
                 nome = employee.nome,
@@ -284,7 +272,6 @@ fun EmployeeProfileCard(employee: UserUi) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Nome e cognome
             Text(
                 text = "${employee.nome} ${employee.cognome}",
                 fontSize = 22.sp,
@@ -292,7 +279,6 @@ fun EmployeeProfileCard(employee: UserUi) {
                 color = Color(0xFF2C3E50)
             )
 
-            // Posizione
             Text(
                 text = employee.posizioneLavorativa,
                 fontSize = 16.sp,
@@ -300,7 +286,6 @@ fun EmployeeProfileCard(employee: UserUi) {
                 modifier = Modifier.padding(top = 4.dp)
             )
 
-            // Dipartimento
             Text(
                 text = employee.dipartimento,
                 fontSize = 14.sp,
@@ -310,13 +295,11 @@ fun EmployeeProfileCard(employee: UserUi) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Informazioni di contatto
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 InfoRow("Email", employee.email)
-//                InfoRow("Telefono", employee.phone)
-//                InfoRow("Data Assunzione", employee.hireDate)
+                InfoRow("Telefono", employee.numeroTelefono)
             }
         }
     }
@@ -361,7 +344,6 @@ fun SectionCard(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // Testo
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,

@@ -40,7 +40,6 @@ class BadgeOrchestrator @Inject constructor(
             val turniDipendente = turniEntities
                 .map { it.toDomain() }
                 .filter { turno ->
-                    // Include turni che iniziano oggi o nei prossimi giorni
                     val fineturno = LocalDateTime.of(turno.data, turno.orarioFine)
                     fineturno.isAfter(now.minusHours(2)) // Include turni fino a 2 ore dopo la fine
                 }
@@ -82,7 +81,7 @@ class BadgeOrchestrator @Inject constructor(
             val tipoTimbraturaNecessaria = when {
                 !haTimbratoEntrata -> TipoTimbratura.ENTRATA
                 haTimbratoEntrata && !haTimbratoUscita -> TipoTimbratura.USCITA
-                else -> TipoTimbratura.ENTRATA // Default, anche se il turno è completato
+                else -> TipoTimbratura.ENTRATA
             }
 
             // Calcola l'orario previsto e il tempo mancante
@@ -94,13 +93,12 @@ class BadgeOrchestrator @Inject constructor(
             val tempoMancante = Duration.between(now, orarioPrevisto)
             val minutiMancanti = tempoMancante.toMinutes()
 
-            // Determina se la timbratura è abilitata
             val abilitaTimbratura = when (tipoTimbraturaNecessaria) {
                 TipoTimbratura.ENTRATA -> {
                     !haTimbratoEntrata && minutiMancanti >= -30 && minutiMancanti <= 30
                 }
                 TipoTimbratura.USCITA -> {
-                    haTimbratoEntrata && !haTimbratoUscita && minutiMancanti >= -30 && minutiMancanti <= 120
+                    minutiMancanti >= -30 && minutiMancanti <= 120
                 }
             }
 
@@ -208,7 +206,6 @@ class BadgeOrchestrator @Inject constructor(
             val orarioPrevisto = when (tipoTimbratura) {
                 TipoTimbratura.ENTRATA -> LocalDateTime.of(turno.data, turno.orarioInizio)
                 TipoTimbratura.USCITA -> LocalDateTime.of(turno.data, turno.orarioFine)
-                else -> now // Per pause usa l'orario attuale
             }
 
             Log.d("ORCHESTRATOR_DEBUG", "Orario previsto: $orarioPrevisto")
@@ -236,9 +233,8 @@ class BadgeOrchestrator @Inject constructor(
                     posizioneVerificata = true
 
                     Log.d("ORCHESTRATOR_DEBUG", "Dentro tolleranza: $dentroDellaTolleranza")
-                    Log.d("ORCHESTRATOR_DEBUG", "Posizione verificata: $posizioneVerificata")
                 } else {
-                    Log.e("ORCHESTRATOR_DEBUG", "❌ ERRORE: Dipendente in sede ma coordinate sono null!")
+                    Log.e("ORCHESTRATOR_DEBUG", " ERRORE: Dipendente in sede ma coordinate sono null!")
                     Log.e("ORCHESTRATOR_DEBUG", "  latitudine: $latitudine")
                     Log.e("ORCHESTRATOR_DEBUG", "  longitudine: $longitudine")
 
@@ -293,25 +289,24 @@ class BadgeOrchestrator @Inject constructor(
             Log.d("ORCHESTRATOR_DEBUG", "Salvataggio timbratura nel repository...")
             when (val result = timbraturaRepository.addTimbratura(timbratura)) {
                 is Resource.Success -> {
-                    Log.d("ORCHESTRATOR_DEBUG", "✅ Timbratura salvata con successo. ID Firebase: ${result.data}")
+                    Log.d("ORCHESTRATOR_DEBUG", " Timbratura salvata con successo. ID Firebase: ${result.data}")
                     Resource.Success(timbratura.copy(idFirebase = result.data))
                 }
                 is Resource.Error -> {
-                    Log.e("ORCHESTRATOR_DEBUG", "❌ Errore nel salvataggio: ${result.message}")
+                    Log.e("ORCHESTRATOR_DEBUG", " Errore nel salvataggio: ${result.message}")
                     result
                 }
                 else -> {
-                    Log.e("ORCHESTRATOR_DEBUG", "❌ Stato loading inaspettato dal repository")
+                    Log.e("ORCHESTRATOR_DEBUG", " Stato loading inaspettato dal repository")
                     Resource.Error("Errore durante il salvataggio")
                 }
             }
         } catch (e: Exception) {
-            Log.e("ORCHESTRATOR_DEBUG", "❌ Eccezione in creaTimbratura: ${e.message}", e)
+            Log.e("ORCHESTRATOR_DEBUG", " Eccezione in creaTimbratura: ${e.message}", e)
             Resource.Error("Errore nella creazione della timbratura: ${e.message}")
         }
     }
 
-    // Aggiungi anche questa funzione helper per il calcolo della distanza con log:
     private fun calcolaDistanza(
         lat1: Double,
         lon1: Double,
@@ -322,14 +317,14 @@ class BadgeOrchestrator @Inject constructor(
         Log.d("ORCHESTRATOR_DEBUG", "  Punto 1 (dipendente): $lat1, $lon1")
         Log.d("ORCHESTRATOR_DEBUG", "  Punto 2 (azienda): $lat2, $lon2")
 
-        val R = 6371000.0 // Raggio della Terra in metri
+        val r = 6371000.0 // Raggio della Terra in metri
         val dLat = Math.toRadians(lat2 - lat1)
         val dLon = Math.toRadians(lon2 - lon1)
-        val a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2)
-        val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-        val distanza = R * c
+        val a = sin(dLat / 2) * sin(dLat / 2) +
+                cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) *
+                sin(dLon / 2) * sin(dLon / 2)
+        val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+        val distanza = r * c
 
         Log.d("ORCHESTRATOR_DEBUG", "Distanza calcolata: ${distanza}m")
         return distanza
@@ -337,7 +332,6 @@ class BadgeOrchestrator @Inject constructor(
 
     suspend fun getTimbratureGiornaliere(idDipendente: String, data: LocalDate): Resource<List<Timbratura>> {
         return try {
-//            val timbrature = timbraturaDao.getByDipendenteAndData(idDipendente, data)
             val timbrature = timbraturaDao.getUltimeTimbratureDipendente(idDipendente)
             Resource.Success(timbrature.map { it.toDomain() })
         } catch (e: Exception) {
@@ -360,7 +354,6 @@ class BadgeOrchestrator @Inject constructor(
     }
 
     private fun generateMatricola(userId: String): String {
-        // Genera una matricola basata sull'ID utente
         return "EMP${userId.take(8).uppercase()}"
     }
 }

@@ -4,7 +4,6 @@ import android.util.Log
 import com.bizsync.cache.dao.TimbraturaDao
 import com.bizsync.backend.dto.TimbraturaDto
 import com.bizsync.backend.mapper.TimbraturaMapper
-import com.bizsync.cache.mapper.toDomain
 import com.bizsync.cache.mapper.toEntity
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.Timbratura
@@ -24,7 +23,6 @@ class TimbraturaRepository @Inject constructor(
     private val collection = firestore.collection("timbrature")
     private val TAG = "TimbraturaRepo"
 
-
     suspend fun syncTimbratureForUserInRange(
         userId: String,
         aziendaId: String,
@@ -34,11 +32,9 @@ class TimbraturaRepository @Inject constructor(
         try {
             Log.d("TimbraturaRepository", "Sincronizzazione timbrature per utente $userId dal $startDate al $endDate")
 
-            // Converte le date in Timestamp per Firebase
             val startTimestamp = startDate.atStartOfDay()
             val endTimestamp = endDate.atTime(23, 59, 59)
 
-            // Query Firebase per timbrature dell'utente nel range di date
             val timbratureFromFirebase = firestore.collection("timbrature")
                 .whereEqualTo("idAzienda", aziendaId)
                 .whereEqualTo("idDipendente", userId)
@@ -61,7 +57,6 @@ class TimbraturaRepository @Inject constructor(
 
             Log.d("TimbraturaRepository", "Trovate ${timbratureFromFirebase.size} timbrature su Firebase")
 
-            // Salva tutte le timbrature in cache locale
             timbratureFromFirebase.forEach { timbratura ->
                 try {
                     timbraturaDao.insert(timbratura.toEntity())
@@ -84,7 +79,6 @@ class TimbraturaRepository @Inject constructor(
         startDate: LocalDate,
         endDate: LocalDate
     ): Resource<List<Timbratura>> = try {
-        // Calcola range
         val startTs = startDate.atStartOfDay().toFirebaseTimestamp()
         val endOfDay = LocalTime.of(23, 59, 59, 999_000_000)
         val endTs = endDate.atTime(endOfDay).toFirebaseTimestamp()
@@ -111,7 +105,6 @@ class TimbraturaRepository @Inject constructor(
         Log.d(TAG, " $timbrature ")
 
 
-        // Sincronizza cache
         timbraturaDao.insertAll(timbrature.map { it.toEntity() })
 
         Resource.Success(timbrature)
@@ -127,7 +120,6 @@ class TimbraturaRepository @Inject constructor(
         val ref = collection.add(dto).await()
         val idFb = ref.id
 
-        // Aggiorna cache con l’ID Firebase
         timbraturaDao.insert(timbratura.copy(idFirebase = idFb).toEntity())
 
         Resource.Success(idFb)
@@ -136,51 +128,7 @@ class TimbraturaRepository @Inject constructor(
         Resource.Error("Errore aggiunta timbratura: ${e.message}")
     }
 
-    suspend fun updateTimbratura(timbratura: Timbratura): Resource<Unit> = try {
-        // Serializza e aggiorna cache
-        timbraturaDao.update(timbratura.toEntity())
-        // Aggiorna su Firebase
-        if (timbratura.idFirebase.isNotBlank()) {
-            val dto = TimbraturaMapper.toDto(timbratura)
-            collection.document(timbratura.idFirebase).set(dto).await()
-        }
-        Resource.Success(Unit)
-    } catch (e: Exception) {
-        Log.e(TAG, "Errore updateTimbratura", e)
-        Resource.Error("Errore aggiornamento timbratura: ${e.message}")
-    }
 
-    suspend fun getTimbratureByTurno(idTurno: String): Resource<List<Timbratura>> = try {
-        // Prima cache
-        val cached = timbraturaDao.getByTurno(idTurno)
-        if (cached.isNotEmpty()) {
-            Resource.Success(cached.map { it.toDomain() })
-        } else {
-            // Poi Firebase
-            val snap = collection
-                .whereEqualTo("idTurno", idTurno)
-                .get()
-                .await()
-            val list = snap.documents.mapNotNull { doc ->
-                doc.toObject(TimbraturaDto::class.java)
-                    ?.copy(idFirebase = doc.id)
-                    ?.let { TimbraturaMapper.toDomain(it) }
-            }
-            list.forEach { timbraturaDao.insert(it.toEntity()) }
-            Resource.Success(list)
-        }
-    } catch (e: Exception) {
-        Log.e(TAG, "Errore getTimbratureByTurno", e)
-        Resource.Error("Errore recupero timbrature turno: ${e.message}")
-    }
-
-    suspend fun getTimbratureAnomale(idAzienda: String): Resource<List<Timbratura>> = try {
-        val anomalies = timbraturaDao.getTimbratureAnomale(idAzienda)
-        Resource.Success(anomalies.map { it.toDomain() })
-    } catch (e: Exception) {
-        Log.e(TAG, "Errore getTimbratureAnomale", e)
-        Resource.Error("Errore recupero timbrature anomale: ${e.message}")
-    }
 
     suspend fun verificaTimbratura(idTimbratura: String): Resource<Unit> = try {
         val entity = timbraturaDao.getById(idTimbratura)

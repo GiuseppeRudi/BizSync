@@ -19,7 +19,6 @@ data class TurnoDto(
     val orarioInizio: Timestamp = Timestamp.now(),
     val orarioFine: Timestamp = Timestamp.now(),
 
-    // Nuova proprietà: salviamo come Map<String, String> per Firebase
     val zoneLavorative: Map<String, String> = emptyMap(),
 
     val note: List<NotaDto> = emptyList(),

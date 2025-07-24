@@ -5,8 +5,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -47,7 +47,6 @@ fun DipartimentiManagementScreen(
     val editingArea = uiState.editingArea
     val showOrariDialog = uiState.showOrariDialog
     val editingOrariAreaId = uiState.editingOrariArea
-    val orariTemp = uiState.orariTemp
     val hasChanges = uiState.hasChanges
     val isLoading = uiState.isLoading
 
@@ -79,7 +78,7 @@ fun DipartimentiManagementScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = { companyVm.setSelectedOperation(null) }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Indietro")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Indietro")
                     }
                 },
                 actions = {
@@ -175,7 +174,6 @@ fun DipartimentiManagementScreen(
         )
     }
 
-    // Dialog per modificare area esistente
     if (editingArea != null) {
         AreaLavoroDialog(
             area = editingArea,
@@ -187,7 +185,6 @@ fun DipartimentiManagementScreen(
         )
     }
 
-    // NUOVO DIALOG PER GESTIONE ORARI
     if (showOrariDialog && editingOrariAreaId != null) {
         OrariSettimanaliDialog(companyVm)
     }
@@ -446,7 +443,6 @@ fun OrariSettimanaliDialog(
         DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY, DayOfWeek.SUNDAY
     )
     val uiState by companyVm.uiState.collectAsState()
-    val areeModificate = uiState.areeModificate
     val orariTemp = uiState.orariTemp
     val editingOrariArea = uiState.editingOrariArea
 

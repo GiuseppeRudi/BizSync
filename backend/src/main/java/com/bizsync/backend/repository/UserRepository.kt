@@ -18,8 +18,6 @@ import javax.inject.Inject
 
 class UserRepository @Inject constructor(private val db : FirebaseFirestore, private val userDao: UserDao) {
 
-
-
     suspend fun updateDipartimentoDipendenti(users: List<User>) {
         try {
             users.forEach { user ->
@@ -46,7 +44,6 @@ class UserRepository @Inject constructor(private val db : FirebaseFirestore, pri
             Log.d("USER_DEBUG", "Aggiornamento utente con UID: $uid")
             Log.d("USER_DEBUG", "Dati utente da aggiornare: $user")
 
-            // Mappa solo i campi che possono essere aggiornati dal dipendente
             val updates = mapOf(
                 UtentiFirestore.Fields.NUMERO_TELEFONO to user.numeroTelefono,
                 UtentiFirestore.Fields.INDIRIZZO to user.indirizzo,
@@ -111,8 +108,8 @@ class UserRepository @Inject constructor(private val db : FirebaseFirestore, pri
     }
 
     suspend fun aggiornaAzienda(idAzienda: String ,idUtente : String, ruolo : RuoliAzienda) : Resource<Unit> {
-        Log.d("AZIENDA_DEBUG", "SONO NEL REPOSITORY E ID UTENTE " + idUtente.toString())
-        Log.d("AZIENDA_DEBUG", "SONO NEL REPOSITORY E ID AZIENDA " + idAzienda.toString())
+        Log.d("AZIENDA_DEBUG", "SONO NEL REPOSITORY E ID UTENTE $idUtente")
+        Log.d("AZIENDA_DEBUG", "SONO NEL REPOSITORY E ID AZIENDA $idAzienda")
 
         val updates = mapOf(
             UtentiFirestore.Fields.ID_AZIENDA to idAzienda,

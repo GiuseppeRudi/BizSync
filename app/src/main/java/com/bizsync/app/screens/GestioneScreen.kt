@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -32,6 +33,7 @@ fun GestioneScreen(
 
 @Composable
 fun MainManagementScreen(
+
     // Manager navigation functions
     onNavigateToEmployees: () -> Unit,
     onNavigateToProjects: () -> Unit,
@@ -41,6 +43,7 @@ fun MainManagementScreen(
     onNavigateToReports: () -> Unit,
     onNavigateToTimbratura: () -> Unit,
     onNavigateToLogout: () -> Unit,
+
     // Employee navigation functions
     onNavigateToShifts: () -> Unit = {},
     onNavigateToAbsences: () -> Unit = {},
@@ -111,7 +114,7 @@ fun MainManagementScreen(
             ManagementCard(
                 title = "Logout",
                 description = "Ci rivediamo presto",
-                icon = Icons.Default.Logout,
+                icon = Icons.AutoMirrored.Filled.Logout,
                 gradient = BizSyncColors.CardGradients[7]
             ) { onNavigateToLogout() }
         )
@@ -165,7 +168,7 @@ fun MainManagementScreen(
             ManagementCard(
                 title = "Logout",
                 description = "Ci rivediamo presto",
-                icon = Icons.Default.Logout,
+                icon = Icons.AutoMirrored.Filled.Logout,
                 gradient = BizSyncColors.CardGradients[7]
             ) { onNavigateToLogout() }
         )
@@ -180,7 +183,6 @@ fun MainManagementScreen(
             .background(BizSyncColors.Background)
             .padding(BizSyncDimensions.SpacingMedium)
     ) {
-        // Header dinamico
         Text(
             text = if (isManager) "Gestione Aziendale" else "Area Dipendente",
             style = MaterialTheme.typography.headlineMedium.copy(
@@ -190,7 +192,6 @@ fun MainManagementScreen(
             modifier = Modifier.padding(bottom = BizSyncDimensions.SpacingLarge)
         )
 
-        // Sottotitolo con info ruolo
         Text(
             text = if (isManager)
                 "Amministra la tua azienda"
@@ -202,7 +203,6 @@ fun MainManagementScreen(
             modifier = Modifier.padding(bottom = BizSyncDimensions.SpacingMedium)
         )
 
-        // Grid di card
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(BizSyncDimensions.SpacingMedium),
             modifier = Modifier.fillMaxSize()

@@ -3,8 +3,6 @@ package com.bizsync.backend.sync
 import android.util.Log
 import com.bizsync.cache.dao.ContrattoDao
 import com.bizsync.domain.constants.sealedClass.Resource
-import com.bizsync.backend.hash.HashStorage
-import com.bizsync.backend.hash.extensions.generateCacheHash
 import com.bizsync.backend.hash.extensions.generateDomainHash
 import com.bizsync.backend.hash.storage.ContrattiHashStorage
 import com.bizsync.backend.repository.ContractRepository
@@ -32,13 +30,13 @@ class SyncContrattoManager @Inject constructor(
                     val currentHash = firebaseData.generateDomainHash()
 
                     if (savedHash == null || savedHash != currentHash) {
-                        Log.d("CONTRATTI_DEBUG", "🔄 Sync contratti necessario per azienda $idAzienda")
+                        Log.d("CONTRATTI_DEBUG", " Sync contratti necessario per azienda $idAzienda")
                         Log.d("CONTRATTI_DEBUG", "   Hash salvato: $savedHash")
                         Log.d("CONTRATTI_DEBUG", "   Hash corrente: $currentHash")
 
                         performSyncWithData(idAzienda, firebaseData, currentHash)
                     } else {
-                        Log.d("CONTRATTI_DEBUG", "✅ CACHE ANCORA VALIDA NON CE DA AGGIORNARE  $idAzienda")
+                        Log.d("CONTRATTI_DEBUG", " CACHE ANCORA VALIDA NON CE DA AGGIORNARE  $idAzienda")
                     }
 
                     val cachedEntities = contrattoDao.getContratti()
@@ -46,7 +44,7 @@ class SyncContrattoManager @Inject constructor(
                 }
 
                 is Resource.Error -> {
-                    Log.e("CONTRATTI_DEBUG", "❌ Errore Firebase contratti, uso cache: ${firebaseResult.message}")
+                    Log.e("CONTRATTI_DEBUG", " Errore Firebase contratti, uso cache: ${firebaseResult.message}")
                     val cachedEntities = contrattoDao.getContratti()
                     Resource.Success(cachedEntities)
                 }
@@ -59,11 +57,11 @@ class SyncContrattoManager @Inject constructor(
             }
 
         } catch (e: Exception) {
-            Log.e("CONTRATTI_DEBUG", "🚨 Errore in syncIfNeeded (contratti): ${e.message}")
+            Log.e("CONTRATTI_DEBUG", " Errore in syncIfNeeded (contratti): ${e.message}")
             try {
                 val cachedEntities = contrattoDao.getContratti()
                 Resource.Success(cachedEntities)
-            } catch (cacheError: Exception) {
+            } catch (e: Exception) {
                 Resource.Error("Errore sync e cache (contratti): ${e.message}")
             }
         }
@@ -96,31 +94,12 @@ class SyncContrattoManager @Inject constructor(
 
             hashStorage.saveContrattiHash(idAzienda, newHash)
 
-            Log.d("CONTRATTI_DEBUG", "✅ Sync contratti completato - ${entities.size} contratti - hash: $newHash")
+            Log.d("CONTRATTI_DEBUG", " Sync contratti completato - ${entities.size} contratti - hash: $newHash")
 
         } catch (e: Exception) {
-            Log.e("CONTRATTI_DEBUG", "❌ Errore durante sync contratti: ${e.message}")
+            Log.e("CONTRATTI_DEBUG", "Errore durante sync contratti: ${e.message}")
             throw e
         }
     }
 
-    suspend fun validateCacheIntegrity(idAzienda: String): Boolean {
-        return try {
-            val savedHash = hashStorage.getContrattiHash(idAzienda) ?: return false
-            val cachedData = contrattoDao.getContratti()
-            val currentCacheHash = cachedData.generateCacheHash()
-
-            val isValid = savedHash == currentCacheHash
-
-            if (!isValid) {
-                Log.w("CONTRATTI_DEBUG", "⚠️ Cache contratti non valida per azienda $idAzienda")
-                Log.w("CONTRATTI_DEBUG", "   Hash salvato: $savedHash")
-                Log.w("CONTRATTI_DEBUG", "   Hash cache: $currentCacheHash")
-            }
-
-            isValid
-        } catch (e: Exception) {
-            false
-        }
-    }
 }

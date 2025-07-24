@@ -1,9 +1,7 @@
 package com.bizsync.app.screens
 
-import android.content.Context
+import android.annotation.SuppressLint
 import android.location.Address
-import android.location.Geocoder
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -38,17 +36,14 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -61,7 +56,6 @@ import com.bizsync.ui.components.GiornoPublicazioneSelector
 import com.bizsync.ui.components.SettoreSelector
 import com.bizsync.ui.components.StatusDialog
 import com.bizsync.ui.viewmodels.AddAziendaViewModel
-import java.util.Locale
 
 @Composable
 fun AddAzienda(onTerminate: () -> Unit) {
@@ -100,7 +94,7 @@ fun AddAzienda(onTerminate: () -> Unit) {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Header con titolo e progress - AGGIORNATO A 5 STEP
+
         StepHeader(currentStep = currentStep, totalSteps = 5)
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -115,13 +109,12 @@ fun AddAzienda(onTerminate: () -> Unit) {
                 2 -> StepTwo(addaziendaviewmodel)
                 3 -> StepThree(addaziendaviewmodel)
                 4 -> StepFour(addaziendaviewmodel)
-                5 -> StepFive(addaziendaviewmodel) // NUOVO STEP
+                5 -> StepFive(addaziendaviewmodel)
             }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Pulsanti di navigazione - AGGIORNATO A 5 STEP
         NavigationButtons(
             currentStep = currentStep,
             totalSteps = 5,
@@ -154,12 +147,15 @@ private fun StepHeader(currentStep: Int, totalSteps: Int) {
         Spacer(modifier = Modifier.height(16.dp))
 
         LinearProgressIndicator(
-            progress = currentStep.toFloat() / totalSteps.toFloat(),
-            modifier = Modifier.fillMaxWidth(),
-            color = MaterialTheme.colorScheme.primary
+        progress = { currentStep.toFloat() / totalSteps.toFloat() },
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.primary,
+        trackColor = ProgressIndicatorDefaults.linearTrackColor,
+        strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
         )
     }
 }
+
 
 @Composable
 private fun StepContainer(
@@ -267,7 +263,6 @@ private fun StepFour(addaziendaviewmodel: AddAziendaViewModel) {
     }
 }
 
-// NUOVO STEP CINQUE - INDIRIZZO AZIENDA
 @Composable
 private fun StepFive(addaziendaviewmodel: AddAziendaViewModel) {
     val addAziendaState by addaziendaviewmodel.uiState.collectAsState()
@@ -291,6 +286,7 @@ private fun StepFive(addaziendaviewmodel: AddAziendaViewModel) {
     }
 }
 
+@SuppressLint("DefaultLocale")
 @Composable
 private fun AddressInputSection(
     currentAddress: String,
@@ -306,7 +302,6 @@ private fun AddressInputSection(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Campo input indirizzo
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -385,7 +380,6 @@ private fun AddressInputSection(
             }
         }
 
-        // Lista candidati indirizzi
         if (addressCandidates.isNotEmpty()) {
             Text(
                 text = if (addressCandidates.size > 1) {
@@ -505,7 +499,6 @@ private fun AddressCandidateCard(
                     }
                 )
 
-                // Dettagli aggiuntivi
                 val details = buildList {
                     address.locality?.let { add("Città: $it") }
                     address.postalCode?.let { add("CAP: $it") }

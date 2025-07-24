@@ -2,7 +2,6 @@ package com.bizsync.backend.orchestrator
 
 
 import android.util.Log
-import com.bizsync.backend.hash.HashStorage
 import com.bizsync.backend.repository.TurnoRepository
 import com.bizsync.backend.sync.SyncTurnoManager
 import com.bizsync.cache.dao.TurnoDao
@@ -19,7 +18,6 @@ import javax.inject.Inject
 class TurnoOrchestrator @Inject constructor(
     private val turnoRepository: TurnoRepository,
     private val turnoDao: TurnoDao,
-    private val hashStorage: HashStorage,
     private val syncTurnoManager: SyncTurnoManager
 ) {
 
@@ -45,12 +43,10 @@ class TurnoOrchestrator @Inject constructor(
             var turniSincronizzati = 0
             var turniEliminati = 0
 
-            // Processa ogni turno
             for (turno in turni) {
                 when {
                     !turno.isSynced && !turno.isDeleted -> {
                         if (turno.idFirebase.isEmpty()) {
-                            // Nuovo turno → aggiungi su Firebase
                             when (val result = turnoRepository.addTurnoToFirebase(turno.toDomain())) {
                                 is Resource.Success -> {
                                     val firebaseId = result.data
@@ -65,7 +61,6 @@ class TurnoOrchestrator @Inject constructor(
                                 }
                             }
                         } else {
-                            // Turno modificato → aggiorna su Firebase
                             when (val result = turnoRepository.updateTurnoOnFirebase(turno.toDomain())) {
                                 is Resource.Success -> {
                                     turnoDao.updateTurnoSyncStatus(
@@ -85,30 +80,27 @@ class TurnoOrchestrator @Inject constructor(
 
                     turno.isDeleted -> {
                         // Turno eliminato → cancella da Firebase e rimuovi dalla cache
-                        turno.idFirebase?.let { firebaseId ->
+                        turno.idFirebase.let { firebaseId ->
                             when (val result = turnoRepository.deleteTurnoFromFirebase(firebaseId)) {
                                 is Resource.Success -> {
                                     turnoDao.deleteTurno(turno)
                                     turniEliminati++
                                 }
+
                                 is Resource.Error -> {
                                     return Resource.Error("Errore eliminazione turno: ${result.message}")
                                 }
+
                                 is Resource.Empty -> {
                                     turnoDao.deleteTurno(turno)
                                     turniEliminati++
                                 }
                             }
-                        } ?: run {
-                            // Turno senza firebaseId, rimuovi solo dalla cache
-//                            turnoRepository.deleteTurnoFromCache(turno)
-                            turniEliminati++
                         }
                     }
                 }
             }
 
-            // Messaggio di successo
             val messaggio = buildString {
                 if (turniSincronizzati > 0) {
                     append("$turniSincronizzati turni sincronizzati")
@@ -138,48 +130,47 @@ class TurnoOrchestrator @Inject constructor(
         return try {
             val currentWeekStart = WeeklyWindowCalculator.getCurrentWeekStart()
 
-            // ✅ CONTROLLO FINESTRA: Manager vs Employee
             val (windowStart, windowEnd) = if (idUser == null) {
-                // 👤 Manager: usa finestra manager
+                // Manager: usa finestra manager
                 WeeklyWindowCalculator.calculateWindowForManager(currentWeekStart)
             } else {
-                // 👥 Employee: usa finestra employee
+                //  Employee: usa finestra employee
                 WeeklyWindowCalculator.calculateWindowForEmployee(currentWeekStart)
             }
 
             if (startWeek in windowStart..windowEnd) {
-                // ✅ CASO 1: dentro la finestra
+                //  CASO 1: dentro la finestra
                 val (startDate, endDate) = WeeklyWindowCalculator.getWeekBounds(startWeek)
 
-                // 🔍 DAO: Manager vs Employee
+                //  DAO: Manager vs Employee
                 val turniEntities = turnoDao.fetchTurniSettimana(startDate, endDate)
 
 
 
                 if (turniEntities.isEmpty()) {
-                    Log.d("TURNI_DEBUG", "📭 Nessun turno trovato nella settimana $startDate - $endDate ${if (idUser != null) "per utente $idUser" else ""}")
+                    Log.d("TURNI_DEBUG", " Nessun turno trovato nella settimana $startDate - $endDate ${if (idUser != null) "per utente $idUser" else ""}")
                     Resource.Empty
                 } else {
                     val domainTurni = turniEntities.toDomainList()
-                    Log.d("TURNI_DEBUG", "✅ Trovati ${domainTurni.size} turni nella settimana $startDate - $endDate ${if (idUser != null) "per utente $idUser" else ""}")
+                    Log.d("TURNI_DEBUG", " Trovati ${domainTurni.size} turni nella settimana $startDate - $endDate ${if (idUser != null) "per utente $idUser" else ""}")
                     Resource.Success(domainTurni)
                 }
             } else {
                 val (startDate, endDate) = WeeklyWindowCalculator.getWeekBounds(startWeek)
 
-                // 🔍 DAO: Manager vs Employee
+                // DAO: Manager vs Employee
                 val turniEntities = turnoDao.fetchTurniSettimana(startDate, endDate)
 
                 if (turniEntities.isNotEmpty()) {
-                    // ✅ Caso 1: Turni trovati in cache
+                    //  Caso 1: Turni trovati in cache
                     val domainTurni = turniEntities.toDomainList()
-                    Log.d("TURNI_DEBUG", "✅ Trovati ${domainTurni.size} turni nella settimana $startDate - $endDate (da cache) ${if (idUser != null) "per utente $idUser" else ""}")
+                    Log.d("TURNI_DEBUG", " Trovati ${domainTurni.size} turni nella settimana $startDate - $endDate (da cache) ${if (idUser != null) "per utente $idUser" else ""}")
                     Resource.Success(domainTurni)
                 } else if (idAzienda != null) {
-                    // 🔍 Caso 2: Cache vuota → fetch da Firebase
-                    Log.d("TURNI_DEBUG", "📭 Cache vuota, recupero da Firebase settimana $startDate - $endDate ${if (idUser != null) "per utente $idUser" else ""}")
+                    //  Caso 2: Cache vuota → fetch da Firebase
+                    Log.d("TURNI_DEBUG", " Cache vuota, recupero da Firebase settimana $startDate - $endDate ${if (idUser != null) "per utente $idUser" else ""}")
 
-                    // 🌐 REPOSITORY: Manager vs Employee
+                    //  REPOSITORY: Manager vs Employee
                     val result = if (idUser == null) {
                         // Manager: prende tutti i turni dell'azienda
                         turnoRepository.getTurniRangeByAzienda(idAzienda, startDate, endDate)
@@ -194,23 +185,23 @@ class TurnoOrchestrator @Inject constructor(
                             if (turni.isNotEmpty()) {
                                 // Salva in cache
                                 turnoDao.insertAll(turni.toEntityList())
-                                Log.d("TURNI_DEBUG", "💾 Turni salvati in cache")
+                                Log.d("TURNI_DEBUG", " Turni salvati in cache")
 
                                 // Ritorna dalla cache con il filtro appropriato
                                 val updated = turnoDao.fetchTurniSettimana(startDate, endDate).toDomainList()
 
                                 Resource.Success(updated)
                             } else {
-                                Log.d("TURNI_DEBUG", "📭 Nessun turno disponibile da Firebase")
+                                Log.d("TURNI_DEBUG", " Nessun turno disponibile da Firebase")
                                 Resource.Empty
                             }
                         }
                         is Resource.Error -> {
-                            Log.e("TURNI_DEBUG", "❌ Errore da Firebase: ${result.message}")
+                            Log.e("TURNI_DEBUG", " Errore da Firebase: ${result.message}")
                             result
                         }
                         else -> {
-                            Log.d("TURNI_DEBUG", "⚠️ Firebase ha restituito uno stato inatteso")
+                            Log.d("TURNI_DEBUG", " Firebase ha restituito uno stato inatteso")
                             Resource.Empty
                         }
                     }

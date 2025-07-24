@@ -16,7 +16,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Error
@@ -56,7 +56,6 @@ import com.bizsync.ui.components.SingleDayTimeRangePicker
 import com.bizsync.ui.components.StatusDialog
 import com.bizsync.ui.components.calculateRequestedHours
 import com.bizsync.ui.model.AbsenceUi
-import com.bizsync.ui.theme.BizSyncColors.Surface
 import com.bizsync.ui.viewmodels.AbsenceViewModel
 import com.bizsync.ui.viewmodels.UserViewModel
 import java.time.DayOfWeek
@@ -70,7 +69,6 @@ import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 
 
-// Funzione helper per calcolare ore
 fun calculateHoursBetween(startTime: LocalTime, endTime: LocalTime): Int {
     return Duration.between(startTime, endTime).toHours().toInt()
 }
@@ -87,9 +85,9 @@ fun NewAbsenceRequestScreen(
     val uiState by absenceVM.uiState.collectAsState()
     val addAbsence = uiState.addAbsence
 
-    var isFullDay = uiState.isFullDay
-    var showStartDatePicker = uiState.showStartDatePicker
-    var showEndDatePicker = uiState.showEndDatePicker
+    val isFullDay = uiState.isFullDay
+    val showStartDatePicker = uiState.showStartDatePicker
+    val showEndDatePicker = uiState.showEndDatePicker
 
     val minimumDate = remember { calculateMinimumAbsenceDate() }
 
@@ -227,7 +225,7 @@ fun NewAbsenceRequestScreen(
                         absenceVM.resetAddAbsence()
                         onDismiss()
                     }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Indietro")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Indietro")
                     }
                 },
                 actions = {
@@ -243,26 +241,23 @@ fun NewAbsenceRequestScreen(
             )
         }
     ) { paddingValues ->
-        // SOLUZIONE 1: Usa Column con verticalScroll invece di LazyColumn
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(horizontal = 16.dp)
-                .verticalScroll(rememberScrollState()) // Questo risolve il problema di scroll
-                .imePadding(), // Aggiunto per evitare problemi con la tastiera
+                .verticalScroll(rememberScrollState())
+                .imePadding(),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 🆕 Warning Card per informazioni anticipo
             AnticipationWarningCard(minimumDate = minimumDate)
 
-            // Absence Type Selector
             AbsenceTypeSelector(
                 selectedType = addAbsence.typeUi,
                 onTypeSelected = { selectedType ->
-                    selectedType?.let { absenceVM.updateAddAbsenceType(it) }
+                    selectedType.let { absenceVM.updateAddAbsenceType(it) }
                 }
             )
 
@@ -294,7 +289,6 @@ fun NewAbsenceRequestScreen(
                 contratto = contratto
             )
 
-            // Reason and Comments
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
@@ -331,7 +325,6 @@ fun NewAbsenceRequestScreen(
                 }
             }
 
-            // Spacer finale per garantire che l'ultimo elemento sia completamente visibile
             Spacer(modifier = Modifier.height(16.dp))
         }
     }
@@ -344,7 +337,6 @@ fun NewAbsenceRequestScreen(
                         .atZone(ZoneId.systemDefault())
                         .toLocalDate()
 
-                    // 🆕 Validazione data minima
                     if (isValidAbsenceDate(selectedDate)) {
                         absenceVM.updateAddAbsenceStartDate(selectedDate)
 
@@ -359,7 +351,7 @@ fun NewAbsenceRequestScreen(
                 absenceVM.setShowStartDatePicker(false)
             },
             initialDate = addAbsence.startDate,
-            minimumDate = minimumDate // 🆕 Limita le date selezionabili
+            minimumDate = minimumDate
         )
     }
 
@@ -371,7 +363,6 @@ fun NewAbsenceRequestScreen(
                         .atZone(ZoneId.systemDefault())
                         .toLocalDate()
 
-                    // 🆕 Validazione data minima
                     if (isValidAbsenceDate(selectedDate) &&
                         (addAbsence.startDate == null || !selectedDate.isBefore(addAbsence.startDate))) {
                         absenceVM.updateAddAbsenceEndDate(selectedDate)
@@ -395,10 +386,6 @@ fun NewAbsenceRequestScreen(
         }
     )
 }
-
-
-
-
 
 
 @Composable
@@ -484,8 +471,6 @@ fun AnticipationWarningCard(minimumDate: LocalDate) {
 }
 
 
-
-
 @Composable
 fun AbsencePeriodSelector(
     addAbsence: AbsenceUi,
@@ -526,12 +511,10 @@ fun AbsencePeriodSelector(
                 }
             }
 
-            // 🆕 Validazione visuale per date non valide
             if (addAbsence.startDate != null && !isValidAbsenceDate(addAbsence.startDate!!)) {
                 DateValidationError(minimumDate)
             }
 
-            // Mostra il totale calcolato
             if ((addAbsence.totalDays ?: 0) > 0 || (addAbsence.totalHours ?: 0) > 0) {
                 TotalDisplay(addAbsence, timeType, isFlexibleModeFullDay)
             }
@@ -539,7 +522,6 @@ fun AbsencePeriodSelector(
     }
 }
 
-// 5. Componente per errore validazione date
 
 @Composable
 private fun DateValidationError(minimumDate: LocalDate) {
@@ -672,7 +654,6 @@ private fun FlexibleSelector(
     minimumDate: LocalDate
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        // Toggle per scegliere modalità
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -724,7 +705,6 @@ private fun FlexibleSelector(
             }
         }
 
-        // Contenuto basato sulla modalità selezionata
         if (isFlexibleModeFullDay) {
             FullDaysSelector(addAbsence, absenceVM, minimumDate)
         } else {
@@ -732,14 +712,14 @@ private fun FlexibleSelector(
         }
     }
 }
-// Aggiorna il TotalDisplay component
+
 @Composable
 private fun TotalDisplay(
     addAbsence: AbsenceUi,
     timeType: AbsenceTimeType,
     isFlexibleModeFullDay: Boolean
 ) {
-    // Mostra solo se c'è qualcosa da mostrare
+
     val hasValue = when {
         timeType == AbsenceTimeType.HOURLY_SINGLE_DAY -> (addAbsence.totalHours ?: 0) > 0
         timeType == AbsenceTimeType.FLEXIBLE && !isFlexibleModeFullDay -> (addAbsence.totalHours ?: 0) > 0
@@ -786,7 +766,6 @@ private fun TotalDisplay(
     }
 }
 
-// Componente info card helper
 @Composable
 private fun InfoCard(title: String, description: String) {
     Card(
@@ -843,11 +822,3 @@ fun isValidAbsenceDate(date: LocalDate): Boolean {
     return !date.isBefore(calculateMinimumAbsenceDate())
 }
 
-/**
- * Ottiene il messaggio di errore per date non valide
- */
-fun getDateValidationMessage(): String {
-    val dataMinima = calculateMinimumAbsenceDate()
-    val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-    return "Le richieste di assenza devono essere inviate con almeno 2 settimane di anticipo. Data minima selezionabile: ${dataMinima.format(formatter)}"
-}

@@ -5,7 +5,7 @@ import com.google.firebase.Timestamp
 
 data class WeeklyShiftDto(
     val idAzienda: String = "",
-    val weekStart: String = "", // ISO format "2025-07-15"
+    val weekStart: String = "",
     val createdBy: String = "",
     val createdAt: Timestamp? = null,
     val updatedAt: Timestamp? = null,
@@ -13,9 +13,7 @@ data class WeeklyShiftDto(
     val dipartimentiAttivi: List<AreaLavoroDto> = emptyList(),
     val dipendentiAttivi: List<UserDto> = emptyList(),
 
-
-    // Metadati aggiuntivi
-    val weekEnd: String = "", // ISO format "2025-07-21" (domenica)
+    val weekEnd: String = "",
     val publishedAt: Timestamp? = null,
     val finalizedAt: Timestamp? = null,
     val notes: String = ""

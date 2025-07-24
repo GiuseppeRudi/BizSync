@@ -1,6 +1,5 @@
 package com.bizsync.app
 
-import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -14,11 +13,10 @@ import com.bizsync.app.navigation.OnboardingNavHost
 import com.bizsync.domain.constants.sealedClass.OnboardingScreen
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.bizsync.app.screens.SplashScreenWithProgress
-import com.bizsync.app.screensMore.AppScaffold
+import com.bizsync.app.screens.MainScaffold
 import com.bizsync.ui.components.DialogStatusType
 import com.bizsync.ui.components.StatusDialog
 import kotlinx.coroutines.delay
@@ -31,7 +29,6 @@ fun MainApp(onLogout: () -> Unit) {
     val check = userState.checkUser
     val uid = FirebaseAuth.getInstance().currentUser?.uid
 
-    // 🔥 TIMER SEMPLICE: Si resetta automaticamente ad ogni ricomposizione
     var showingSplash by rememberSaveable { mutableStateOf(true) }
 
     userState.resultMsg?.let { error ->
@@ -65,7 +62,6 @@ fun MainApp(onLogout: () -> Unit) {
         splashVM.clearObsoleteCacheIfNeeded()
     }
 
-    // ⏱️ TIMER MINIMO SOLO QUANDO I DATI SONO PRONTI
     LaunchedEffect(check) {
         if (check != null && showingSplash) {
             Log.d("SPLASH_TIMING", "⏳ Dati , attendo 1.5s per animazione")
@@ -75,7 +71,6 @@ fun MainApp(onLogout: () -> Unit) {
         }
     }
 
-    // 🎭 NAVIGAZIONE DIRETTA
     when {
         showingSplash -> {
             SplashScreenWithProgress(
@@ -85,14 +80,14 @@ fun MainApp(onLogout: () -> Unit) {
             )
         }
         check == false -> OnboardingFlow(onSuccess = { userVM.change() })
-        check == true -> AppScaffold(onLogout)
+        check == true -> MainScaffold(onLogout)
     }
 }
 
 @Composable
 fun OnboardingFlow(onSuccess : () -> Unit)
 {
-    var userVM = LocalUserViewModel.current
+    val userVM = LocalUserViewModel.current
 
     val userState = userVM.uiState.collectAsState()
     val uid = userState.value.user.uid

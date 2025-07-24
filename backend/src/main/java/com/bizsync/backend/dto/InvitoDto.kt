@@ -18,7 +18,6 @@ data class InvitoDto(
     val sentDate: Timestamp = Timestamp(0, 0),
     val acceptedDate: Timestamp = Timestamp(0, 0),
 
-    // Nuovi campi aggiunti
     val settoreAziendale: String = "",
     val dipartimento: String = "",
     val tipoContratto: String = "",

@@ -18,21 +18,18 @@ import com.bizsync.domain.constants.enumClass.TipoPausa
 import com.bizsync.domain.constants.enumClass.TipoNota
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.bizsync.app.navigation.LocalScaffoldViewModel
 import com.bizsync.domain.constants.enumClass.WeeklyShiftStatus
 import com.bizsync.domain.model.AreaLavoro
@@ -44,7 +41,6 @@ import com.bizsync.domain.model.WeeklyShift
 import com.bizsync.ui.components.AIResultDialog
 import com.bizsync.ui.components.DipartimentoHeader
 import com.bizsync.ui.components.EmptyTurniCard
-import com.bizsync.ui.components.SectionHeader
 import com.bizsync.ui.components.TimelineOrariaDettagliata
 import com.bizsync.ui.components.getTipoPausaIcon
 import com.bizsync.ui.viewmodels.PianificaManagerViewModel
@@ -141,7 +137,6 @@ fun GestioneTurniDipartimentoScreen(
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Scritta "Turni Assegnati" con numero
                     Text(
                         text = "Turni Assegnati (${turniGioDip.size} turni)",
                         style = MaterialTheme.typography.titleMedium,
@@ -149,7 +144,6 @@ fun GestioneTurniDipartimentoScreen(
                     )
 
                     if (weeklyIsIdentical && weeklyShift?.status != WeeklyShiftStatus.PUBLISHED) {
-                        // FloatingActionButton per AI
                         FloatingActionButton(
                             onClick = {
                                 managerVM.generateTurniWithAI(
@@ -201,7 +195,6 @@ fun GestioneTurniDipartimentoScreen(
 
 
 
-// Dialog per mostrare risultati AI
         if (managerState.showAIResultDialog) {
             AIResultDialog(
                 turniGenerati = managerState.turniGeneratiAI,
@@ -211,7 +204,6 @@ fun GestioneTurniDipartimentoScreen(
             )
         }
 
-// Loading indicator per generazione AI
         if (managerState.isGeneratingTurni) {
             Box(
                 modifier = Modifier
@@ -346,7 +338,6 @@ fun TurnoAssegnatoCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column {
-            // Header compatto sempre visibile
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -356,7 +347,6 @@ fun TurnoAssegnatoCard(
             ) {
                 // Informazioni principali
                 Column(modifier = Modifier.weight(1f)) {
-                    // Titolo del turno
                     Text(
                         text = turno.titolo,
                         style = MaterialTheme.typography.titleMedium,
@@ -386,7 +376,7 @@ fun TurnoAssegnatoCard(
 
                     Spacer(modifier = Modifier.height(6.dp))
 
-                    // Dipendenti (primi 2-3 nomi)
+                    // Dipendenti (primi 3 nomi)
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -418,12 +408,10 @@ fun TurnoAssegnatoCard(
                     }
                 }
 
-                // Pulsanti azione
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Pulsante espandi
                     IconButton(
                         onClick = { isExpanded = !isExpanded }
                     ) {
@@ -564,7 +552,7 @@ private fun DetailedTurnoInfo(
         if (turno.note.isNotEmpty()) {
             DetailSection(
                 title = "Note",
-                icon = Icons.Default.Notes
+                icon = Icons.AutoMirrored.Filled.Notes
             ) {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -643,7 +631,7 @@ private fun InfoChip(
     icon: ImageVector,
     label: String,
     value: String,
-    color: androidx.compose.ui.graphics.Color
+    color: Color
 ) {
     Surface(
         color = color.copy(alpha = 0.1f),
@@ -679,7 +667,7 @@ private fun InfoChip(
 @Composable
 private fun DipendenteChip(dipendente: User) {
     AssistChip(
-        onClick = { /* Opzionale: mostra dettagli dipendente */ },
+        onClick = { TODO() },
         label = {
             Text(
                 text = if (dipendente.nome.isNotBlank() && dipendente.cognome.isNotBlank()) {
@@ -763,8 +751,8 @@ private fun NotaItem(nota: Nota) {
                     TipoNota.IMPORTANTE -> Icons.Default.PriorityHigh
                     TipoNota.SICUREZZA -> Icons.Default.Warning
                     TipoNota.PROCEDURA -> Icons.Default.Bookmark
-                    TipoNota.CLIENTE -> TODO()
-                    TipoNota.EQUIPMENT -> TODO()
+                    TipoNota.CLIENTE -> Icons.Default.Person
+                    TipoNota.EQUIPMENT -> Icons.Default.Build
                 },
                 contentDescription = null,
                 modifier = Modifier.size(16.dp),
@@ -773,8 +761,8 @@ private fun NotaItem(nota: Nota) {
                     TipoNota.IMPORTANTE -> MaterialTheme.colorScheme.error
                     TipoNota.SICUREZZA -> MaterialTheme.colorScheme.tertiary
                     TipoNota.PROCEDURA -> MaterialTheme.colorScheme.secondary
-                    TipoNota.CLIENTE -> TODO()
-                    TipoNota.EQUIPMENT -> TODO()
+                    TipoNota.CLIENTE -> MaterialTheme.colorScheme.onPrimary
+                    TipoNota.EQUIPMENT -> MaterialTheme.colorScheme.outline
                 }
             )
 

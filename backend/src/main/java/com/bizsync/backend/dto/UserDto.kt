@@ -14,14 +14,13 @@ data class UserDto(
     val posizioneLavorativa: String,
     val dipartimento: String,
 
-    // NUOVI CAMPI PERSONALI
+    // CAMPI PERSONALI
     val numeroTelefono: String,
     val indirizzo: String,
     val codiceFiscale: String,
     val dataNascita: String,
     val luogoNascita: String
 ) {
-    // Costruttore vuoto richiesto da Firebase
     constructor() : this(
         uid = "",
         email = "",

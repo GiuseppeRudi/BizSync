@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material3.*
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -19,7 +20,6 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -29,6 +29,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bizsync.app.R
 import com.bizsync.app.navigation.LocalScaffoldViewModel
+import com.bizsync.ui.model.LogoutStepUi
 import com.bizsync.ui.viewmodels.CleanupStep
 import com.bizsync.ui.viewmodels.LogoutViewModel
 import kotlinx.coroutines.delay
@@ -41,14 +42,13 @@ fun LogoutManagementScreen(
     val scaffoldVM = LocalScaffoldViewModel.current
     val cleanupState by cleanupViewModel.uiState.collectAsStateWithLifecycle()
 
-    var currentStep by remember { mutableStateOf(0) }
+    var currentStep by remember { mutableIntStateOf(0) }
     var showContent by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         scaffoldVM.onFullScreenChanged(true)
     }
 
-    // Animazioni di background
     val infiniteTransition = rememberInfiniteTransition(label = "logout_transition")
 
     val backgroundRotation by infiniteTransition.animateFloat(
@@ -79,18 +79,17 @@ fun LogoutManagementScreen(
         Color(0xFF533A7B)
     )
 
-    // Sequenza ottimizzata (1.5 secondi totali)
+
     LaunchedEffect(Unit) {
         showContent = true
-        delay(700) // Messaggio di arrivederci
+        delay(700)
         currentStep = 1
 
-        // Avvia la pulizia del database
         cleanupViewModel.startCleanup()
 
-        delay(800) // Mostra pulizia in corso
+        delay(800)
         currentStep = 2
-        delay(800) // Completamento
+        delay(800)
         onLogout()
     }
 
@@ -105,7 +104,6 @@ fun LogoutManagementScreen(
             ),
         contentAlignment = Alignment.Center
     ) {
-        // Elementi decorativi di background
         repeat(2) { index ->
             Box(
                 modifier = Modifier
@@ -119,7 +117,6 @@ fun LogoutManagementScreen(
             )
         }
 
-        // Cerchio pulsante
         Box(
             modifier = Modifier
                 .size(200.dp)
@@ -169,24 +166,24 @@ fun LogoutManagementScreen(
                         modifier = Modifier.size(56.dp)
                     )
 
-                    // Contenuto dinamico
                     LogoutStepContent(
                         currentStep = currentStep,
                         cleanupStep = cleanupState.currentStep
                     )
 
-                    // Progress indicator semplificato
                     LinearProgressIndicator(
-                        progress = when (currentStep) {
+                    progress = {
+                        when (currentStep) {
                             0 -> 0.2f
                             1 -> 0.7f
-                            else -> 1f
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(4.dp),
-                        color = Color(0xFF2196F3),
-                        trackColor = Color.Gray.copy(alpha = 0.2f)
+                            else -> 1f }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(4.dp),
+                    color = Color(0xFF2196F3),
+                    trackColor = Color.Gray.copy(alpha = 0.2f),
+                    strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
                     )
                 }
             }
@@ -200,19 +197,19 @@ fun LogoutStepContent(
     cleanupStep: CleanupStep
 ) {
     val stepData = when (currentStep) {
-        0 -> LogoutStep(
+        0 -> LogoutStepUi(
             icon = Icons.Default.CheckCircle,
             title = "Arrivederci!",
             message = "Grazie per aver utilizzato BizSync",
             color = Color(0xFF4CAF50)
         )
-        1 -> LogoutStep(
+        1 -> LogoutStepUi(
             icon = Icons.Default.CleaningServices,
             title = getCleanupTitle(cleanupStep),
             message = cleanupStep.message,
             color = Color(0xFF2196F3)
         )
-        else -> LogoutStep(
+        else -> LogoutStepUi(
             icon = Icons.Default.CheckCircle,
             title = "Completato!",
             message = "A presto su BizSync!",
@@ -273,7 +270,6 @@ fun LogoutStepContent(
                 lineHeight = 20.sp
             )
 
-            // Dots animati solo per la pulizia
             if (step == 1) {
                 LogoutLoadingDots(color = stepData.color)
             }
@@ -346,10 +342,3 @@ private fun getCleanupTitle(cleanupStep: CleanupStep): String {
     }
 }
 
-// Data class per i passi del logout
-data class LogoutStep(
-    val icon: ImageVector,
-    val title: String,
-    val message: String,
-    val color: Color
-)

@@ -65,7 +65,6 @@ private fun HistoryRequestCard(request: AbsenceUi) {
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -107,7 +106,6 @@ private fun HistoryRequestCard(request: AbsenceUi) {
                 color = Color.Gray
             )
 
-            // Approved date
             request.approvedDate?.let { date ->
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(

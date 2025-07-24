@@ -1,10 +1,7 @@
-// MainActivity.kt
 package com.bizsync.app
 
-import LoginScreen
 import android.content.Context
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -14,10 +11,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
 import com.bizsync.app.navigation.LocalNavController
 import com.bizsync.app.navigation.LocalUserViewModel
+import com.bizsync.app.screens.LoginScreen
 import com.bizsync.ui.viewmodels.UserViewModel
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
-import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.appcheck.FirebaseAppCheck
 import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
@@ -100,7 +97,7 @@ class MainActivity : ComponentActivity() {
         val intent = AuthUI.getInstance()
             .createSignInIntentBuilder()
             .setAvailableProviders(providers)
-            .setIsSmartLockEnabled(false)     // <<< Disabilita il prompt Smart Lock
+            .setIsSmartLockEnabled(false)
             .build()
         signInLauncher.launch(intent)
     }

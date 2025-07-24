@@ -7,7 +7,6 @@ import com.bizsync.backend.remote.TurniFirestore
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.Turno
 import com.bizsync.domain.utils.DateUtils.toFirebaseTimestamp
-import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import java.time.LocalDate
 import com.bizsync.backend.mapper.toDomainList
@@ -15,8 +14,6 @@ import com.bizsync.backend.mapper.toDto
 import com.bizsync.cache.dao.TurnoDao
 import com.bizsync.cache.mapper.toEntity
 import com.google.firebase.firestore.toObject
-import java.time.ZoneId
-import java.util.Date
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -26,19 +23,8 @@ class TurnoRepository @Inject constructor(
     private val turnoDao : TurnoDao
 )  {
 
-    companion object {
-        private const val COLLECTION_NAME = "turni"
-        private const val TAG = "TurnoRepository"
-    }
 
 
-    private val collection = firestore.collection(COLLECTION_NAME)
-
-    /**
-     * Aggiunge un nuovo turno a Firebase
-     * @param turno Turno da aggiungere
-     * @return Resource<String> con l'ID del documento Firebase
-     */
     suspend fun addTurnoToFirebase(turno: Turno): Resource<String> {
         return try {
             val documentRef = firestore
@@ -52,11 +38,7 @@ class TurnoRepository @Inject constructor(
         }
     }
 
-    /**
-     * Aggiorna un turno esistente su Firebase
-     * @param turno Turno da aggiornare
-     * @return Resource<Unit> risultato dell'operazione
-     */
+
     suspend fun updateTurnoOnFirebase(turno: Turno): Resource<Unit> {
         return try {
             if (turno.idFirebase.isEmpty()) {
@@ -88,7 +70,6 @@ class TurnoRepository @Inject constructor(
                     doc.toObject<Turno>()?.copy(id = doc.id)
                 }
 
-            // Salva nella cache locale
             turniFromFirebase.forEach { turno ->
                 turnoDao.insertTurno(turno.toEntity())
             }
@@ -108,7 +89,6 @@ class TurnoRepository @Inject constructor(
                     doc.toObject<Turno>()?.copy(id = doc.id)
                 }
 
-//            turnoDao.clearAllTurni()
             allTurni.forEach { turno ->
                 turnoDao.insertTurno(turno.toEntity())
             }
@@ -118,11 +98,6 @@ class TurnoRepository @Inject constructor(
         }
     }
 
-    /**
-     * Elimina un turno da Firebase
-     * @param firebaseId ID del documento Firebase
-     * @return Resource<Unit> risultato dell'operazione
-     */
     suspend fun deleteTurnoFromFirebase(firebaseId: String): Resource<Unit> {
         return try {
             firestore
@@ -146,7 +121,6 @@ class TurnoRepository @Inject constructor(
         try {
             Log.d("TurnoRepository", "Sincronizzazione turni per utente $userId dal $startDate al $endDate")
 
-            // Query Firebase per turni dell'utente nel range di date
             val turniFromFirebase = firestore.collection("turni")
                 .whereEqualTo("idAzienda", aziendaId)
                 .whereArrayContains("idDipendenti", userId)
@@ -188,9 +162,6 @@ class TurnoRepository @Inject constructor(
     }
 
 
-
-
-
     suspend fun getTurniRangeByAzienda(
         idAzienda: String,
         startRange: LocalDate,
@@ -206,7 +177,6 @@ class TurnoRepository @Inject constructor(
                 .whereGreaterThanOrEqualTo("data", startTimestamp)
                 .whereLessThan("data", endTimestamp)
 
-            // se idEmployee è specificato, controlla che sia contenuto nell'array idDipendenti
             if (idEmployee != null) {
                 query = query.whereArrayContains("idDipendenti", idEmployee)
             }
@@ -214,7 +184,7 @@ class TurnoRepository @Inject constructor(
             val result = query.get().await()
 
             val turni = result.mapNotNull { document ->
-                document.toObject(TurnoDto::class.java)?.copy(idFirebase = document.id)
+                document.toObject(TurnoDto::class.java).copy(idFirebase = document.id)
             }
 
             Log.d("TURNI_DEBUG", "🔍 Recuperati ${turni.size} turni per azienda $idAzienda")
@@ -229,8 +199,6 @@ class TurnoRepository @Inject constructor(
             Resource.Error("Errore durante il recupero dei turni per l'azienda")
         }
     }
-
-
 
 }
 

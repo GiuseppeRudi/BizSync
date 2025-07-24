@@ -11,10 +11,8 @@ import java.time.LocalDateTime
 object TurnoMapper {
 
     fun toDomain(dto: TurnoDto): Turno {
-        // Ricava LocalDate da dto.data
         val dataLocalDate = dto.data.toLocalDate()
 
-        // Ricava LocalTime da Timestamp orarioInizio e orarioFine
         val orarioInizioLocalTime = dto.orarioInizio.toLocalDateTime().toLocalTime()
         val orarioFineLocalTime = dto.orarioFine.toLocalDateTime().toLocalTime()
 
@@ -27,7 +25,7 @@ object TurnoMapper {
             orarioFine = orarioFineLocalTime,
             dipartimento = dto.dipartimento,
             data = dataLocalDate,
-            zoneLavorative = dto.zoneLavorative.toZoneLavorativeMap(), // 🆕 Conversione
+            zoneLavorative = dto.zoneLavorative.toZoneLavorativeMap(),
             pause = dto.pause.toDomainList(),
             note = dto.note.toDomainList(),
             createdAt = dto.createdAt.toLocalDate(),
@@ -38,7 +36,6 @@ object TurnoMapper {
     fun toDto(domain: Turno): TurnoDto {
         val dataTimestamp = domain.data.toFirebaseTimestamp()
 
-        // Combina data + orarioInizio per creare LocalDateTime e poi Timestamp
         val orarioInizioTimestamp = LocalDateTime.of(domain.data, domain.orarioInizio).toFirebaseTimestamp()
         val orarioFineTimestamp = LocalDateTime.of(domain.data, domain.orarioFine).toFirebaseTimestamp()
 
@@ -63,7 +60,7 @@ object TurnoMapper {
 
     fun toDtoList(domainList: List<Turno>): List<TurnoDto> = domainList.map { toDto(it) }
 
-    // ========== FUNZIONI HELPER PER ZONE LAVORATIVE ==========
+
 
     /**
      * Converte Map<String, String> da Firebase in Map<String, ZonaLavorativa>
@@ -103,41 +100,3 @@ fun Turno.toDto(): TurnoDto = TurnoMapper.toDto(this)
 // Extension functions per liste
 fun List<TurnoDto>.toDomainList(): List<Turno> = this.map { it.toDomain() }
 fun List<Turno>.toDtoList(): List<TurnoDto> = this.map { it.toDto() }
-
-// ========== UTILITY EXTENSIONS PER ZONE LAVORATIVE ==========
-
-/**
- * Extension per convertire facilmente ZonaLavorativa in stringa
- */
-fun ZonaLavorativa.toFirebaseString(): String = this.name
-
-/**
- * Extension per convertire stringa in ZonaLavorativa con fallback
- */
-fun String.toZonaLavorativaOrDefault(default: ZonaLavorativa = ZonaLavorativa.IN_SEDE): ZonaLavorativa {
-    return try {
-        ZonaLavorativa.valueOf(this.uppercase())
-    } catch (e: IllegalArgumentException) {
-        default
-    }
-}
-
-/**
- * Utility per creare una mappa di zone lavorative con valori di default
- */
-fun Map<String, ZonaLavorativa>.withDefaults(dipendentiIds: List<String>): Map<String, ZonaLavorativa> {
-    val result = this.toMutableMap()
-    dipendentiIds.forEach { id ->
-        if (!result.containsKey(id)) {
-            result[id] = ZonaLavorativa.IN_SEDE
-        }
-    }
-    return result
-}
-
-/**
- * Utility per validare che tutti i dipendenti abbiano una zona assegnata
- */
-fun Map<String, ZonaLavorativa>.isCompleteFor(dipendentiIds: List<String>): Boolean {
-    return dipendentiIds.all { this.containsKey(it) }
-}

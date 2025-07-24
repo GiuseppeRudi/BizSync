@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -18,6 +17,9 @@ import com.bizsync.domain.constants.enumClass.InviteView
 import com.bizsync.ui.components.StatusDialog
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.ui.graphics.Color
 import com.bizsync.app.navigation.LocalScaffoldViewModel
 import com.bizsync.app.navigation.LocalUserViewModel
@@ -58,7 +60,7 @@ fun InviteManagementScreen(
                     },
                     navigationIcon = {
                         IconButton(onClick = { companyVM.setSelectedOperation(null) }) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "Indietro")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Indietro")
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
@@ -68,7 +70,6 @@ fun InviteManagementScreen(
             }
         }
     ) { paddingValues ->
-        // FIXED: Removed verticalScroll() from the outer Column
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -119,11 +120,10 @@ fun SelectionContent(
     onCreateInvite: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // FIXED: Added verticalScroll here since this content doesn't have LazyColumn
     Column(
         modifier = modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState()), // ← Moved verticalScroll here
+            .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(
@@ -133,7 +133,6 @@ fun SelectionContent(
             modifier = Modifier.padding(vertical = 24.dp)
         )
 
-        // Card per visualizzare inviti
         Card(
             onClick = onViewInvites,
             modifier = Modifier
@@ -150,7 +149,7 @@ fun SelectionContent(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    imageVector = Icons.Default.List,
+                    imageVector = Icons.AutoMirrored.Filled.List,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onPrimaryContainer,
                     modifier = Modifier.size(48.dp)
@@ -241,7 +240,7 @@ fun ViewInvitesScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Indietro"
                         )
                     }

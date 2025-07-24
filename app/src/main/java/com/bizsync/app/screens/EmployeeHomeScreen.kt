@@ -8,40 +8,35 @@ import android.util.Log
 import com.bizsync.domain.constants.enumClass.TipoTimbratura
 import com.bizsync.domain.model.BadgeVirtuale
 import com.bizsync.domain.model.ProssimoTurno
-import com.bizsync.domain.model.Timbratura
-import com.bizsync.ui.viewmodels.HomeViewModel
 import androidx.compose.animation.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import android.provider.Settings
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material3.*
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.bizsync.domain.constants.enumClass.HomeScreenRoute
-import com.bizsync.domain.constants.enumClass.StatoTimbratura
 import com.bizsync.domain.constants.enumClass.ZonaLavorativa
 import com.bizsync.domain.model.Azienda
 import com.bizsync.domain.model.User
@@ -65,14 +60,13 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-// Sostituisci la logica nella EmployeeHomeScreen con questa versione migliorata:
 
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun EmployeeHomeScreen(
+    modifier: Modifier = Modifier,
     userState: UserState,
     viewModel: EmployeeHomeViewModel = hiltViewModel(),
-    modifier: Modifier = Modifier,
     onNavigate: (HomeScreenRoute) -> Unit
 ) {
     val homeState by viewModel.homeState.collectAsState()
@@ -118,7 +112,7 @@ fun EmployeeHomeScreen(
                     context = context,
                     onLocationReceived = { lat, lon ->
                         viewModel.setIsGettingLocation(false)
-//                        viewModel.onTimbra(tipoTimbraturaTemp, lat, lon)
+                        viewModel.onTimbra(tipoTimbraturaTemp, lat, lon)
                     },
                     onError = { error ->
                         viewModel.setIsGettingLocation(false)
@@ -436,7 +430,7 @@ fun EmployeeShiftPublicationAlert(
         UrgencyLevel.MEDIUM -> Triple(
             Color(0xFFFFC107),
             Color(0xFFFFFDE7),
-            Icons.Default.Schedule
+             Icons.Default.Schedule
         )
         UrgencyLevel.LOW -> Triple(
             Color(0xFF2196F3),
@@ -449,7 +443,7 @@ fun EmployeeShiftPublicationAlert(
         daysUntilPublication < 0 -> "I turni della prossima settimana sono in ritardo!"
         daysUntilPublication == 0 -> "I turni vengono pubblicati oggi!"
         daysUntilPublication == 1 -> "I turni vengono pubblicati domani"
-        else -> "I turni saranno pubblicati tra ${daysUntilPublication} giorni"
+        else -> "I turni saranno pubblicati tra $daysUntilPublication giorni"
     }
 
     Card(
@@ -636,13 +630,14 @@ fun TodayTurnoOverviewCard(
             }
 
             LinearProgressIndicator(
-                progress = progress,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(8.dp)
-                    .clip(RoundedCornerShape(4.dp)),
-                color = statoColor,
-                trackColor = statoColor.copy(alpha = 0.2f)
+            progress = { progress },
+            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(8.dp)
+                                .clip(RoundedCornerShape(4.dp)),
+            color = statoColor,
+            trackColor = statoColor.copy(alpha = 0.2f),
+            strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
             )
         }
     }
@@ -817,7 +812,6 @@ private fun requestCurrentLocation(
     }
 }
 
-// Aggiungi anche controlli di stato GPS e permessi:
 fun isLocationEnabled(context: Context): Boolean {
     val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
     val gpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
@@ -828,7 +822,6 @@ fun isLocationEnabled(context: Context): Boolean {
 
     return gpsEnabled || networkEnabled
 }
-// Nuovi dialog per gestire gli errori di posizione
 
 @Composable
 fun GpsDisabledDialog(
@@ -959,17 +952,15 @@ fun BadgePreviewCard(
         }
     }
 }
-// Aggiorna il componente ProssimoTurnoCard nella screen:
-// Componente ProssimoTurnoCard completo aggiornato
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun ProssimoTurnoCard(
+    modifier: Modifier = Modifier,
     prossimoTurno: ProssimoTurno,
     canTimbra: Boolean,
     isGettingLocation: Boolean = false,
     onTimbra: (TipoTimbratura, Context) -> Unit,
-    modifier: Modifier = Modifier
 ) {
     var currentTime by remember { mutableStateOf(prossimoTurno.getTempoMancanteFormattato()) }
 
@@ -982,7 +973,6 @@ fun ProssimoTurnoCard(
         }
     }
 
-    // Colori dinamici basati sul tipo di timbratura
     val cardColor = when {
         canTimbra && prossimoTurno.tipoTimbraturaNecessaria == TipoTimbratura.ENTRATA ->
             MaterialTheme.colorScheme.primaryContainer
@@ -1010,7 +1000,6 @@ fun ProssimoTurnoCard(
                 .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Icona dinamica basata sul tipo di timbratura
             val icon = when (prossimoTurno.tipoTimbraturaNecessaria) {
                 TipoTimbratura.ENTRATA -> Icons.AutoMirrored.Filled.Login
                 TipoTimbratura.USCITA -> Icons.AutoMirrored.Filled.Logout
@@ -1128,7 +1117,6 @@ fun ProssimoTurnoCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Timer countdown con effetti visivi
             Card(
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(
@@ -1162,7 +1150,6 @@ fun ProssimoTurnoCard(
                 }
             }
 
-            // Pulsante di timbratura con stati diversi
             if (canTimbra) {
                 Spacer(modifier = Modifier.height(20.dp))
 
@@ -1217,7 +1204,7 @@ fun ProssimoTurnoCard(
                                 Icon(
                                     imageVector = when (prossimoTurno.tipoTimbraturaNecessaria) {
                                         TipoTimbratura.ENTRATA -> Icons.Default.Fingerprint
-                                        TipoTimbratura.USCITA -> Icons.Default.ExitToApp
+                                        TipoTimbratura.USCITA -> Icons.AutoMirrored.Filled.ExitToApp
                                     },
                                     contentDescription = "Timbra",
                                     modifier = Modifier.size(24.dp)
@@ -1232,7 +1219,6 @@ fun ProssimoTurnoCard(
                     }
                 }
 
-                // Messaggio informativo sotto il pulsante
                 if (isGettingLocation) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
@@ -1243,7 +1229,6 @@ fun ProssimoTurnoCard(
                     )
                 }
             } else {
-                // Mostra messaggio quando non può timbrare
                 Spacer(modifier = Modifier.height(20.dp))
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -1256,7 +1241,7 @@ fun ProssimoTurnoCard(
                         text = when {
                             prossimoTurno.haTimbratoEntrata && prossimoTurno.haTimbratoUscita ->
                                 "✅ Turno completato"
-                            prossimoTurno.tempoMancante?.toMinutes() ?: 0 > 30 ->
+                            (prossimoTurno.tempoMancante?.toMinutes() ?: 0) > 30 ->
                                 "Timbratura non ancora disponibile"
                             else -> "Finestra di timbratura non attiva"
                         },
@@ -1307,7 +1292,6 @@ fun SuccessDialog(
 }
 
 
-// 5. Dialog permessi posizione
 @Composable
 fun LocationPermissionDialog(
     onConfirm: () -> Unit,
@@ -1350,7 +1334,6 @@ fun LocationPermissionDialog(
 
 
 
-// E questa per aprire le impostazioni GPS
 fun openLocationSettings(context: Context) {
     val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
     context.startActivity(intent)

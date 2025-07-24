@@ -3,12 +3,12 @@ package com.bizsync.app.screens
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -19,12 +19,8 @@ import com.bizsync.app.navigation.LocalScaffoldViewModel
 import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.ui.model.AziendaUi
 import com.bizsync.ui.viewmodels.CompanyViewModel
-import com.bizsync.ui.viewmodels.PianificaViewModel
-import kotlinx.coroutines.flow.update
 import com.bizsync.domain.constants.enumClass.CompanyOperation
 import com.bizsync.domain.model.AreaLavoro
-import com.bizsync.domain.model.Azienda
-import com.bizsync.domain.model.TurnoFrequente
 import java.time.DayOfWeek
 import java.time.LocalTime
 
@@ -58,7 +54,6 @@ fun CompanyCore(
 
 
     val userViewModel = LocalUserViewModel.current
-    val userState by userViewModel.uiState.collectAsState()
     val companyState by companyVm.uiState.collectAsState()
     val selectedOperation = companyState.selectedOperation
     val areeLavoro: List<AreaLavoro> = azienda.areeLavoro
@@ -71,8 +66,7 @@ fun CompanyCore(
                 azienda = azienda,
                 onBackClick = { companyVm.setSelectedOperation(null) },
                 onSaveChanges = { updatedAzienda ->
-                    // Logica per salvare le modifiche
-//                    companyVm.updateAziendaDetails(updatedAzienda)
+                    companyVm.updateAziendaDetails(updatedAzienda)
                     companyVm.setSelectedOperation(null)
                 },
                 isLoading = companyState.isLoading
@@ -162,11 +156,9 @@ fun OperationSelectorScreen(
 
 
 
-        // Lista Operazioni
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-
 
             item {
                 RiepilogoAziendaCard(azienda = azienda)
@@ -258,23 +250,29 @@ fun RiepilogoAziendaCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Nome Azienda
             InfoRow(
                 label = "Nome",
                 value = azienda.nome.ifEmpty { "Non specificato" },
                 icon = Icons.Default.Business
             )
 
-            Divider(modifier = Modifier.padding(vertical = 8.dp))
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 8.dp),
+                thickness = DividerDefaults.Thickness,
+                color = DividerDefaults.color
+            )
 
-            // Settore
             InfoRow(
                 label = "Settore",
                 value = azienda.sector.ifEmpty { "Non specificato" },
                 icon = Icons.Default.Category
             )
 
-            Divider(modifier = Modifier.padding(vertical = 8.dp))
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 8.dp),
+                thickness = DividerDefaults.Thickness,
+                color = DividerDefaults.color
+            )
 
             // Numero Dipendenti
             InfoRow(
@@ -283,7 +281,11 @@ fun RiepilogoAziendaCard(
                 icon = Icons.Default.People
             )
 
-            Divider(modifier = Modifier.padding(vertical = 8.dp))
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 8.dp),
+                thickness = DividerDefaults.Thickness,
+                color = DividerDefaults.color
+            )
 
             // Geolocalizzazione
             InfoRow(
@@ -296,7 +298,11 @@ fun RiepilogoAziendaCard(
                 icon = Icons.Default.LocationOn
             )
 
-            Divider(modifier = Modifier.padding(vertical = 8.dp))
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 8.dp),
+                thickness = DividerDefaults.Thickness,
+                color = DividerDefaults.color
+            )
 
             // Aree di Lavoro
             InfoRow(

@@ -3,7 +3,6 @@ package com.bizsync.backend.dto
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.Exclude
 
-// 1. PRIMO PASSO: Aggiungi lastUpdated al DTO Firebase
 data class AbsenceDto(
     @get:Exclude
     val id: String = "",
@@ -22,5 +21,4 @@ data class AbsenceDto(
     val comments: String? = null,
     val totalDays: Int? = null,
     val totalHours: Int? = null,
-
 )

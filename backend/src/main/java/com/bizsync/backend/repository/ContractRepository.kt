@@ -1,18 +1,14 @@
 package com.bizsync.backend.repository
 
 import android.util.Log
-import com.bizsync.backend.dto.AbsenceDto
-import com.bizsync.backend.mapper.toDomainList
 import com.bizsync.backend.prompts.AiPrompts
 import com.bizsync.backend.prompts.ContractPrompts
 import com.bizsync.backend.remote.ContrattiFirestore
 import com.bizsync.cache.dao.ContrattoDao
 import com.bizsync.cache.mapper.toEntity
 import com.bizsync.domain.constants.sealedClass.Resource
-import com.bizsync.domain.model.Absence
 import com.bizsync.domain.model.Ccnlnfo
 import com.bizsync.domain.model.Contratto
-import com.google.firebase.Timestamp
 import com.google.firebase.ai.GenerativeModel
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.toObject
@@ -20,8 +16,6 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import java.time.LocalDate
-import java.time.ZoneId
-import java.util.Date
 import javax.inject.Inject
 
 class ContractRepository @Inject constructor(
@@ -88,11 +82,11 @@ class ContractRepository @Inject constructor(
 
     suspend fun updateContratto(contratto: Contratto): Resource<String> {
         return try {
-            Log.d("CONTRACT_REPO", "🔄 Aggiornamento contratto ID: ${contratto.id}")
-
+            Log.d("CONTRACT_REPO", " Aggiornamento contratto ID: ${contratto.id}")
             // Validazione ID
+
             if (contratto.id.isEmpty()) {
-                Log.e("CONTRACT_REPO", "❌ ID contratto vuoto")
+                Log.e("CONTRACT_REPO", "ID contratto vuoto")
                 return Resource.Error("ID contratto mancante per l'aggiornamento")
             }
 
@@ -102,7 +96,7 @@ class ContractRepository @Inject constructor(
                 .set(contratto)
                 .await()
 
-            Log.d("CONTRACT_REPO", "✅ Contratto aggiornato su Firebase: ${contratto.id}")
+            Log.d("CONTRACT_REPO", " Contratto aggiornato su Firebase: ${contratto.id}")
             Log.d("CONTRACT_REPO", "   Ferie usate: ${contratto.ferieUsate}")
             Log.d("CONTRACT_REPO", "   ROL usate: ${contratto.rolUsate}")
             Log.d("CONTRACT_REPO", "   Malattia usata: ${contratto.malattiaUsata}")
@@ -110,7 +104,7 @@ class ContractRepository @Inject constructor(
             Resource.Success(contratto.id)
 
         } catch (e: Exception) {
-            Log.e("CONTRACT_REPO", "❌ Errore aggiornamento contratto: ${e.message}")
+            Log.e("CONTRACT_REPO", " Errore aggiornamento contratto: ${e.message}")
             Resource.Error("Errore nell'aggiornamento del contratto: ${e.message}")
         }
     }
@@ -193,7 +187,7 @@ class ContractRepository @Inject constructor(
 
             docRef.set(contrattoConId).await()
 
-            Resource.Success(docRef.id) // restituisci l'ID
+            Resource.Success(docRef.id)
         } catch (e: Exception) {
             Resource.Error("Errore nel salvataggio contratto: ${e.message}")
         }

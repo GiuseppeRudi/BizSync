@@ -1,6 +1,5 @@
 package com.bizsync.app.screens
 
-import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,32 +17,23 @@ import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Circle
-import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Badge
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import com.bizsync.domain.constants.enumClass.DipartimentoStatus
 import com.bizsync.domain.model.AreaLavoro
 import com.bizsync.domain.model.Turno
@@ -53,8 +43,6 @@ import com.bizsync.ui.components.GiornoHeaderCard
 import com.bizsync.ui.components.RiepilogoGiornataCard
 import com.bizsync.ui.components.SectionHeader
 import com.bizsync.ui.viewmodels.PianificaManagerViewModel
-import com.bizsync.ui.viewmodels.PianificaViewModel
-import com.bizsync.ui.viewmodels.ScaffoldViewModel
 import java.time.DayOfWeek
 import java.time.Duration
 import java.time.LocalDate
@@ -88,17 +76,12 @@ fun PianificaGiornata(
     }
 
 
-
-    // Se stai ancora caricando mostra spinner o altro
     if (managerState.loading) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
         return
     }
-
-
-
 
 
     if (dipartimentiDelGiorno.isEmpty()) {
@@ -110,12 +93,10 @@ fun PianificaGiornata(
             .fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // Header giorno
         item {
             GiornoHeaderCard(giornoSelezionato, dayOfWeek)
         }
 
-        // Header sezione dipartimenti
         item {
             SectionHeader(
                 title = "Dipartimenti da Pianificare",
@@ -142,9 +123,7 @@ fun PianificaGiornata(
             RiepilogoGiornataCard(dipartimentiDelGiorno)
         }
 
-
     }
-
 
 }
 
@@ -182,7 +161,6 @@ private fun DipartimentoStatoCard(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Info dipartimento
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.weight(1f)
@@ -207,7 +185,6 @@ private fun DipartimentoStatoCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
-                    // Informazioni aggiuntive sui problemi rilevati
                     if (risultatiAnalisi.buchi.isNotEmpty()) {
                         Text(
                             text = "${risultatiAnalisi.buchi.size} buchi orari",
@@ -225,12 +202,10 @@ private fun DipartimentoStatoCard(
                 }
             }
 
-            // Status badge e info
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Badge turni assegnati
                 if (risultatiAnalisi.turniAssegnati > 0) {
                     Badge(
                         containerColor = MaterialTheme.colorScheme.primary
@@ -280,114 +255,6 @@ private fun DipartimentoStatoCard(
     }
 }
 
-@Composable
-private fun AzioniFinaliCard(
-    dipartimenti: List<AreaLavoro>,
-    turniGiorno: List<Turno>,
-    giornoSelezionato: LocalDate,
-    onFinalizzaGiornata: () -> Unit
-) {
-    val dayOfWeek = giornoSelezionato.dayOfWeek
-
-    // Calcola se tutti i dipartimenti sono completi
-    val tuttiCompleti = dipartimenti.all { dipartimento ->
-        val orari = dipartimento.orariSettimanali[dayOfWeek]
-        if (orari == null) {
-            true // Se il dipartimento è chiuso, consideralo "completo"
-        } else {
-            val risultato = calcolaStatoDipartimento(dipartimento, turniGiorno, orari)
-            risultato.stato == DipartimentoStatus.COMPLETE
-        }
-    }
-
-    // Conta statistiche per la visualizzazione
-    val statistiche = calcolaStatisticheGiornata(dipartimenti, turniGiorno, dayOfWeek)
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            // Riepilogo statistiche
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                StatChip("Completi", statistiche.completi, MaterialTheme.colorScheme.primary)
-                StatChip("Parziali", statistiche.parziali, MaterialTheme.colorScheme.tertiary)
-                StatChip("Da fare", statistiche.incompleti, MaterialTheme.colorScheme.outline)
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Pulsante di azione
-            if (tuttiCompleti) {
-                Button(
-                    onClick = onFinalizzaGiornata,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Done,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Finalizza Giornata")
-                }
-            } else {
-                OutlinedButton(
-                    onClick = { /* Mostra dialog avviso */ },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Warning,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Completa tutti i dipartimenti")
-                }
-
-                // Mostra dettagli di cosa manca
-                if (statistiche.incompleti > 0 || statistiche.parziali > 0) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Mancano: ${statistiche.incompleti} da pianificare, ${statistiche.parziali} parziali",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun StatChip(label: String, count: Int, color: Color) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "$count",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = color
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-// ========== FUNZIONI DI CALCOLO ==========
 
 /**
  * Risultato dell'analisi di un dipartimento
@@ -415,13 +282,6 @@ data class SovrapposizioneOrari(
     val orarioFine: String
 )
 
-data class StatisticheGiornata(
-    val completi: Int,
-    val parziali: Int,
-    val incompleti: Int,
-    val totaleTurni: Int,
-    val totaleOre: Double
-)
 
 /**
  * Calcola lo stato di un dipartimento basandosi sui turni assegnati
@@ -589,7 +449,6 @@ private fun rilevaSovrapposizioni(turni: List<Turno>): List<SovrapposizioneOrari
                         )
                     )
                 } catch (e: Exception) {
-                    // Ignora errori di parsing
                 }
             }
         }
@@ -597,48 +456,6 @@ private fun rilevaSovrapposizioni(turni: List<Turno>): List<SovrapposizioneOrari
 
     return sovrapposizioni
 }
-
-/**
- * Calcola le statistiche generali della giornata
- */
-private fun calcolaStatisticheGiornata(
-    dipartimenti: List<AreaLavoro>,
-    turniGiorno: List<Turno>,
-    dayOfWeek: DayOfWeek
-): StatisticheGiornata {
-
-    var completi = 0
-    var parziali = 0
-    var incompleti = 0
-    var totaleTurni = 0
-    var totaleOre = 0.0
-
-    dipartimenti.forEach { dipartimento ->
-        val orari = dipartimento.orariSettimanali[dayOfWeek]
-        if (orari != null) {
-            val risultato = calcolaStatoDipartimento(dipartimento, turniGiorno, orari)
-
-            when (risultato.stato) {
-                DipartimentoStatus.COMPLETE -> completi++
-                DipartimentoStatus.PARTIAL -> parziali++
-                DipartimentoStatus.INCOMPLETE -> incompleti++
-            }
-
-            totaleTurni += risultato.turniAssegnati
-            totaleOre += risultato.oreCoperte
-        }
-    }
-
-    return StatisticheGiornata(
-        completi = completi,
-        parziali = parziali,
-        incompleti = incompleti,
-        totaleTurni = totaleTurni,
-        totaleOre = totaleOre
-    )
-}
-
-// ========== FUNZIONI UTILITY ==========
 
 private fun calcolaOreTotali(inizio: LocalTime, fine: LocalTime): Int {
     return Duration.between(inizio, fine).toHours().toInt()

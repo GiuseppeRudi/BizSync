@@ -16,6 +16,6 @@ object ContrattiFirestore {
         const val ORE_SETTIMANALI = "oreSettimanali"
         const val SETTORE_AZIENDALE = "settoreAziendale"
         const val DATA_INIZIO = "dataInizio"
-        const val CCNL_INFO = "ccnlInfo"  // assuming serialized as map/object
+        const val CCNL_INFO = "ccnlInfo"
     }
 }
