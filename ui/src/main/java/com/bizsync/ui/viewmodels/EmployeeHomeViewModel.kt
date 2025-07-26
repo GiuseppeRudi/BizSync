@@ -14,6 +14,7 @@ import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.*
 import com.bizsync.domain.utils.WeeklyPublicationCalculator
 import com.bizsync.ui.mapper.toDomain
+import com.bizsync.ui.model.EmployeeHomeState
 import com.bizsync.ui.model.UserState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
@@ -21,47 +22,9 @@ import kotlinx.coroutines.flow.*
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
 import javax.inject.Inject
 
-data class EmployeeHomeState(
-    val badge: BadgeVirtuale? = null,
-    val prossimoTurno: ProssimoTurno? = null,
-    val todayTurno: TurnoWithDetails? = null,
-    val timbratureOggi: List<Timbratura> = emptyList(),
-    val canTimbra: Boolean = false,
-    val daysUntilShiftPublication: Int? = null,
-    val shiftsPublishedThisWeek: Boolean = false,
-    val isLoading: Boolean = false,
-    val isGettingLocation: Boolean = false,
-    val error: String? = null,
-    val showSuccess: Boolean = false,
-    val successMessage: String = "",
-    val user: User = User(),
-    val azienda: Azienda = Azienda()
-)
 
-data class TurnoWithDetails(
-    val turno: Turno,
-    val haTimbratoEntrata: Boolean = false,
-    val haTimbratoUscita: Boolean = false,
-    val orarioEntrataEffettivo: LocalTime? = null,
-    val orarioUscitaEffettivo: LocalTime? = null,
-    val minutiRitardo: Int = 0,
-    val minutiAnticipo: Int = 0,
-    val statoTurno: StatoTurno = StatoTurno.NON_INIZIATO
-)
-
-enum class StatoTurno {
-    NON_INIZIATO,
-    IN_CORSO,
-    IN_PAUSA,
-    COMPLETATO,
-    IN_RITARDO,
-    ASSENTE
-}
-
-private const val TAG = "EmployeeHomeVM"
 
 @HiltViewModel
 class EmployeeHomeViewModel @Inject constructor(
@@ -73,6 +36,8 @@ class EmployeeHomeViewModel @Inject constructor(
 
     private val _homeState = MutableStateFlow(EmployeeHomeState())
     val homeState = _homeState.asStateFlow()
+
+    private val TAG = "EmployeeHomeVM"
 
     private val _timerState = MutableStateFlow<ProssimoTurno?>(null)
 
@@ -154,7 +119,6 @@ class EmployeeHomeViewModel @Inject constructor(
                 val startOfDay = today.atStartOfDay().toString()
                 val endOfDay = today.atTime(23, 59, 59).toString()
 
-                // 2) Prendo le timbrature di oggi per l'utente - ESEGUITO SU IO DISPATCHER
                 val timbratureEntities = timbratureDao
                     .getTimbratureByDateAndUser(startOfDay, endOfDay, userId)
 

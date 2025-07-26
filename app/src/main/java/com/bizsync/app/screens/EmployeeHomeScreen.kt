@@ -37,16 +37,16 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.bizsync.domain.constants.enumClass.HomeScreenRoute
+import com.bizsync.domain.constants.enumClass.StatoTurno
 import com.bizsync.domain.constants.enumClass.ZonaLavorativa
 import com.bizsync.domain.model.Azienda
+import com.bizsync.domain.model.TurnoWithDetails
 import com.bizsync.domain.model.User
 import com.bizsync.ui.components.TimbratureOggiCard
 import com.bizsync.ui.mapper.toDomain
+import com.bizsync.ui.model.EmployeeHomeState
 import com.bizsync.ui.model.UserState
-import com.bizsync.ui.viewmodels.EmployeeHomeState
 import com.bizsync.ui.viewmodels.EmployeeHomeViewModel
-import com.bizsync.ui.viewmodels.StatoTurno
-import com.bizsync.ui.viewmodels.TurnoWithDetails
 import com.bizsync.ui.viewmodels.UrgencyLevel
 import com.google.accompanist.permissions.*
 import com.google.android.gms.location.LocationAvailability
@@ -661,7 +661,7 @@ fun DialogsSection(
     onErrorDismiss: () -> Unit,
     onSuccessDismiss: () -> Unit
 ) {
-    // Dialog permessi posizione
+
     if (showLocationDialog) {
         LocationPermissionDialog(
             onConfirm = onLocationDialogConfirm,
@@ -804,9 +804,9 @@ private fun requestCurrentLocation(
             locationCallback,
             android.os.Looper.getMainLooper()
         )
-        Log.d("LOCATION_DEBUG", "✅ Richiesta di posizione inviata con successo")
+        Log.d("LOCATION_DEBUG", " Richiesta di posizione inviata con successo")
     } catch (e: Exception) {
-        Log.e("LOCATION_DEBUG", "❌ Eccezione nella richiesta di posizione: ${e.message}")
+        Log.e("LOCATION_DEBUG", " Eccezione nella richiesta di posizione: ${e.message}")
         handler.removeCallbacks(timeoutRunnable)
         onError("Errore nel richiedere la posizione: ${e.message}")
     }

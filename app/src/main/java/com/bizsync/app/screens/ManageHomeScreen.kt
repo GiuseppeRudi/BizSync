@@ -53,6 +53,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.bizsync.app.navigation.LocalScaffoldViewModel
 import com.bizsync.domain.constants.enumClass.TipoTimbratura
 import com.bizsync.domain.model.Azienda
 import com.bizsync.domain.model.Timbratura

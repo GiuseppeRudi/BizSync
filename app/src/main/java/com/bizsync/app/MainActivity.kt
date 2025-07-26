@@ -54,7 +54,7 @@ class MainActivity : ComponentActivity() {
 
 
 
-        //PER FARE DI DEPLOY
+//        PER FARE DI DEPLOY
 //        FirebaseAppCheck.getInstance()
 //            .installAppCheckProviderFactory(
 //                PlayIntegrityAppCheckProviderFactory.getInstance()

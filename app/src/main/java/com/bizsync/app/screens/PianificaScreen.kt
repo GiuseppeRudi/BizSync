@@ -729,6 +729,9 @@ fun PianificaManagerCore(
     val userVM = LocalUserViewModel.current
 
 
+    val scaffoldVM = LocalScaffoldViewModel.current
+    LaunchedEffect(Unit) {scaffoldVM.onFullScreenChanged(false) }
+
     val userState by userVM.uiState.collectAsState()
 
     val pianificaState by pianificaVM.uistate.collectAsState()
@@ -811,7 +814,9 @@ fun PianificaManagerCore(
             )
 
             if( weeklyShiftAttuale != null && weeklyShiftAttuale.id != weeklyShiftRiferimento?.id )
-            HeaderTurniManager(weeklyShift = weeklyShiftAttuale)
+            {
+                HeaderTurniManager(weeklyShift = weeklyShiftAttuale)
+            }
 
             if(weeklyShiftAttuale?.id == weeklyShiftRiferimento?.id && weeklyShiftRiferimento?.status == WeeklyShiftStatus.PUBLISHED)
                 HeaderTurniManager(weeklyShift = weeklyShiftAttuale)
