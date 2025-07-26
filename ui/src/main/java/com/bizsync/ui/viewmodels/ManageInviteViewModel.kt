@@ -214,6 +214,7 @@ class ManageInviteViewModel @Inject constructor(
                             idAzienda = azienda.idAzienda,
                             stato = StatusInvite.PENDING,
                             ccnlInfo = ccnlInfo,
+                            settoreAziendale = azienda.sector,
                             sentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
                         )
                     )

@@ -573,7 +573,7 @@ private fun FullDaysSelector(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             DateButton(
-                label = "Data inizio",
+                label = "Inizio",
                 selectedDate = addAbsence.startDate,
                 modifier = Modifier.weight(1f),
                 onClick = { absenceVM.setShowStartDatePicker(true) },
@@ -581,7 +581,7 @@ private fun FullDaysSelector(
             )
 
             DateButton(
-                label = "Data fine",
+                label = "Fine",
                 selectedDate = addAbsence.endDate,
                 modifier = Modifier.weight(1f),
                 onClick = { absenceVM.setShowEndDatePicker(true) },
@@ -654,16 +654,22 @@ private fun FlexibleSelector(
     minimumDate: LocalDate
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+
+        Spacer(modifier = Modifier.width(8.dp))
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
+
+
             Text(
                 text = "Tipo di assenza",
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Medium
             )
+        }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 FilterChip(
@@ -711,7 +717,7 @@ private fun FlexibleSelector(
             SingleDayHourlySelector(addAbsence, absenceVM, minimumDate)
         }
     }
-}
+
 
 @Composable
 private fun TotalDisplay(

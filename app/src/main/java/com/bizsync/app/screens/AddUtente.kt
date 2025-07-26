@@ -47,6 +47,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.ui.components.DialogStatusType
 import com.bizsync.ui.components.StatusDialog
+import com.bizsync.ui.model.DateVisualTransformation
 import com.bizsync.ui.viewmodels.AddUtenteViewModel
 import com.google.firebase.auth.FirebaseAuth
 
@@ -400,12 +401,14 @@ private fun StepThree(addutenteviewmodel: AddUtenteViewModel) {
                 value = userState.dataNascita,
                 onValueChange = { addutenteviewmodel.onDataNascitaChanged(it) },
                 label = { Text("Data di nascita") },
-                placeholder = { Text("Es: 01/01/1990") },
+                placeholder = { Text("01/01/1990") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                visualTransformation = DateVisualTransformation()
             )
+
 
             OutlinedTextField(
                 value = userState.luogoNascita,

@@ -36,6 +36,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.domain.constants.enumClass.HomeScreenRoute
 import com.bizsync.domain.constants.enumClass.StatoTurno
 import com.bizsync.domain.constants.enumClass.ZonaLavorativa
@@ -46,6 +47,7 @@ import com.bizsync.ui.components.TimbratureOggiCard
 import com.bizsync.ui.mapper.toDomain
 import com.bizsync.ui.model.EmployeeHomeState
 import com.bizsync.ui.model.UserState
+import com.bizsync.ui.model.UserUi
 import com.bizsync.ui.viewmodels.EmployeeHomeViewModel
 import com.bizsync.ui.viewmodels.UrgencyLevel
 import com.google.accompanist.permissions.*
@@ -72,6 +74,8 @@ fun EmployeeHomeScreen(
     val homeState by viewModel.homeState.collectAsState()
     val currentTime = remember { mutableStateOf(LocalDateTime.now()) }
 
+    val userVM = LocalUserViewModel.current
+    val userState by userVM.uiState.collectAsState()
     val locationPermissionState = rememberMultiplePermissionsState(
         permissions = listOf(
             android.Manifest.permission.ACCESS_FINE_LOCATION,
@@ -221,7 +225,7 @@ fun EmployeeHomeScreen(
             // Badge preview
             item {
                 BadgePreviewCard(
-                    badge = homeState.badge,
+                    user = userState.user,
                     onClick = { onNavigate(HomeScreenRoute.Badge) },
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -274,7 +278,6 @@ fun EmployeeHomeScreen(
                 }
             }
 
-            // Panoramica turno di oggi
             homeState.todayTurno?.let { turnoDetails ->
                 item {
                     TodayTurnoOverviewCard(
@@ -284,7 +287,6 @@ fun EmployeeHomeScreen(
                 }
             }
 
-            // Timbrature di oggi
             if (homeState.timbratureOggi.isNotEmpty()) {
                 item {
                     TimbratureOggiCard(
@@ -293,7 +295,6 @@ fun EmployeeHomeScreen(
                     )
                 }
             }
-
 
         }
 
@@ -894,7 +895,7 @@ fun LocationErrorDialog(
 
 @Composable
 fun BadgePreviewCard(
-    badge: BadgeVirtuale?,
+    user: UserUi?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -914,7 +915,7 @@ fun BadgePreviewCard(
         ) {
             // Foto profilo
             AsyncImage(
-                model = badge?.fotoUrl ?: "",
+                model = user?.photourl,
                 contentDescription = "Foto profilo",
                 modifier = Modifier
                     .size(60.dp)
@@ -927,18 +928,13 @@ fun BadgePreviewCard(
             // Info dipendente
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = badge?.getFullName() ?: "Nome Dipendente",
+                    text = user?.getFullName() ?: "Nome Dipendente",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = badge?.posizioneLavorativa ?: "Posizione",
+                    text = user?.posizioneLavorativa ?: "Posizione",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "Matricola: ${badge?.matricola ?: ""}",
-                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -1040,7 +1036,6 @@ fun ProssimoTurnoCard(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Mostra lo stato delle timbrature con design migliorato
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
@@ -1137,6 +1132,7 @@ fun ProssimoTurnoCard(
                             text = time,
                             style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center,
                             color = iconColor
                         )
                     }

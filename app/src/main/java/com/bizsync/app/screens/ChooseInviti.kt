@@ -40,7 +40,6 @@ fun ChooseInvito(onTerminate: () -> Unit) {
     val userVM = LocalUserViewModel.current
     val userState by userVM.uiState.collectAsState()
     val user = userState.user
-    val updateInvite = inviteState.updateInvite
     val checkAcceptInvite = userState.checkAcceptInvite
 
     LaunchedEffect(Unit) {
@@ -48,7 +47,6 @@ fun ChooseInvito(onTerminate: () -> Unit) {
             invitiVM.fetchInvites(user.email)
     }
 
-    // FIX 2: Gestisci il termine in modo più pulito
     LaunchedEffect(checkAcceptInvite) {
         if (checkAcceptInvite) {
             onTerminate()
@@ -58,11 +56,7 @@ fun ChooseInvito(onTerminate: () -> Unit) {
     val loading = inviteState.isLoading
     val invites = inviteState.invites
 
-    val resultMsgInvire = inviteState.resultMsg
-    val statusMsgInvite = inviteState.statusMsg
 
-    val resultMsgUser = userState.resultMsg
-    val statusMsgUser = userState.statusMsg
 
     Box(modifier = Modifier.fillMaxSize()) {
         // Loading state
@@ -107,22 +101,7 @@ fun ChooseInvito(onTerminate: () -> Unit) {
         }
     }
 
-    // Status dialogs
-    resultMsgUser?.let { message ->
-        StatusDialog(
-            message = message,
-            statusType = statusMsgUser,
-            onDismiss = { userVM.clearMessage() }
-        )
-    }
 
-    resultMsgInvire?.let { message ->
-        StatusDialog(
-            message = message,
-            statusType = statusMsgInvite,
-            onDismiss = { invitiVM.clearMessage() }
-        )
-    }
 }
 
 @Composable
@@ -182,7 +161,6 @@ private fun InvitesContent(
                 invite = invite,
                 onAccept = {
                     invitiVM.acceptInvite(invite, user.uid)
-                    // FIX 3: Gestisci l'accettazione in modo più pulito
                     if (inviteState.updateInvite == true) {
                         userVM.onAcceptInvite(invite, inviteState.contratto)
                     }

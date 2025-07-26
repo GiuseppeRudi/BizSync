@@ -20,4 +20,6 @@ data class UserUi(
     val codiceFiscale: String = "",
     val dataNascita: String = "",
     val luogoNascita: String = ""
-)
+) {
+    fun getFullName(): String = "$nome $cognome".trim()
+}

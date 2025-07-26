@@ -1,8 +1,13 @@
 package com.bizsync.backend.dto
 
+import com.google.firebase.firestore.Exclude
+
 
 data class UserDto(
+
+    @get:Exclude
     val uid: String,
+
     val email: String,
     val nome: String,
     val cognome: String,

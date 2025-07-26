@@ -170,22 +170,24 @@ class UserRepository @Inject constructor(private val db : FirebaseFirestore, pri
     }
 
 
-
-
     suspend fun updateAcceptInvite(invite: Invito, uid: String): Resource<Unit> {
         return try {
             Log.d("INVITO_DEBUG", invite.toString())
 
+            val aggiornamenti = mapOf(
+                UtentiFirestore.Fields.ID_AZIENDA to invite.idAzienda,
+                UtentiFirestore.Fields.MANAGER to invite.manager,
+                UtentiFirestore.Fields.DIPARTIMENTO to invite.dipartimento,
+                UtentiFirestore.Fields.POSIZIONE_LAVORATIVA to invite.nomeRuolo
+            )
+
             db.collection(UtentiFirestore.COLLECTION)
                 .document(uid)
-                .update(
-                    UtentiFirestore.Fields.ID_AZIENDA, invite.idAzienda,
-                    UtentiFirestore.Fields.MANAGER, invite.manager,
-                    UtentiFirestore.Fields.RUOLO, invite.nomeRuolo
-                )
+                .update(aggiornamenti)
                 .await()
 
-            Resource.Success(Unit)  // Successo senza dati specifici
+            return Resource.Success(Unit)
+
 
         } catch (e: Exception) {
             Log.d("INVITO_DEBUG", e.toString())

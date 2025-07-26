@@ -104,9 +104,11 @@ class AddUtenteViewModel @Inject constructor(
         updateUserState { it.copy(codiceFiscale = cleanValue) }
     }
 
+    // Nel tuo ViewModel
     fun onDataNascitaChanged(newValue: String) {
-        val cleanValue = newValue.filter { it.isDigit() || it == '/' }.take(10)
-        updateUserState { it.copy(dataNascita = cleanValue) }
+        // Semplicemente mantieni solo i numeri, massimo 8 cifre
+        val digits = newValue.filter { it.isDigit() }.take(8)
+        updateUserState { it.copy(dataNascita = digits) }
     }
 
     fun onLuogoNascitaChanged(newValue: String) {
