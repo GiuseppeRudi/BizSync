@@ -104,14 +104,6 @@ fun CompanyCore(
             )
         }
 
-        CompanyOperation.GIORNO_PUBBLICAZIONE -> {
-            GiornoPublicazioneManagementScreen(
-                companyVm = companyVm,
-                userVm = userViewModel,
-                idAzienda = azienda.idAzienda
-            )
-        }
-
         null -> OperationSelectorScreen(
             azienda = azienda,
             onOperationSelected = { operation ->
@@ -206,15 +198,6 @@ fun OperationSelectorScreen(
                     description = "Invita nuovi dipendenti",
                     icon = Icons.Default.PersonAdd,
                     onClick = { onOperationSelected(CompanyOperation.GESTIONE_INVITI) }
-                )
-            }
-
-            item {
-                OperationCard(
-                    title = "Giorno Pubblicazione",
-                    description = "Imposta quando pubblicare i turni",
-                    icon = Icons.Default.CalendarToday,
-                    onClick = { onOperationSelected(CompanyOperation.GIORNO_PUBBLICAZIONE) }
                 )
             }
         }

@@ -11,7 +11,6 @@ data class Azienda(
 
     val numDipendentiRange : String = "",
     val sector : String = "",
-    val giornoPubblicazioneTurni: DayOfWeek = DayOfWeek.FRIDAY,
 
     // Nuovi campi per la geolocalizzazione
     val latitudine: Double = 0.0,

@@ -249,7 +249,7 @@ fun BadgeVirtualeScreen(modifier: Modifier = Modifier, viewModel: HomeViewModel)
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Security note
+                // Logout note
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(

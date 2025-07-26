@@ -16,7 +16,6 @@ fun Azienda.toDto(): AziendaDto {
         turniFrequenti = this.turniFrequenti,
         numDipendentiRange = this.numDipendentiRange,
         sector = this.sector,
-        giornoPubblicazioneTurni = this.giornoPubblicazioneTurni.name,
         latitudine = this.latitudine,
         longitudine = this.longitudine,
         tolleranzaMetri = this.tolleranzaMetri
@@ -34,12 +33,6 @@ fun AziendaDto.toDomain(): Azienda {
         turniFrequenti = this.turniFrequenti,
         numDipendentiRange = this.numDipendentiRange,
         sector = this.sector,
-        giornoPubblicazioneTurni = try {
-            DayOfWeek.valueOf(this.giornoPubblicazioneTurni)
-        } catch (e: Exception) {
-            Log.w("MAPPER_DEBUG", "Errore parsing giorno pubblicazione: ${this.giornoPubblicazioneTurni}")
-            DayOfWeek.FRIDAY
-        },
         latitudine = this.latitudine,
         longitudine = this.longitudine,
         tolleranzaMetri = this.tolleranzaMetri

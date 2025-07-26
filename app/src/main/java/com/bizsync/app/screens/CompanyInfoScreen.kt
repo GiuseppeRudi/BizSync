@@ -156,11 +156,6 @@ fun CompanyInfoCard(azienda: Azienda) {
             icon = Icons.Default.People
         )
 
-        InfoRow(
-            label = "Pubblicazione Turni",
-            value = getDayOfWeekInItalian(azienda.giornoPubblicazioneTurni),
-            icon = Icons.Default.Schedule
-        )
 
         // Aree di Lavoro
         if (azienda.areeLavoro.isNotEmpty()) {

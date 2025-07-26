@@ -30,11 +30,6 @@ data class CompanyState(
 
     val hasChanges : Boolean = false,
 
-    val giornoPublicazioneTemp: DayOfWeek? = null, // Giorno temporaneo durante la modifica
-    val showGiornoPublicazioneDialog: Boolean = false,
-    val hasGiornoPublicazioneChanges: Boolean = false,
-    val hasGiornoPubblicato : Boolean = false,
-
     val dipendenti: List<User> = emptyList(),
     val dipendentiModificati: Map<String, User> = emptyMap(),
     val selectedDipendente: User? = null,

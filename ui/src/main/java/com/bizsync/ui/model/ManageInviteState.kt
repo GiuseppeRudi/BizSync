@@ -6,7 +6,7 @@ import com.bizsync.ui.components.DialogStatusType
 
 
 data class ManageInviteState(
-    val currentView: InviteView = InviteView.SELECTION,
+    val currentView: InviteView = InviteView.VIEW_INVITES,
     val invites: List<InvitoUi> = emptyList(),
 
     val invite : InvitoUi = InvitoUi(),

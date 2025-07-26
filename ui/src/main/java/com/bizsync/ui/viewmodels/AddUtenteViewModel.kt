@@ -20,10 +20,10 @@ class AddUtenteViewModel @Inject constructor(
     private val userRepository: UserRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(AddUtenteState(userState = UserUi()))
+    private val _uiState = MutableStateFlow(AddUtenteState(user = UserUi()))
     val uiState: StateFlow<AddUtenteState> = _uiState
 
-    fun addUserAndPropaga() {
+    fun addUser() {
         if (!validateUser()) return
 
         viewModelScope.launch {
@@ -32,12 +32,12 @@ class AddUtenteViewModel @Inject constructor(
             Log.d("ADD_USER_DEBUG", "=== INIZIO CREAZIONE UTENTE ===")
             Log.d("ADD_USER_DEBUG", "UID: ${_uiState.value.uid}")
             Log.d("ADD_USER_DEBUG", "Dati utente:")
-            Log.d("ADD_USER_DEBUG", "  Nome: ${_uiState.value.userState.nome}")
-            Log.d("ADD_USER_DEBUG", "  Cognome: ${_uiState.value.userState.cognome}")
-            Log.d("ADD_USER_DEBUG", "  Email: ${_uiState.value.userState.email}")
+            Log.d("ADD_USER_DEBUG", "  Nome: ${_uiState.value.user.nome}")
+            Log.d("ADD_USER_DEBUG", "  Cognome: ${_uiState.value.user.cognome}")
+            Log.d("ADD_USER_DEBUG", "  Email: ${_uiState.value.user.email}")
 
             try {
-                val utenteCreato = _uiState.value.userState.toDomain().copy(uid = "")
+                val utenteCreato = _uiState.value.user.toDomain().copy(uid = "")
                 val success = userRepository.addUser(utenteCreato, _uiState.value.uid)
 
                 if (success) {
@@ -47,7 +47,7 @@ class AddUtenteViewModel @Inject constructor(
 
                     updateState {
                         it.copy(
-                            userState = utenteConUid.toUi(),
+                            user = utenteConUid.toUi(),
                             isLoading = false,
                             isUserAdded = true
                         )
@@ -135,7 +135,7 @@ class AddUtenteViewModel @Inject constructor(
 
     // FUNZIONE PER VERIFICARE SE SI PUÒ PROCEDERE AL PROSSIMO STEP
     fun canProceedToNextStep(currentStep: Int): Boolean {
-        val userState = _uiState.value.userState
+        val userState = _uiState.value.user
         return when (currentStep) {
             1 -> {
                 // Step 1: Nome e cognome obbligatori, email deve essere valida
@@ -166,11 +166,11 @@ class AddUtenteViewModel @Inject constructor(
     }
 
     private fun updateUserState(update: (UserUi) -> UserUi) {
-        updateState { it.copy(userState = update(it.userState)) }
+        updateState { it.copy(user = update(it.user)) }
     }
 
     private fun validateUser(): Boolean {
-        val userState = _uiState.value.userState
+        val userState = _uiState.value.user
 
         return when {
             userState.nome.isBlank() -> {

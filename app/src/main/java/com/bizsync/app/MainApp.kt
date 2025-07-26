@@ -79,13 +79,13 @@ fun MainApp(onLogout: () -> Unit) {
                 minimumDuration = 1500L
             )
         }
-        check == false -> OnboardingFlow(onSuccess = { userVM.change() })
+        check == false -> OnboardingFlow(onSuccess = { userVM.change() }, onLogout)
         check == true -> MainScaffold(onLogout)
     }
 }
 
 @Composable
-fun OnboardingFlow(onSuccess : () -> Unit)
+fun OnboardingFlow(onSuccess : () -> Unit, onLogout: () -> Unit)
 {
     val userVM = LocalUserViewModel.current
 
@@ -94,12 +94,12 @@ fun OnboardingFlow(onSuccess : () -> Unit)
     val navController = rememberNavController()
 
     if(uid.isEmpty()){
-        OnboardingNavHost(navController, onSuccess,OnboardingScreen.AddUtente.route)
+        OnboardingNavHost(navController, onLogout, onSuccess,OnboardingScreen.AddUtente.route)
     }
     else
 
     {
-        OnboardingNavHost(navController, onSuccess,OnboardingScreen.ChooseAzienda.route)
+        OnboardingNavHost(navController, onLogout, onSuccess,OnboardingScreen.ChooseAzienda.route)
 
     }
 

@@ -39,29 +39,6 @@ class AziendaRepository @Inject constructor(private val db : FirebaseFirestore) 
     }
 
 
-    suspend fun updateGiornoPublicazioneTurni(idAzienda: String, nuovoGiorno: DayOfWeek): Resource<Unit> {
-        return try {
-            val giornoString = nuovoGiorno.name
-
-            db.collection(AziendeFirestore.COLLECTION)
-                .document(idAzienda)
-                .set(
-                    mapOf(
-                        AziendeFirestore.Fields.GIORNO_PUBBLICAZIONE_TURNI to giornoString
-                    ),
-                    SetOptions.merge()
-                )
-                .await()
-
-            Log.d("AZIENDA_DEBUG", "Giorno pubblicazione aggiornato a: $giornoString per azienda: $idAzienda")
-            Resource.Success(Unit)
-
-        } catch (e: Exception) {
-            Log.e("AZIENDA_DEBUG", "Errore nell'aggiornare il giorno di pubblicazione", e)
-            Resource.Error(message = "Errore durante l'aggiornamento del giorno di pubblicazione: ${e.message}")
-        }
-    }
-
     suspend fun addPianificaSetup(
         idAzienda: String,
         aree: List<AreaLavoro>,

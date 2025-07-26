@@ -16,6 +16,7 @@ import com.bizsync.ui.components.DialogStatusType
 import com.bizsync.ui.mapper.toUi
 import com.bizsync.ui.model.InvitoUi
 import com.bizsync.ui.model.UserState
+import com.bizsync.ui.model.UserUi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,9 +36,6 @@ class UserViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(UserState())
     val uiState: StateFlow<UserState> = _uiState
 
-    fun setGiornoPublicazioneTurni(giorno: DayOfWeek) {
-        _uiState.update { it.copy(azienda = _uiState.value.azienda.copy(giornoPubblicazioneTurni = giorno)) }
-    }
 
     fun updateAree(aree: List<AreaLavoro>) {
         _uiState.update { it.copy(azienda = _uiState.value.azienda.copy(areeLavoro = aree)) }
@@ -56,6 +54,10 @@ class UserViewModel @Inject constructor(
                     indirizzo = modifiche.indirizzo))
 
         }
+    }
+
+    fun updateUtente(user: UserUi) {
+        _uiState.update { it.copy(user = user) }
     }
 
     fun onAddAziendaRole(idAzienda: String) {

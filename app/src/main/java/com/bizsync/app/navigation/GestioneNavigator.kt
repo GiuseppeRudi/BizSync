@@ -26,12 +26,6 @@ fun GestioneNavigator(
                 onNavigateToEmployees = {
                     navController.navigate(GestioneScreenRoute.Employees.route)
                 },
-                onNavigateToProjects = {
-                    navController.navigate(GestioneScreenRoute.Projects.route)
-                },
-                onNavigateToFinance = {
-                    navController.navigate(GestioneScreenRoute.Finance.route)
-                },
                 onNavigateToRequest = {
                     navController.navigate(GestioneScreenRoute.Request.route)
                 },
@@ -42,10 +36,10 @@ fun GestioneNavigator(
                     navController.navigate(GestioneScreenRoute.Reports.route)
                 },
                 onNavigateToTimbratura = {
-                    navController.navigate(GestioneScreenRoute.Settings.route)
+                    navController.navigate(GestioneScreenRoute.Timbratura.route)
                 },
                 onNavigateToLogout = {
-                    navController.navigate(GestioneScreenRoute.Security.route)
+                    navController.navigate(GestioneScreenRoute.Logout.route)
                 },
                 // Employee navigation functions
                 onNavigateToShifts = {
@@ -54,14 +48,8 @@ fun GestioneNavigator(
                 onNavigateToAbsences = {
                     navController.navigate(GestioneScreenRoute.Absences.route)
                 },
-                onNavigateToActivities = {
-                    navController.navigate(GestioneScreenRoute.Activities.route)
-                },
                 onNavigateToEmployeeSettings = {
                     navController.navigate(GestioneScreenRoute.EmployeeSettings.route)
-                },
-                onNavigateToEmployeeFinance = {
-                    navController.navigate(GestioneScreenRoute.EmployeeFinance.route)
                 },
                 onNavigateToCompanyInfo = {
                     navController.navigate(GestioneScreenRoute.CompanyInfo.route)
@@ -76,17 +64,6 @@ fun GestioneNavigator(
             )
         }
 
-        composable(GestioneScreenRoute.Projects.route) {
-            ProjectsManagementScreen(
-                onBackClick = { navController.popBackStack() }
-            )
-        }
-
-        composable(GestioneScreenRoute.Finance.route) {
-            FinanceManagementScreen(
-                onBackClick = { navController.popBackStack() }
-            )
-        }
 
         composable(GestioneScreenRoute.Request.route) {
             RequestManagementScreen(
@@ -105,13 +82,13 @@ fun GestioneNavigator(
             ReportsManagementScreen(onBackClick = { navController.popBackStack()} )
         }
 
-        composable(GestioneScreenRoute.Settings.route) {
+        composable(GestioneScreenRoute.Timbratura.route) {
             TimbratureManagementScreen(
                 onBackClick = { navController.popBackStack() }
             )
         }
 
-        composable(GestioneScreenRoute.Security.route) {
+        composable(GestioneScreenRoute.Logout.route) {
             LogoutManagementScreen( onLogout = onLogout)
         }
 
@@ -128,20 +105,8 @@ fun GestioneNavigator(
             )
         }
 
-        composable(GestioneScreenRoute.Activities.route) {
-            ActivitiesManagementScreen(
-                onBackClick = { navController.popBackStack() }
-            )
-        }
-
         composable(GestioneScreenRoute.EmployeeSettings.route) {
             EmployeeSettingsScreen(
-                onBackClick = { navController.popBackStack() }
-            )
-        }
-
-        composable(GestioneScreenRoute.EmployeeFinance.route) {
-            EmployeeFinanceScreen(
                 onBackClick = { navController.popBackStack() }
             )
         }

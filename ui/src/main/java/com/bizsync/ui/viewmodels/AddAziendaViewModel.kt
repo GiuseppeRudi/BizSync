@@ -89,12 +89,6 @@ class AddAziendaViewModel @Inject constructor(
         )
     }
 
-    fun onGiornoPubblicazioneChanged(newValue: DayOfWeek) {
-        _uiState.value = _uiState.value.copy(
-            azienda = _uiState.value.azienda.copy(giornoPubblicazioneTurni = newValue)
-        )
-    }
-
 
     fun onIndirizzoChanged(newValue: String) {
         _uiState.update {
@@ -226,15 +220,13 @@ class AddAziendaViewModel @Inject constructor(
         }
     }
 
-    // FUNZIONE PER VERIFICARE SE SI PUÒ PROCEDERE AL PROSSIMO STEP
     fun canProceedToNextStep(currentStep: Int): Boolean {
         val state = _uiState.value
         return when (currentStep) {
             1 -> state.azienda.nome.isNotBlank()
             2 -> state.azienda.numDipendentiRange.isNotBlank()
             3 -> state.azienda.sector.isNotBlank()
-            4 -> true // Giorno pubblicazione ha valore default
-            5 -> state.indirizzoSelezionato != null &&
+            4 -> state.indirizzoSelezionato != null &&
                     state.azienda.latitudine != 0.0 &&
                     state.azienda.longitudine != 0.0
             else -> true

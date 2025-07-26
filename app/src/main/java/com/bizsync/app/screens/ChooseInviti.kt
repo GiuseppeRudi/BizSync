@@ -31,6 +31,7 @@ import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.ui.components.StatusDialog
 import com.bizsync.ui.model.InvitoUi
 import com.bizsync.ui.viewmodels.InvitiViewModel
+import com.bizsync.ui.viewmodels.UserViewModel
 
 @Composable
 fun ChooseInvito(onTerminate: () -> Unit) {
@@ -42,13 +43,16 @@ fun ChooseInvito(onTerminate: () -> Unit) {
     val updateInvite = inviteState.updateInvite
     val checkAcceptInvite = userState.checkAcceptInvite
 
-    LaunchedEffect(userState) {
-        if(userState.user.email.isNotEmpty())
-        invitiVM.fetchInvites(user.email)
+    LaunchedEffect(Unit) {
+
+            invitiVM.fetchInvites(user.email)
     }
 
-    if(checkAcceptInvite){
-        onTerminate()
+    // FIX 2: Gestisci il termine in modo più pulito
+    LaunchedEffect(checkAcceptInvite) {
+        if (checkAcceptInvite) {
+            onTerminate()
+        }
     }
 
     val loading = inviteState.isLoading
@@ -61,6 +65,7 @@ fun ChooseInvito(onTerminate: () -> Unit) {
     val statusMsgUser = userState.statusMsg
 
     Box(modifier = Modifier.fillMaxSize()) {
+        // Loading state
         AnimatedVisibility(
             visible = loading,
             enter = fadeIn(),
@@ -82,64 +87,110 @@ fun ChooseInvito(onTerminate: () -> Unit) {
             }
         }
 
-        // Invite list
+        // Content state
         AnimatedVisibility(
             visible = !loading,
             enter = slideInVertically(initialOffsetY = { it / 2 }) + fadeIn(),
             exit = slideOutVertically(targetOffsetY = { it / 2 }) + fadeOut()
         ) {
             if (invites.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            imageVector = Icons.Default.Business,
-                            contentDescription = null,
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Nessun invito disponibile",
-                            style = MaterialTheme.typography.headlineSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = "Controlla più tardi per nuove opportunità",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+                EmptyInvitesState()
             } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize().padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    item {
-                        Text(
-                            text = "I tuoi inviti (${invites.size})",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-
-                    items(invites.size) { index ->
-                        val invite = invites[index]
-                        InviteCard(
-                            invite = invite,
-                            onAccept = { invitiVM.acceptInvite(invite,user.uid)
-                                if (updateInvite == true){ userVM.onAcceptInvite(invite,inviteState.contratto) } },
-                            onDecline = { invitiVM.declineInvite(invite) }
-                        )
-                    }
-                }
+                InvitesContent(
+                    invites = invites,
+                    user = user,
+                    invitiVM = invitiVM,
+                    userVM = userVM,
+                    inviteState = inviteState
+                )
             }
         }
     }
 
-    StatusDialog(message = resultMsgUser, statusType = statusMsgUser, onDismiss = { userVM.clearMessage()} )
-    StatusDialog(message = resultMsgInvire, statusType = statusMsgInvite, onDismiss = { invitiVM.clearMessage()} )
+    // Status dialogs
+    resultMsgUser?.let { message ->
+        StatusDialog(
+            message = message,
+            statusType = statusMsgUser,
+            onDismiss = { userVM.clearMessage() }
+        )
+    }
+
+    resultMsgInvire?.let { message ->
+        StatusDialog(
+            message = message,
+            statusType = statusMsgInvite,
+            onDismiss = { invitiVM.clearMessage() }
+        )
+    }
+}
+
+@Composable
+private fun EmptyInvitesState() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                imageVector = Icons.Default.Business,
+                contentDescription = null,
+                modifier = Modifier.size(64.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "Nessun invito disponibile",
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = "Controlla più tardi per nuove opportunità",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun InvitesContent(
+    invites: List<InvitoUi>,
+    user: com.bizsync.ui.model.UserUi,
+    invitiVM: InvitiViewModel,
+    userVM: UserViewModel,
+    inviteState: com.bizsync.ui.model.InvitiState
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            Text(
+                text = "I tuoi inviti (${invites.size})",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+
+        items(invites.size) { index ->
+            val invite = invites[index]
+            InviteCard(
+                invite = invite,
+                onAccept = {
+                    invitiVM.acceptInvite(invite, user.uid)
+                    // FIX 3: Gestisci l'accettazione in modo più pulito
+                    if (inviteState.updateInvite == true) {
+                        userVM.onAcceptInvite(invite, inviteState.contratto)
+                    }
+                },
+                onDecline = { invitiVM.declineInvite(invite) }
+            )
+        }
+    }
 }
 
 @Composable
@@ -286,7 +337,6 @@ private fun InviteCard(
                 ) {
                     Text("Rifiuta")
                 }
-
 
                 Button(
                     onClick = onAccept,

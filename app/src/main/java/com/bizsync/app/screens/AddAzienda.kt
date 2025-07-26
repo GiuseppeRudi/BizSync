@@ -18,12 +18,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
@@ -52,13 +52,14 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.ui.components.DialogStatusType
 import com.bizsync.ui.components.DipendentiSelector
-import com.bizsync.ui.components.GiornoPublicazioneSelector
 import com.bizsync.ui.components.SettoreSelector
 import com.bizsync.ui.components.StatusDialog
 import com.bizsync.ui.viewmodels.AddAziendaViewModel
 
 @Composable
-fun AddAzienda(onTerminate: () -> Unit) {
+fun AddAzienda(
+    onLogout: () -> Unit,
+    onTerminate: () -> Unit) {
     val addaziendaviewmodel: AddAziendaViewModel = hiltViewModel()
     val userviewmodel = LocalUserViewModel.current
 
@@ -95,7 +96,7 @@ fun AddAzienda(onTerminate: () -> Unit) {
             .padding(16.dp)
     ) {
 
-        StepHeader(currentStep = currentStep, totalSteps = 5)
+        StepHeader(currentStep = currentStep, totalSteps = 4, onLogout)
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -109,7 +110,6 @@ fun AddAzienda(onTerminate: () -> Unit) {
                 2 -> StepTwo(addaziendaviewmodel)
                 3 -> StepThree(addaziendaviewmodel)
                 4 -> StepFour(addaziendaviewmodel)
-                5 -> StepFive(addaziendaviewmodel)
             }
         }
 
@@ -127,36 +127,63 @@ fun AddAzienda(onTerminate: () -> Unit) {
 }
 
 @Composable
-private fun StepHeader(currentStep: Int, totalSteps: Int) {
+ fun StepHeader(
+    currentStep: Int,
+    totalSteps: Int,
+    onLogout: () -> Unit
+) {
     Column {
-        Text(
-            text = "Configura la tua azienda",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
-        )
+        // Riga con titolo e pulsante logout
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Azienda",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
 
-        Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Passo $currentStep di $totalSteps",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
 
-        Text(
-            text = "Passo $currentStep di $totalSteps",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+            // Pulsante logout elegante
+            OutlinedButton(
+                onClick ={ onLogout()},
+                modifier = Modifier.padding(start = 16.dp),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.Logout,
+                    contentDescription = "Logout",
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Esci")
+            }
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         LinearProgressIndicator(
-        progress = { currentStep.toFloat() / totalSteps.toFloat() },
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.primary,
-        trackColor = ProgressIndicatorDefaults.linearTrackColor,
-        strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
+            progress = { currentStep.toFloat() / totalSteps.toFloat() },
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.primary,
+            trackColor = ProgressIndicatorDefaults.linearTrackColor,
+            strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
         )
     }
 }
-
-
 @Composable
 private fun StepContainer(
     icon: ImageVector,
@@ -254,17 +281,6 @@ private fun StepThree(addaziendaviewmodel: AddAziendaViewModel) {
 
 @Composable
 private fun StepFour(addaziendaviewmodel: AddAziendaViewModel) {
-    StepContainer(
-        icon = Icons.Default.Schedule,
-        title = "Pubblicazione turni",
-        subtitle = "Configura quando pubblichi i turni settimanali"
-    ) {
-        GiornoPublicazioneSelector(addaziendaviewmodel)
-    }
-}
-
-@Composable
-private fun StepFive(addaziendaviewmodel: AddAziendaViewModel) {
     val addAziendaState by addaziendaviewmodel.uiState.collectAsState()
     val context = LocalContext.current
 

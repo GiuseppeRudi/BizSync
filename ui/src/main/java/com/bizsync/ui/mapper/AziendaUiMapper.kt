@@ -13,7 +13,6 @@ object AziendaUiMapper {
             turniFrequenti = ui.turniFrequenti,
             numDipendentiRange = ui.numDipendentiRange,
             sector = ui.sector,
-            giornoPubblicazioneTurni = ui.giornoPubblicazioneTurni,
             // mapping coordinate azienda
             latitudine = ui.latitudine,
             longitudine = ui.longitudine,
@@ -29,7 +28,6 @@ object AziendaUiMapper {
             turniFrequenti = domain.turniFrequenti,
             numDipendentiRange = domain.numDipendentiRange,
             sector = domain.sector,
-            giornoPubblicazioneTurni = domain.giornoPubblicazioneTurni,
             // mapping coordinate azienda
             latitudine = domain.latitudine,
             longitudine = domain.longitudine,

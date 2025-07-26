@@ -12,6 +12,7 @@ import com.bizsync.ui.mapper.toDomain
 import com.bizsync.ui.mapper.toUiStateList
 import com.bizsync.ui.components.DialogStatusType
 import com.bizsync.ui.model.AziendaUi
+import com.bizsync.ui.model.InvitoUi
 import com.bizsync.ui.model.ManageInviteState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -76,11 +77,21 @@ class ManageInviteViewModel @Inject constructor(
 
 
     fun setCurrentView(view: InviteView) {
-        _uiState.update { it.copy(currentView = view) }
-
-        // Reset dello step quando si torna alla selezione
-        if (view == InviteView.SELECTION) {
-            _uiState.update { it.copy(currentStep = 1) }
+        _uiState.update { currentState ->
+            when (view) {
+                InviteView.CREATE_INVITE -> {
+                    currentState.copy(
+                        currentView = view,
+                        invite = InvitoUi(),
+                        ccnlnfo = Ccnlnfo(),
+                        currentStep = 1,
+                        resultMessage = null
+                    )
+                }
+                InviteView.VIEW_INVITES -> {
+                    currentState.copy(currentView = view)
+                }
+            }
         }
     }
 

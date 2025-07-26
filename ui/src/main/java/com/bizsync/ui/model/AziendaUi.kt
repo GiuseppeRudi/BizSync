@@ -11,7 +11,6 @@ data class AziendaUi(
     val turniFrequenti: List<TurnoFrequente> = emptyList(),
     val numDipendentiRange: String = "",
     val sector: String = "",
-    val giornoPubblicazioneTurni: DayOfWeek = DayOfWeek.FRIDAY,
 
     val latitudine: Double = 0.0,
     val longitudine: Double = 0.0,

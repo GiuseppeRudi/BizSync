@@ -11,22 +11,22 @@ import com.bizsync.app.screens.ChooseAzienda
 import com.bizsync.app.screens.ChooseInvito
 
 @Composable
-fun OnboardingNavHost(navController: NavHostController, onSuccess: () -> Unit,startDestination : String) {
+fun OnboardingNavHost(navController: NavHostController,onLogout: () -> Unit, onSuccess: () -> Unit,startDestination : String) {
     NavHost(navController, startDestination =  startDestination) {
         composable(OnboardingScreen.AddUtente.route) {
-            AddUtente(onChooseAzienda = {
-                navController.navigate(OnboardingScreen.ChooseAzienda.route)
-            })
+            AddUtente(onChooseAzienda = { navController.navigate(OnboardingScreen.ChooseAzienda.route) }, onLogout)
         }
         composable(OnboardingScreen.ChooseAzienda.route) {
             ChooseAzienda(
+                onLogout,
                 onCreaAzienda = { navController.navigate(OnboardingScreen.CreaAzienda.route) },
                 onVisualizzaInviti = { navController.navigate(OnboardingScreen.ChooseInvito.route) }
             )
         }
         composable(OnboardingScreen.CreaAzienda.route) {
-            AddAzienda(onTerminate = {
-                navController.navigate(OnboardingScreen.Terminate.route)
+            AddAzienda(
+                onLogout,
+                onTerminate = { navController.navigate(OnboardingScreen.Terminate.route)
             })
         }
         composable(OnboardingScreen.ChooseInvito.route) {

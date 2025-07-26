@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.ContactMail
 import androidx.compose.material.icons.filled.Person
@@ -31,6 +32,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -49,13 +51,18 @@ import com.bizsync.ui.viewmodels.AddUtenteViewModel
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
-fun AddUtente(onChooseAzienda: () -> Unit) {
+fun AddUtente(
+    onChooseAzienda: () -> Unit,
+    onLogout: () -> Unit
+) {
     val addutenteviewmodel: AddUtenteViewModel = hiltViewModel()
     val userviewmodel = LocalUserViewModel.current
 
     val uiState by addutenteviewmodel.uiState.collectAsState()
     val currentStep = uiState.currentStep
     val isUserAdded = uiState.isUserAdded
+
+
 
     LaunchedEffect(Unit) {
         val currentUser = FirebaseAuth.getInstance().currentUser
@@ -68,6 +75,7 @@ fun AddUtente(onChooseAzienda: () -> Unit) {
 
     LaunchedEffect(isUserAdded) {
         if (isUserAdded) {
+            userviewmodel.updateUtente(uiState.user)
             onChooseAzienda()
         }
     }
@@ -80,13 +88,17 @@ fun AddUtente(onChooseAzienda: () -> Unit) {
         )
     }
 
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Header con titolo e progress
-        StepHeader(currentStep = currentStep, totalSteps = 4)
+        StepHeaderUtente(
+            currentStep = currentStep,
+            totalSteps = 4,
+            onLogoutClick = { onLogout()}
+        )
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -143,41 +155,72 @@ fun AddUtente(onChooseAzienda: () -> Unit) {
             canProceed = addutenteviewmodel.canProceedToNextStep(currentStep),
             onPrevious = { addutenteviewmodel.onCurrentStepDown() },
             onNext = { addutenteviewmodel.onCurrentStepUp() },
-            onComplete = { addutenteviewmodel.addUserAndPropaga() },
+            onComplete = { addutenteviewmodel.addUser() },
             isLoading = uiState.isLoading
         )
     }
 }
 
 @Composable
-private fun StepHeader(currentStep: Int, totalSteps: Int) {
+private fun StepHeaderUtente(
+    currentStep: Int,
+    totalSteps: Int,
+    onLogoutClick: () -> Unit
+) {
     Column {
-        Text(
-            text = "Configura il tuo profilo",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
-        )
+        // Riga con titolo e pulsante logout
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Profilo",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
 
-        Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Passo $currentStep di $totalSteps",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
 
-        Text(
-            text = "Passo $currentStep di $totalSteps",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+            // Pulsante logout elegante
+            OutlinedButton(
+                onClick = onLogoutClick,
+                modifier = Modifier.padding(start = 16.dp),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.Logout,
+                    contentDescription = "Logout",
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Esci")
+            }
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         LinearProgressIndicator(
-        progress = { currentStep.toFloat() / totalSteps.toFloat() },
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.primary,
-        trackColor = ProgressIndicatorDefaults.linearTrackColor,
-        strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
+            progress = { currentStep.toFloat() / totalSteps.toFloat() },
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.primary,
+            trackColor = ProgressIndicatorDefaults.linearTrackColor,
+            strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
         )
     }
 }
+
+
 
 @Composable
 private fun StepContainer(
@@ -234,7 +277,7 @@ private fun StepContainer(
 @Composable
 private fun StepOne(addutenteviewmodel: AddUtenteViewModel) {
     val uiState by addutenteviewmodel.uiState.collectAsState()
-    val userState = uiState.userState
+    val userState = uiState.user
 
     StepContainer(
         icon = Icons.Default.Person,
@@ -289,7 +332,7 @@ private fun StepOne(addutenteviewmodel: AddUtenteViewModel) {
 @Composable
 private fun StepTwo(addutenteviewmodel: AddUtenteViewModel) {
     val uiState by addutenteviewmodel.uiState.collectAsState()
-    val userState = uiState.userState
+    val userState = uiState.user
 
     StepContainer(
         icon = Icons.Default.ContactMail,
@@ -333,7 +376,7 @@ private fun StepTwo(addutenteviewmodel: AddUtenteViewModel) {
 @Composable
 private fun StepThree(addutenteviewmodel: AddUtenteViewModel) {
     val uiState by addutenteviewmodel.uiState.collectAsState()
-    val userState = uiState.userState
+    val userState = uiState.user
 
     StepContainer(
         icon = Icons.Default.Badge,
@@ -387,7 +430,7 @@ private fun StepThree(addutenteviewmodel: AddUtenteViewModel) {
 @Composable
 private fun StepFour(addutenteviewmodel: AddUtenteViewModel) {
     val uiState by addutenteviewmodel.uiState.collectAsState()
-    val userState = uiState.userState
+    val userState = uiState.user
 
     StepContainer(
         icon = Icons.Default.Person,
@@ -489,57 +532,61 @@ private fun NavigationButtons(
     onComplete: () -> Unit,
     isLoading: Boolean
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        if (currentStep > 1) {
-            OutlinedButton(
-                onClick = onPrevious,
-                enabled = !isLoading,
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.weight(1f)
-            ) {
-                Text("Indietro")
-            }
-        } else {
-            Spacer(modifier = Modifier.weight(1f))
-        }
+    Column {
 
-        Spacer(modifier = Modifier.width(12.dp))
-
-        if (currentStep < totalSteps) {
-            Button(
-                onClick = onNext,
-                enabled = canProceed && !isLoading,
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    disabledContainerColor = MaterialTheme.colorScheme.outline
-                )
-            ) {
-                Text("Avanti")
+        // Pulsanti di navigazione principali
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            if (currentStep > 1) {
+                OutlinedButton(
+                    onClick = onPrevious,
+                    enabled = !isLoading,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Indietro")
+                }
+            } else {
+                Spacer(modifier = Modifier.weight(1f))
             }
-        } else {
-            Button(
-                onClick = onComplete,
-                enabled = canProceed && !isLoading,
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    disabledContainerColor = MaterialTheme.colorScheme.outline
-                )
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            if (currentStep < totalSteps) {
+                Button(
+                    onClick = onNext,
+                    enabled = canProceed && !isLoading,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        disabledContainerColor = MaterialTheme.colorScheme.outline
                     )
-                } else {
-                    Text("Crea profilo")
+                ) {
+                    Text("Avanti")
+                }
+            } else {
+                Button(
+                    onClick = onComplete,
+                    enabled = canProceed && !isLoading,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        disabledContainerColor = MaterialTheme.colorScheme.outline
+                    )
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    } else {
+                        Text("Crea profilo")
+                    }
                 }
             }
         }
