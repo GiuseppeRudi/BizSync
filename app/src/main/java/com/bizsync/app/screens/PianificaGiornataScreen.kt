@@ -1,5 +1,6 @@
 package com.bizsync.app.screens
 
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -40,7 +41,6 @@ import com.bizsync.domain.model.Turno
 import com.bizsync.domain.model.WeeklyShift
 import com.bizsync.ui.components.EmptyDayCard
 import com.bizsync.ui.components.GiornoHeaderCard
-import com.bizsync.ui.components.RiepilogoGiornataCard
 import com.bizsync.ui.components.SectionHeader
 import com.bizsync.ui.viewmodels.PianificaManagerViewModel
 import java.time.DayOfWeek
@@ -55,12 +55,11 @@ fun PianificaGiornata(
     giornoSelezionato: LocalDate,
     managerVM : PianificaManagerViewModel,
     onDipartimentoClick: (AreaLavoro) -> Unit,
-    weeklyShift: WeeklyShift?,
 ) {
 
     val managerState by managerVM.uiState.collectAsState()
     val dayOfWeek = giornoSelezionato.dayOfWeek
-
+    val turniCaricamento = managerState.isLoadingTurni
     val turniGiorno = managerState.turniGiornalieri
 
     val dipartimentiDelGiorno = dipartimenti
@@ -68,12 +67,19 @@ fun PianificaGiornata(
         .sortedBy { it.orariSettimanali[dayOfWeek]?.first ?: LocalTime.MIN }
 
 
-    LaunchedEffect(giornoSelezionato) {
+    LaunchedEffect(giornoSelezionato,turniCaricamento) {
         managerVM.setLoading(true)
-        if (weeklyShift != null) {
+
+        if(!turniCaricamento)
+        {
             managerVM.setTurniGiornalieri(dayOfWeek, dipartimentiDelGiorno)
+
         }
     }
+
+    Log.d("PianificaGiornata", "selectionDate: $giornoSelezionato")
+    Log.d("PianificaGiornata", "dipartimentiDelGiorno: $dipartimentiDelGiorno")
+    Log.d("PianificaGiornata", "turniDelGiorno: $turniGiorno")
 
 
     if (managerState.loading) {
@@ -117,10 +123,6 @@ fun PianificaGiornata(
                 )
             }
 
-        }
-
-        item {
-            RiepilogoGiornataCard(dipartimentiDelGiorno)
         }
 
     }
@@ -187,14 +189,14 @@ private fun DipartimentoStatoCard(
 
                     if (risultatiAnalisi.buchi.isNotEmpty()) {
                         Text(
-                            text = "${risultatiAnalisi.buchi.size} buchi orari",
+                            text = "${risultatiAnalisi.buchi.size} ${if (risultatiAnalisi.buchi.size == 1) "buco orario" else "buchi orari"}",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.error
                         )
                     }
                     if (risultatiAnalisi.sovrapposizioni.isNotEmpty()) {
                         Text(
-                            text = "${risultatiAnalisi.sovrapposizioni.size} sovrapposizioni",
+                            text = "${risultatiAnalisi.sovrapposizioni.size} ${if (risultatiAnalisi.sovrapposizioni.size == 1) "sovrapposizione" else "sovrapposizioni"}",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.error
                         )

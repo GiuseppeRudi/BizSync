@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.bizsync.app.navigation.LocalScaffoldViewModel
 import com.bizsync.domain.constants.enumClass.TipoTimbratura
+import com.bizsync.domain.constants.enumClass.UrgencyLevel
 import com.bizsync.domain.model.Azienda
 import com.bizsync.domain.model.Timbratura
 import com.bizsync.domain.model.User
@@ -65,7 +66,6 @@ import com.bizsync.ui.viewmodels.ManagerHomeViewModel
 import com.bizsync.ui.viewmodels.TimbratureWithUser
 import com.bizsync.ui.viewmodels.TodayStats
 import com.bizsync.ui.viewmodels.TurnoWithUsers
-import com.bizsync.ui.viewmodels.UrgencyLevel
 import kotlinx.coroutines.delay
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -112,10 +112,12 @@ fun ManagerHomeScreen(
 
         // Alert pubblicazione turni
         item {
-            ShiftPublicationAlert(
-                daysUntilPublication = homeState.daysUntilShiftPublication,
-                isPublished = homeState.shiftsPublishedThisWeek,
-            )
+            if(homeState.shiftsPublishedThisWeek == false) {
+                ShiftPublicationAlert(
+                    daysUntilPublication = homeState.daysUntilShiftPublication,
+                )
+            }
+
         }
 
         // Statistiche giornaliere
@@ -222,9 +224,7 @@ fun WelcomeHeader(
 @Composable
 fun ShiftPublicationAlert(
     daysUntilPublication: Int,
-    isPublished: Boolean,
 ) {
-    if (isPublished) return
 
     val urgencyLevel = when {
         daysUntilPublication <= 0 -> UrgencyLevel.CRITICAL

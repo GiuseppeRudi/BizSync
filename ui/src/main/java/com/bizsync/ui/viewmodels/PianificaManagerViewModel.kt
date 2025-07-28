@@ -89,7 +89,6 @@ class PianificaManagerViewModel @Inject constructor(
                         isGeneratingTurni = false,
                         turniGeneratiAI = turniConvertiti,
                         showAIResultDialog = true,
-                        hasChangeShift = true,
                         aiGenerationMessage = if (result.coperturaTotale) {
                             "Generati ${turniConvertiti.size} turni con copertura completa!"
                         } else {
@@ -462,28 +461,37 @@ class PianificaManagerViewModel @Inject constructor(
 
     fun setTurniSettimanali(startWeek: LocalDate, idAzienda: String) {
         viewModelScope.launch {
+            // Inizio caricamento
+            _uiState.update { it.copy(isLoadingTurni = true) }
 
-            when (val result = turnoOrchestrator.fetchTurniSettimana(startWeek,idAzienda)) {
+            when (val result = turnoOrchestrator.fetchTurniSettimana(startWeek, idAzienda)) {
                 is Resource.Success -> {
                     val turni = result.data
-
                     val grouped = turni.groupBy { it.data.dayOfWeek }
                     val allDays = DayOfWeek.entries.associateWith { grouped[it] ?: emptyList() }
 
+                    _uiState.update {
+                        it.copy(
+                            turniSettimanali = allDays,
+                            isLoadingTurni = false // Fine caricamento
+                        )
+                    }
+                }
 
-                    _uiState.update { current -> current.copy(turniSettimanali = allDays) }
-                }
-                is Resource.Error -> {
+                is Resource.Error, is Resource.Empty -> {
                     val allDays = DayOfWeek.entries.associateWith { emptyList<Turno>() }
-                    _uiState.update { current -> current.copy(turniSettimanali = allDays) }
-                }
-                is Resource.Empty -> {
-                    val allDays = DayOfWeek.entries.associateWith { emptyList<Turno>() }
-                    _uiState.update { current -> current.copy(turniSettimanali = allDays) }
+
+                    _uiState.update {
+                        it.copy(
+                            turniSettimanali = allDays,
+                            isLoadingTurni = false // Fine caricamento anche in caso di errore
+                        )
+                    }
                 }
             }
         }
     }
+
 
 
 

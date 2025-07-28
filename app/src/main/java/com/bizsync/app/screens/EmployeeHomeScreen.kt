@@ -39,6 +39,7 @@ import coil.compose.AsyncImage
 import com.bizsync.app.navigation.LocalUserViewModel
 import com.bizsync.domain.constants.enumClass.HomeScreenRoute
 import com.bizsync.domain.constants.enumClass.StatoTurno
+import com.bizsync.domain.constants.enumClass.UrgencyLevel
 import com.bizsync.domain.constants.enumClass.ZonaLavorativa
 import com.bizsync.domain.model.Azienda
 import com.bizsync.domain.model.TurnoWithDetails
@@ -49,7 +50,6 @@ import com.bizsync.ui.model.EmployeeHomeState
 import com.bizsync.ui.model.UserState
 import com.bizsync.ui.model.UserUi
 import com.bizsync.ui.viewmodels.EmployeeHomeViewModel
-import com.bizsync.ui.viewmodels.UrgencyLevel
 import com.google.accompanist.permissions.*
 import com.google.android.gms.location.LocationAvailability
 import com.google.android.gms.location.LocationCallback

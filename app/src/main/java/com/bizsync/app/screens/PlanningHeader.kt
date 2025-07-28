@@ -39,10 +39,15 @@ fun PlanningHeader(
     hasUnsavedChanges: Boolean = false,
     isLoading: Boolean = false,
     onSync: () -> Unit,
+    setExpanded : Boolean = false,
     onStatoSettimana: (WeeklyShiftStatus) -> Unit,
 ) {
     var showStatusDialog by remember { mutableStateOf(false) }
-    var isExpanded by remember { mutableStateOf(true) } // Stato per mostrare/nascondere
+    var isExpanded by remember { mutableStateOf(setExpanded) }
+
+    LaunchedEffect(setExpanded) {
+        isExpanded = setExpanded
+    }
 
     if (weeklyShift != null && weeklyShift.status != WeeklyShiftStatus.PUBLISHED) {
         Card(
@@ -371,33 +376,6 @@ fun StatoOption(
             Spacer(modifier = Modifier.width(12.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Medium
-                    )
-
-                    if (isCurrentStatus) {
-                        AssistChip(
-                            onClick = { },
-                            label = {
-                                Text(
-                                    "Attuale",
-                                    style = MaterialTheme.typography.labelSmall
-                                )
-                            },
-                            colors = AssistChipDefaults.assistChipColors(
-                                containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                            )
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
                     text = subtitle,

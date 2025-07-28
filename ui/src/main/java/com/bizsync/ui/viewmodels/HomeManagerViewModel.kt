@@ -13,6 +13,7 @@ import com.bizsync.domain.constants.enumClass.TipoTimbratura
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.*
 import com.bizsync.domain.utils.WeeklyPublicationCalculator
+import com.bizsync.ui.model.ManagerHomeState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
@@ -50,21 +51,6 @@ data class TurnoWithUsers(
     val users: List<User>
 )
 
-enum class UrgencyLevel {
-    LOW, MEDIUM, HIGH, CRITICAL
-}
-
-
-data class ManagerHomeState(
-    val azienda : Azienda = Azienda(),
-    val todayStats: TodayStats = TodayStats(),
-    val recentTimbrature: List<TimbratureWithUser> = emptyList(),
-    val todayShifts: List<TurnoWithUsers> = emptyList(),
-    val daysUntilShiftPublication: Int = 0,
-    val shiftsPublishedThisWeek: Boolean = false,
-    val isLoading: Boolean = false,
-    val error: String? = null
-)
 
 @HiltViewModel
 class ManagerHomeViewModel @Inject constructor(

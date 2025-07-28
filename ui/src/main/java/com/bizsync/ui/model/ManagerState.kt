@@ -29,6 +29,7 @@ data class ManagerState(
     val disponibilitaMembriTurno : DipendentiGiorno = DipendentiGiorno(),
 
     val turnoInModifica: Turno = Turno(),
+    val isLoadingTurni: Boolean = false,
     val hasChangeShift : Boolean = false,
     val loading: Boolean = true,
 

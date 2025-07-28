@@ -1,5 +1,10 @@
 package com.bizsync.app.screens
 
+import android.util.Log
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -21,6 +26,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.bizsync.app.navigation.LocalScaffoldViewModel
@@ -33,6 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import com.bizsync.domain.constants.enumClass.PianificaScreenManager
 import com.bizsync.domain.constants.enumClass.WeeklyShiftStatus
+import com.bizsync.domain.model.AreaLavoro
 import com.bizsync.domain.model.Turno
 import com.bizsync.domain.model.User
 import com.bizsync.domain.model.WeeklyShift
@@ -160,6 +169,21 @@ fun PianificaDipendentiCore(
 
     LaunchedEffect(Unit) {
         employeeVM.inizializzaContratto( userState.contratto)
+
+        if(weeklyShiftRiferimento != null)
+        {
+            val dipartimenti = weeklyShiftRiferimento.dipartimentiAttivi
+            val dipendenti = weeklyShiftRiferimento.dipendentiAttivi
+            val dipendentePassato = dipendenti.find { it.uid == userState.user.uid }
+            if(dipendentePassato!=null)
+            {
+                val dipartimento = dipartimenti.find { it.nomeArea == dipendentePassato.dipartimento}
+
+                if(dipartimento != null)
+                    employeeVM.inizializzaDatiEmployee(userState.user.uid,  dipartimento)
+            }
+        }
+
     }
 
     LaunchedEffect(weeklyShiftRiferimento, weeklyShiftAttuale) {
@@ -167,6 +191,16 @@ fun PianificaDipendentiCore(
             pianificaVM.setWeeklyShiftIdentical(true)
         } else {
             pianificaVM.setWeeklyShiftIdentical(false)
+        }
+
+        if (weeklyShiftAttuale != null && !weeklyisIdentical ) {
+            employeeVM.setTurniSettimanaliDipendente(weeklyShiftAttuale.weekStart, userState.azienda.idAzienda, userState.user.uid)
+        }
+
+        if(weeklyShiftRiferimento != null) {
+
+            val weekStart = weeklyShiftRiferimento.weekStart
+            employeeVM.setTurniSettimanaliDipendente(weekStart, userState.azienda.idAzienda, userState.user.uid)
         }
     }
 
@@ -180,18 +214,6 @@ fun PianificaDipendentiCore(
         }
     }
 
-    LaunchedEffect(weeklyShiftRiferimento) {
-        if(weeklyShiftRiferimento != null) {
-            val weekStart = weeklyShiftRiferimento.weekStart
-            employeeVM.setTurniSettimanaliDipendente(weekStart, userState.azienda.idAzienda, userState.user.uid)
-        }
-    }
-
-    LaunchedEffect(weeklyShiftAttuale) {
-        if (weeklyShiftAttuale != null && !weeklyisIdentical ) {
-            employeeVM.setTurniSettimanaliDipendente(weeklyShiftAttuale.weekStart, userState.azienda.idAzienda, userState.user.uid)
-        }
-    }
 
     Column(
         modifier = Modifier
@@ -742,15 +764,28 @@ fun PianificaManagerCore(
     val weeklyShiftAttuale = pianificaState.weeklyShiftAttuale
     val managerVM: PianificaManagerViewModel = hiltViewModel()
 
-    val dipartimenti = weeklyShiftAttuale?.dipartimentiAttivi ?: emptyList()
+    var dipartimenti by remember { mutableStateOf(emptyList<AreaLavoro>()) }
+    val isIdentical = pianificaState.weeklyisIdentical
 
+    Log.d("PianificaManagerCore", "weeklyisIdentical: $weeklyisIdentical")
     LaunchedEffect(weeklyShiftRiferimento, weeklyShiftAttuale) {
-        if(weeklyShiftRiferimento != null && weeklyShiftAttuale != null && weeklyShiftAttuale == weeklyShiftRiferimento)
-        {
-            pianificaVM.setWeeklyShiftIdentical(true)
+        val riferimento = weeklyShiftRiferimento
+        val attuale = weeklyShiftAttuale
+
+        pianificaVM.setWeeklyShiftIdentical(riferimento != null && attuale != null && riferimento.id == attuale.id)
+
+        riferimento?.let {
+            dipartimenti = it.dipartimentiAttivi
+            pianificaVM.syncTurniAvvio(it.weekStart)
+            managerVM.setTurniSettimanali(it.weekStart, userState.azienda.idAzienda)
+            managerVM.inizializzaDatiWeeklyRiferimento(it.dipendentiAttivi)
+
         }
-        else{
-            pianificaVM.setWeeklyShiftIdentical(false)
+
+        if (attuale != null && riferimento?.id != attuale.id) {
+            dipartimenti = attuale.dipartimentiAttivi
+            managerVM.inizializzaDatiDipendenti(attuale.dipendentiAttivi)
+            managerVM.setTurniSettimanali(attuale.weekStart, userState.azienda.idAzienda)
         }
     }
 
@@ -760,33 +795,9 @@ fun PianificaManagerCore(
     {
         pianificaVM.backToMain()
 
-
         if(selectionData!=null )
-        {
-            pianificaVM.getWeeklyShiftCorrente(selectionData)
-        }
+        { pianificaVM.getWeeklyShiftCorrente(selectionData) }
     }
-
-
-    LaunchedEffect(weeklyShiftRiferimento) {
-        if(weeklyShiftRiferimento != null)
-        {
-            val weekStart = weeklyShiftRiferimento.weekStart
-            pianificaVM.syncTurniAvvio(weekStart)
-            managerVM.setTurniSettimanali(weekStart,userState.azienda.idAzienda)
-
-            managerVM.inizializzaDatiWeeklyRiferimento(weeklyShiftRiferimento.dipendentiAttivi)
-        }
-    }
-
-    LaunchedEffect(weeklyShiftAttuale) {
-        if (weeklyShiftAttuale != null && !weeklyisIdentical) {
-            managerVM.inizializzaDatiDipendenti(weeklyShiftAttuale.dipendentiAttivi)
-            managerVM.setTurniSettimanali(weeklyShiftAttuale.weekStart,userState.azienda.idAzienda)
-        }
-    }
-
-
 
 
     val currentScreen by pianificaVM.currentScreen.collectAsState()
@@ -807,22 +818,40 @@ fun PianificaManagerCore(
                 onSync = {
                     pianificaVM.syncTurni(weeklyShiftAttuale?.weekStart)
                 },
+                setExpanded = isIdentical,
                 onStatoSettimana = { nuovoStato ->
 
                     pianificaVM.changeStatoWeeklyAttuale(nuovoStato)
                 }
             )
 
-            if( weeklyShiftAttuale != null && weeklyShiftAttuale.id != weeklyShiftRiferimento?.id )
-            {
-                HeaderTurniManager(weeklyShift = weeklyShiftAttuale)
+            if (weeklyShiftAttuale != null && weeklyShiftAttuale.id != weeklyShiftRiferimento?.id) {
+                AnimatedVisibility(
+                    visible = true,
+                    enter = fadeIn(tween(300)) + slideInVertically(initialOffsetY = { -40 }),
+                ) {
+                    HeaderTurniManager(weeklyShift = weeklyShiftAttuale)
+                }
             }
 
-            if(weeklyShiftAttuale?.id == weeklyShiftRiferimento?.id && weeklyShiftRiferimento?.status == WeeklyShiftStatus.PUBLISHED)
-                HeaderTurniManager(weeklyShift = weeklyShiftAttuale)
+            if (weeklyShiftAttuale?.id == weeklyShiftRiferimento?.id && weeklyShiftRiferimento?.status == WeeklyShiftStatus.PUBLISHED) {
+                AnimatedVisibility(
+                    visible = true,
+                    enter = fadeIn(tween(300)) + slideInVertically(initialOffsetY = { -40 }),
+                ) {
+                    HeaderTurniManager(weeklyShift = weeklyShiftAttuale)
+                }
+            }
 
-            if(weeklyShiftAttuale== null)
-                HeaderTurniManager(weeklyShift = null, selectionData)
+            if (weeklyShiftAttuale == null && selectionData != null) {
+                AnimatedVisibility(
+                    visible = true,
+                    enter = fadeIn(tween(300)) + slideInVertically(initialOffsetY = { -40 }),
+                ) {
+                    HeaderTurniManager(weeklyShift = null, selectionData)
+                }
+            }
+
 
             // Calendario
             Calendar(pianificaVM)
@@ -840,7 +869,6 @@ fun PianificaManagerCore(
                         giornoSelezionato = selectionData,
                         managerVM = managerVM,
                         onDipartimentoClick = { pianificaVM.openGestioneTurni(it) },
-                        weeklyShift = weeklyShiftRiferimento
                     )
                 }
 

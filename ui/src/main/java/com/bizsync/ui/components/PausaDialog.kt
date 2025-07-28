@@ -144,7 +144,7 @@ fun PauseManagerDialog(
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                         Text(
-                                            text = "Aggiungi la prima pausa per iniziare",
+                                            text = "Aggiungi la prima pausa ",
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
