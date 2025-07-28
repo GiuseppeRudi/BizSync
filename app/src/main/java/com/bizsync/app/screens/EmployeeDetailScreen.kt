@@ -77,37 +77,31 @@ fun EmployeeDetailScreen(
                 )
             )
     ) {
-        TopAppBar(
-            title = {
-                Text(
-                    text = when (currentSection) {
-                        EmployeeSection.MAIN -> "Dettagli Dipendente"
-                        EmployeeSection.CONTRACT -> "Contratto e CCNL"
-                        EmployeeSection.PAST_SHIFTS -> "Turni Passati"
-                        EmployeeSection.FUTURE_SHIFTS -> "Turni Futuri"
-                    },
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF2C3E50)
-                )
-            },
-            navigationIcon = {
-                IconButton(
-                    onClick = {
-                        if (currentSection == EmployeeSection.MAIN) {
-                            employeeVm.updateSelectedEmployee(null)
-                        } else {
-                            employeeVm.setCurrentSection(EmployeeSection.MAIN)
-                        }
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Indietro",
-                        tint = Color(0xFF2C3E50)
+        if(currentSection == EmployeeSection.MAIN)
+        {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Dettagli Dipendente" ,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF2C3E50)
                     )
+                },
+                navigationIcon = {
+                    IconButton(
+                        onClick = {
+                            employeeVm.updateSelectedEmployee(null)
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Indietro",
+                            tint = Color(0xFF2C3E50)
+                        )
+                    }
                 }
-            }
-        )
+            )
+        }
 
         when (currentSection) {
             EmployeeSection.MAIN -> {

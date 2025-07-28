@@ -85,7 +85,6 @@ fun ChatRoomScreen(
     val coroutineScope = rememberCoroutineScope()
     val keyboardController = LocalSoftwareKeyboardController.current
 
-    // Auto-scroll quando arrivano nuovi messaggi
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
             coroutineScope.launch {

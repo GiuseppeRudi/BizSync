@@ -19,7 +19,7 @@ import com.bizsync.cache.utils.ListStringConverter
 
 @Database(
     entities = [UserEntity::class, ContrattoEntity::class, TurnoEntity::class, AbsenceEntity::class,TimbraturaEntity::class],
-    version = 15,
+    version = 17,
     exportSchema = false
 )
 @TypeConverters(DateConverter::class, ListStringConverter::class, EsitoTurnoConverter::class)

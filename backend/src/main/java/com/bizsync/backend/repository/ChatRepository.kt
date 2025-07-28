@@ -3,6 +3,8 @@ package com.bizsync.backend.repository
 import android.util.Log
 import com.bizsync.backend.dto.ChatDto
 import com.bizsync.backend.dto.MessageDto
+import com.bizsync.backend.mapper.toDomain
+import com.bizsync.backend.remote.ChatFirestore
 import com.bizsync.domain.constants.enumClass.ChatType
 import com.bizsync.domain.constants.enumClass.MessageType
 import com.bizsync.domain.model.*
@@ -21,11 +23,12 @@ import javax.inject.Singleton
 class ChatRepository @Inject constructor(
     private val firestore: FirebaseFirestore
 ) {
-    private val chatsCollection = firestore.collection("chats")
+    private val chatsCollection = firestore.collection(ChatFirestore.COLLECTION)
 
     fun getChatsForUser(user: User, allEmployees: List<User>): Flow<List<Chat>> = callbackFlow {
         val listener = chatsCollection
-            .orderBy("ultimoMessaggioTimestamp", Query.Direction.DESCENDING)
+            .whereEqualTo(ChatFirestore.Fields.ID_AZIENDA, user.idAzienda)
+            .orderBy(ChatFirestore.Fields.ULTIMO_MESSAGGIO_TIMESTAMP, Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     close(error)
@@ -37,19 +40,21 @@ class ChatRepository @Inject constructor(
 
                     // Filtra le chat in base al ruolo dell'utente
                     when {
-                        // Manager vede tutto
-                        user.isManager -> chatDto.toDomainModel(user.uid)
+                        // Manager vede tutto della sua azienda
+                        user.isManager -> chatDto.toDomain(user.uid)
 
-                        // Chat generale - tutti la vedono
-                        chatDto.tipo == "generale" -> chatDto.toDomainModel(user.uid)
+                        // Chat generale - tutti la vedono (della propria azienda)
+                        chatDto.tipo == ChatFirestore.TipoChat.GENERALE -> chatDto.toDomain(user.uid)
 
-                        // Chat dipartimento - solo se appartiene al dipartimento
-                        chatDto.tipo == "dipartimento" &&
-                                chatDto.dipartimentoId == user.dipartimento -> chatDto.toDomainModel(user.uid)
+                        // Chat dipartimento - solo se appartiene al dipartimento E alla stessa azienda
+                        chatDto.tipo == ChatFirestore.TipoChat.DIPARTIMENTO &&
+                                chatDto.dipartimento == user.dipartimento &&
+                                chatDto.idAzienda == user.idAzienda -> chatDto.toDomain(user.uid)
 
-                        // Chat privata - solo se è partecipante
-                        chatDto.tipo == "privata" &&
-                                user.uid in chatDto.partecipanti -> chatDto.toDomainModel(user.uid)
+                        // Chat privata - solo se è partecipante E della stessa azienda
+                        chatDto.tipo == ChatFirestore.TipoChat.PRIVATA &&
+                                user.uid in chatDto.partecipanti &&
+                                chatDto.idAzienda == user.idAzienda -> chatDto.toDomain(user.uid)
 
                         else -> null
                     }
@@ -64,8 +69,8 @@ class ChatRepository @Inject constructor(
     fun getMessagesForChat(chatId: String, userId: String): Flow<List<Message>> = callbackFlow {
         val listener = chatsCollection
             .document(chatId)
-            .collection("messages")
-            .orderBy("timestamp", Query.Direction.ASCENDING)
+            .collection(ChatFirestore.MESSAGES_SUBCOLLECTION)
+            .orderBy(ChatFirestore.MessageFields.TIMESTAMP, Query.Direction.ASCENDING)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     close(error)
@@ -73,14 +78,19 @@ class ChatRepository @Inject constructor(
                 }
 
                 val messages = snapshot?.documents?.mapNotNull { doc ->
-                    doc.toObject(MessageDto::class.java)?.toDomainModel(userId)
+                    doc.toObject(MessageDto::class.java)?.toDomain(userId)
                 } ?: emptyList()
 
                 // Segna come letti i messaggi non propri
                 snapshot?.documents?.forEach { doc ->
                     val message = doc.toObject(MessageDto::class.java)
-                    if (message != null && message.senderId != userId && userId !in message.lettoDa) {
-                        doc.reference.update("lettoDa", message.lettoDa + userId)
+                    if (message != null &&
+                        message.senderId != userId &&
+                        userId !in message.lettoDa) {
+                        doc.reference.update(
+                            ChatFirestore.MessageFields.LETTO_DA,
+                            message.lettoDa + userId
+                        )
                     }
                 }
 
@@ -102,7 +112,12 @@ class ChatRepository @Inject constructor(
             senderId = senderId,
             senderNome = senderNome,
             content = content,
-            tipo = tipo.name.lowercase(),
+            tipo = when (tipo) {
+                MessageType.TEXT -> ChatFirestore.MessageTypes.TEXT
+                MessageType.ANNOUNCEMENT -> ChatFirestore.MessageTypes.ANNOUNCEMENT
+                MessageType.SYSTEM -> ChatFirestore.MessageTypes.SYSTEM
+                else -> ChatFirestore.MessageTypes.TEXT
+            },
             categoria = categoria,
             lettoDa = listOf(senderId)
         )
@@ -110,7 +125,7 @@ class ChatRepository @Inject constructor(
         // Aggiungi il messaggio
         chatsCollection
             .document(chatId)
-            .collection("messages")
+            .collection(ChatFirestore.MESSAGES_SUBCOLLECTION)
             .add(messageDto)
             .await()
 
@@ -118,47 +133,58 @@ class ChatRepository @Inject constructor(
         chatsCollection
             .document(chatId)
             .update(mapOf(
-                "ultimoMessaggio" to content,
-                "ultimoMessaggioTimestamp" to Timestamp.now(),
-                "ultimoMessaggioSenderId" to senderId
+                ChatFirestore.Fields.ULTIMO_MESSAGGIO to content,
+                ChatFirestore.Fields.ULTIMO_MESSAGGIO_TIMESTAMP to Timestamp.now(),
+                ChatFirestore.Fields.ULTIMO_MESSAGGIO_SENDER_ID to senderId
             ))
             .await()
     }
 
     // Crea una nuova chat privata
     suspend fun createPrivateChat(user1: User, user2: User): String {
-        // Controlla se esiste già
+        Log.d("ChatRepo", "Cerco chat privata tra ${user1.uid} e ${user2.uid} nella stessa azienda ${user1.idAzienda}")
+
+        // Controlla se esiste già nella stessa azienda
         val existingChat = chatsCollection
-            .whereEqualTo("tipo", "privata")
-            .whereArrayContains("partecipanti", user1.uid)
+            .whereEqualTo(ChatFirestore.Fields.TIPO, ChatFirestore.TipoChat.PRIVATA)
+            .whereEqualTo(ChatFirestore.Fields.ID_AZIENDA, user1.idAzienda)
+            .whereArrayContains(ChatFirestore.Fields.PARTECIPANTI, user1.uid)
             .get()
             .await()
             .documents
             .firstOrNull { doc ->
-                val partecipanti = doc.get("partecipanti") as? List<*>
+                val partecipanti = doc.get(ChatFirestore.Fields.PARTECIPANTI) as? List<*>
+                Log.d("ChatRepo", "Controllo partecipanti della chat ${doc.id}: $partecipanti")
                 partecipanti?.contains(user2.uid) == true
             }
 
         if (existingChat != null) {
+            Log.d("ChatRepo", "Chat già esistente trovata con ID: ${existingChat.id}")
             return existingChat.id
         }
 
-        // Crea nuova chat
+        // Crea nuova chat con idAzienda
         val chatDto = ChatDto(
-            tipo = "privata",
+            tipo = ChatFirestore.TipoChat.PRIVATA,
             nome = "${user2.nome} ${user2.cognome}",
+            idAzienda = user1.idAzienda,
             partecipanti = listOf(user1.uid, user2.uid)
         )
 
+        Log.d("ChatRepo", "Nessuna chat trovata. Creo nuova chat con: $chatDto")
+
         val docRef = chatsCollection.add(chatDto).await()
+
+        Log.d("ChatRepo", "Nuova chat creata con ID: ${docRef.id}")
+
         return docRef.id
     }
 
     suspend fun getUnreadCount(chatId: String, userId: String): Int {
         return chatsCollection
             .document(chatId)
-            .collection("messages")
-            .whereNotEqualTo("senderId", userId)
+            .collection(ChatFirestore.MESSAGES_SUBCOLLECTION)
+            .whereNotEqualTo(ChatFirestore.MessageFields.SENDER_ID, userId)
             .get()
             .await()
             .documents
@@ -168,81 +194,50 @@ class ChatRepository @Inject constructor(
             }
     }
 
-    // Inizializza le chat di default (generale e dipartimenti)
+    // Inizializza le chat di default (generale e dipartimenti) con idAzienda
     suspend fun initializeDefaultChats(aziendaId: String, dipartimenti: List<String>) {
-        // Chat generale
-        Log.d("ChatRepository", "Inizializzazione chat $aziendaId")
+        Log.d("ChatRepository", "Inizializzazione chat per azienda: $aziendaId")
 
+        // Chat generale con idAzienda
         val generalChat = chatsCollection
-            .whereEqualTo("tipo", "generale")
-            .whereEqualTo("nome", "Chat Generale $aziendaId")
+            .whereEqualTo(ChatFirestore.Fields.TIPO, ChatFirestore.TipoChat.GENERALE)
+            .whereEqualTo(ChatFirestore.Fields.ID_AZIENDA, aziendaId)
             .get()
             .await()
 
         if (generalChat.isEmpty) {
             chatsCollection.add(
                 ChatDto(
-                    tipo = "generale",
-                    nome = "Chat Generale $aziendaId",
+                    tipo = ChatFirestore.TipoChat.GENERALE,
+                    nome = "Chat Generale",
+                    idAzienda = aziendaId,
                     partecipanti = emptyList() // Tutti possono accedere
                 )
             ).await()
+            Log.d("ChatRepository", "Creata chat generale per azienda: $aziendaId")
         }
 
-        // Chat per dipartimento
+        // Chat per dipartimento con idAzienda
         dipartimenti.forEach { dip ->
             val dipChat = chatsCollection
-                .whereEqualTo("tipo", "dipartimento")
-                .whereEqualTo("dipartimentoId", dip)
+                .whereEqualTo(ChatFirestore.Fields.TIPO, ChatFirestore.TipoChat.DIPARTIMENTO)
+                .whereEqualTo(ChatFirestore.Fields.ID_AZIENDA, aziendaId)
+                .whereEqualTo(ChatFirestore.Fields.DIPARTIMENTO, dip)
                 .get()
                 .await()
 
             if (dipChat.isEmpty) {
                 chatsCollection.add(
                     ChatDto(
-                        tipo = "dipartimento",
+                        tipo = ChatFirestore.TipoChat.DIPARTIMENTO,
                         nome = "Chat $dip",
-                        dipartimentoId = dip,
+                        idAzienda = aziendaId,
+                        dipartimento = dip,
                         partecipanti = emptyList()
                     )
                 ).await()
+                Log.d("ChatRepository", "Creata chat dipartimento '$dip' per azienda: $aziendaId")
             }
         }
     }
-}
-
-private fun ChatDto.toDomainModel(currentUserId: String): Chat {
-    return Chat(
-        id = id,
-        tipo = when (tipo) {
-            "generale" -> ChatType.GENERALE
-            "dipartimento" -> ChatType.DIPARTIMENTO
-            "privata" -> ChatType.PRIVATA
-            else -> ChatType.GENERALE
-        },
-        nome = nome,
-        dipartimento = dipartimentoId,
-        partecipanti = partecipanti,
-        ultimoMessaggio = ultimoMessaggio,
-        ultimoMessaggioTimestamp = ultimoMessaggioTimestamp?.toDate(),
-        ultimoMessaggioSenderNome = ultimoMessaggioSenderId,
-        messaggiNonLetti = 0 // Calcolato separatamente
-    )
-}
-
-private fun MessageDto.toDomainModel(currentUserId: String): Message {
-    return Message(
-        id = id,
-        senderId = senderId,
-        senderNome = senderNome,
-        content = content,
-        timestamp = timestamp?.toDate() ?: Date(),
-        tipo = when (tipo) {
-            "announcement" -> MessageType.ANNOUNCEMENT
-            "system" -> MessageType.SYSTEM
-            else -> MessageType.TEXT
-        },
-        isLetto = currentUserId in lettoDa,
-        categoria = categoria
-    )
 }

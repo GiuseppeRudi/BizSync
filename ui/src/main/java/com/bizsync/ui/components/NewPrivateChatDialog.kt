@@ -71,10 +71,15 @@ fun NewPrivateChatDialog(
                                 fontWeight = FontWeight.Medium
                             )
                             Text(
-                                text = "${employee.posizioneLavorativa} - ${employee.dipartimento}",
+                                text = if (employee.isManager) {
+                                    "Manager"
+                                } else {
+                                    "${employee.posizioneLavorativa} - ${employee.dipartimento}"
+                                },
                                 fontSize = 12.sp,
                                 color = Color(0xFF7F8C8D)
                             )
+
                         }
                     }
                 }

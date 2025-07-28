@@ -119,9 +119,9 @@ fun MainManagementScreen(
             ) { onNavigateToAbsences() },
 
             ManagementCard(
-                title = "Impostazioni",
-                description = "Profilo e preferenze",
-                icon = Icons.Default.Settings,
+                title = "Profilo",
+                description = "Modifica dati e preferenze",
+                icon = Icons.Default.Person,
                 gradient = BizSyncColors.CardGradients[3]
             ) { onNavigateToEmployeeSettings() },
 

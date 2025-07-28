@@ -14,11 +14,10 @@ fun Turno.generateTurnoHash(): String {
         idAzienda,
         idFirebase,
         idDipendenti.joinToString(","),
-        orarioInizio,
-        orarioFine,
+        orarioInizio.toString(),
+        orarioFine.toString(),
         dipartimento,
         data.toString(),
-        note,
         createdAt.toString(),
         updatedAt.toString()
     ).joinToString("|")

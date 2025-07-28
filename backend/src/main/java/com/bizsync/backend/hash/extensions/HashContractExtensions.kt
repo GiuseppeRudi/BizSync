@@ -9,15 +9,31 @@ import com.bizsync.domain.model.Contratto
 // Hash singolo contratto
 fun Contratto.generateContrattoHash(): String {
     val contrattoString = listOf(
-        id, idDipendente, idAzienda, emailDipendente,
-        posizioneLavorativa, dipartimento, tipoContratto,
-        oreSettimanali, settoreAziendale, dataInizio,
-        ccnlInfo.settore, ccnlInfo.ruolo, ccnlInfo.ferieAnnue.toString(),
-        ccnlInfo.rolAnnui.toString(), ccnlInfo.stipendioAnnualeLordo.toString(),
-        ccnlInfo.malattiaRetribuita.toString()
+        id,
+        idDipendente,
+        idAzienda,
+        emailDipendente,
+        posizioneLavorativa,
+        dipartimento,
+        tipoContratto,
+        oreSettimanali,
+        settoreAziendale,
+        dataInizio,
+        ccnlInfo.settore,
+        ccnlInfo.ruolo,
+        ccnlInfo.ferieAnnue.toString(),
+        ccnlInfo.rolAnnui.toString(),
+        ccnlInfo.stipendioAnnualeLordo.toString(),
+        ccnlInfo.malattiaRetribuita.toString(),
+
+        ferieUsate.toString(),
+        rolUsate.toString(),
+        malattiaUsata.toString()
     ).joinToString("|")
+
     return HashManager.generateHash(contrattoString)
 }
+
 
 
 // Per Cache (Entity -> Domain -> Hash)

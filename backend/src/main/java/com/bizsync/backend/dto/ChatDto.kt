@@ -9,7 +9,8 @@ data class ChatDto(
     val id: String = "",
     val tipo: String = "",
     val nome: String = "",
-    val dipartimentoId: String? = null,
+    val idAzienda: String = "",
+    val dipartimento: String? = null,
     val partecipanti: List<String> = emptyList(),
     @ServerTimestamp
     val creatoIl: Timestamp? = null,

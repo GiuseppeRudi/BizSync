@@ -26,7 +26,11 @@ object ContrattoEntityMapper {
                 rolAnnui = entity.ccnlInfo.rolAnnui,
                 stipendioAnnualeLordo = entity.ccnlInfo.stipendioAnnualeLordo,
                 malattiaRetribuita = entity.ccnlInfo.malattiaRetribuita
-            )
+            ) ,
+            ferieUsate = entity.ferieUsate,
+            rolUsate = entity.rolUsate,
+            malattiaUsata = entity.malattiaUsata
+
         )
     }
 
@@ -49,7 +53,10 @@ object ContrattoEntityMapper {
                 rolAnnui = domain.ccnlInfo.rolAnnui,
                 stipendioAnnualeLordo = domain.ccnlInfo.stipendioAnnualeLordo,
                 malattiaRetribuita = domain.ccnlInfo.malattiaRetribuita
-            )
+            ),
+            ferieUsate = domain.ferieUsate,
+            rolUsate = domain.rolUsate,
+            malattiaUsata = domain.malattiaUsata
         )
     }
 }

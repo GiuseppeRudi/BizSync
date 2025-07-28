@@ -1,15 +1,17 @@
 package com.bizsync.app.screens
 
-
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.Image
 import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.filled.*
 import android.graphics.Bitmap
 import androidx.compose.material.icons.Icons
@@ -21,10 +23,10 @@ import androidx.compose.material3.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -35,279 +37,397 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.set
+import com.bizsync.domain.model.BadgeVirtuale
 
-@OptIn(ExperimentalAnimationApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BadgeVirtualeScreen(modifier: Modifier = Modifier, viewModel: HomeViewModel) {
+fun BadgeVirtualeScreen(
+    modifier: Modifier = Modifier,
+    viewModel: HomeViewModel
+) {
     var showQRCode by remember { mutableStateOf(false) }
     val uiState by viewModel.uiState.collectAsState()
     val badge = uiState.badge
 
     val userVM = LocalUserViewModel.current
     val userState by userVM.uiState.collectAsState()
+
     LaunchedEffect(Unit) {
         viewModel.setBadge(userState)
     }
 
-    if (badge == null) {
-        LoadingIndicator()
-    }
-    else {
-        Box(
-            modifier = modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.primary,
-                            MaterialTheme.colorScheme.primaryContainer
-                        )
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "BADGE",
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 2.sp
                     )
+                },
+                navigationIcon = {
+                    IconButton(
+                        onClick = { viewModel.changeCurrentScreen(HomeScreenRoute.Home) }
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Indietro"
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White
                 )
+            )
+        }
+    ) { paddingValues ->
+        if (badge == null) {
+            LoadingBadgeIndicator()
+        } else {
+            BadgeContent(
+                badge = badge,
+                showQRCode = showQRCode,
+                onToggleQRCode = { showQRCode = !showQRCode },
+                modifier = Modifier.padding(paddingValues)
+            )
+        }
+    }
+}
+
+@Composable
+private fun BadgeContent(
+    badge: BadgeVirtuale,
+    showQRCode: Boolean,
+    onToggleQRCode: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Badge principale
+        BadgeCard(badge = badge)
+
+        // Sezione QR Code
+        QRCodeSection(
+            badge = badge,
+            showQRCode = showQRCode,
+            onToggleQRCode = onToggleQRCode
+        )
+
+        // Info aggiuntive
+        SecurityInfoCard()
+
+        // Data e ora (sempre visibile in fondo)
+        Spacer(modifier = Modifier.height(8.dp))
+        CurrentDateTimeSimple()
+    }
+}
+
+@Composable
+private fun BadgeCard(badge: BadgeVirtuale) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .wrapContentHeight(),
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Back button
-            IconButton(
-                onClick = { viewModel.changeCurrentScreen(HomeScreenRoute.Home) },
+            // Header colorato
+            Box(
                 modifier = Modifier
-                    .padding(16.dp)
-                    .align(Alignment.TopStart)
+                    .fillMaxWidth()
+                    .height(60.dp)
+                    .background(
+                        brush = Brush.horizontalGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.primary,
+                                MaterialTheme.colorScheme.secondary
+                            )
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ),
+                contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Indietro",
-                    tint = Color.White
+                Text(
+                    text = badge.nomeAzienda,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
                 )
             }
 
-            Column(
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Foto profilo
+            AsyncImage(
+                model = badge.fotoUrl,
+                contentDescription = "Foto profilo",
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                    .size(100.dp)
+                    .clip(CircleShape)
+                    .border(
+                        width = 3.dp,
+                        color = MaterialTheme.colorScheme.primary,
+                        shape = CircleShape
+                    ),
+                contentScale = ContentScale.Crop
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Nome
+            Text(
+                text = badge.getFullName(),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Posizione
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                ),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                // Badge Card
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .shadow(
-                            elevation = 16.dp,
-                            shape = RoundedCornerShape(24.dp),
-                            ambientColor = Color.Black.copy(alpha = 0.3f),
-                            spotColor = Color.Black.copy(alpha = 0.3f)
-                        ),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.White
-                    )
-                ) {
-                    Box {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(100.dp)
-                                .background(
-                                    Brush.horizontalGradient(
-                                        colors = listOf(
-                                            MaterialTheme.colorScheme.primary,
-                                            MaterialTheme.colorScheme.secondary
-                                        )
-                                    )
-                                )
+                Text(
+                    text = badge.posizioneLavorativa,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Info in due colonne
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                InfoCardCompact(
+                    label = "MATRICOLA",
+                    value = badge.matricola,
+                    modifier = Modifier.weight(1f)
+                )
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                InfoCardCompact(
+                    label = "DIPENDENTE",
+                    value = "ATTIVO",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun InfoCardCompact(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                letterSpacing = 1.sp
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
+private fun QRCodeSection(
+    badge: BadgeVirtuale,
+    showQRCode: Boolean,
+    onToggleQRCode: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            AnimatedContent(
+                targetState = showQRCode,
+                transitionSpec = {
+                    (fadeIn(animationSpec = tween(300)) +
+                            slideInVertically(animationSpec = tween(300)) { it / 3 }) togetherWith
+                            (fadeOut(animationSpec = tween(200)) +
+                                    slideOutVertically(animationSpec = tween(200)) { -it / 3 })
+                },
+                label = "qr_animation"
+            ) { isQRVisible ->
+                if (isQRVisible) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        QRCodeImage(
+                            data = badge.generateQRData(),
+                            modifier = Modifier.size(180.dp)
                         )
 
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(24.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                        Text(
+                            text = "Scansiona per verificare l'identità",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+
+                        FilledTonalButton(
+                            onClick = onToggleQRCode,
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer
+                            )
                         ) {
-                            // Logo azienda
-                            Spacer(modifier = Modifier.height(40.dp))
-
-                            // Foto profilo con bordo
-                            Box(
-                                modifier = Modifier
-                                    .size(120.dp)
-                                    .clip(CircleShape)
-                                    .border(
-                                        width = 4.dp,
-                                        color = Color.White,
-                                        shape = CircleShape
-                                    )
-                                    .shadow(8.dp, CircleShape)
-                            ) {
-                                AsyncImage(
-                                    model = badge.fotoUrl,
-                                    contentDescription = "Foto profilo",
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(24.dp))
-
-                            // Nome e cognome
-                            Text(
-                                text = badge.getFullName(),
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
                             )
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            // Posizione lavorativa
-                            Text(
-                                text = badge.posizioneLavorativa,
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-
-
-                            Spacer(modifier = Modifier.height(20.dp))
-
-                            HorizontalDivider(
-                                modifier = Modifier.fillMaxWidth(0.8f),
-                                color = MaterialTheme.colorScheme.outlineVariant
-                            )
-
-                            Spacer(modifier = Modifier.height(20.dp))
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceEvenly
-                            ) {
-                                InfoColumn(
-                                    label = "MATRICOLA",
-                                    value = badge.matricola
-                                )
-
-                                VerticalDivider(
-                                    modifier = Modifier.height(50.dp),
-                                    color = MaterialTheme.colorScheme.outlineVariant
-                                )
-
-                                InfoColumn(
-                                    label = "AZIENDA",
-                                    value = badge.nomeAzienda
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(24.dp))
-
-                            // QR Code section
-                            AnimatedContent(
-                                targetState = showQRCode,
-                                transitionSpec = {
-                                    fadeIn() + expandVertically() with
-                                            fadeOut() + shrinkVertically()
-                                }
-                            ) { showQR ->
-                                if (showQR) {
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally
-                                    ) {
-                                        QRCodeImage(
-                                            data = badge.generateQRData(),
-                                            modifier = Modifier.size(150.dp)
-                                        )
-
-                                        Spacer(modifier = Modifier.height(8.dp))
-
-                                        Text(
-                                            text = "Scansiona per verificare",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                } else {
-                                    Button(
-                                        onClick = { showQRCode = true },
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = MaterialTheme.colorScheme.primary
-                                        )
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.QrCode,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text("MOSTRA QR CODE")
-                                    }
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(20.dp))
-
-                            // Data e ora corrente
-                            CurrentDateTime()
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("NASCONDI")
                         }
                     }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Logout note
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f)
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                } else {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Security,
+                            imageVector = Icons.Default.QrCode,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(48.dp),
+                            tint = MaterialTheme.colorScheme.primary
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+
                         Text(
-                            text = "Badge digitale verificato e sicuro",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                            text = "Codice QR di Verifica",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
                         )
+
+                        Text(
+                            text = "Mostra il QR code per verificare la tua identità",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+
+                        Button(
+                            onClick = onToggleQRCode,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.QrCode,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("MOSTRA QR CODE")
+                        }
                     }
                 }
             }
         }
     }
-
 }
 
 @Composable
-fun InfoColumn(
-    label: String,
-    value: String
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally
+private fun SecurityInfoCard() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f)
+        ),
+        shape = RoundedCornerShape(12.dp)
     ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            letterSpacing = 1.sp
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = value,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Security,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                modifier = Modifier.size(24.dp)
+            )
+
+            Column {
+                Text(
+                    text = "Badge Digitale Verificato",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+                Text(
+                    text = "Sicuro e autenticato dal sistema aziendale",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            }
+        }
     }
 }
 
 @Composable
-fun CurrentDateTime() {
+private fun CurrentDateTimeSimple() {
     var currentTime by remember { mutableStateOf(LocalDateTime.now()) }
 
     LaunchedEffect(Unit) {
@@ -317,38 +437,77 @@ fun CurrentDateTime() {
         }
     }
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        shape = RoundedCornerShape(12.dp)
     ) {
-        Text(
-            text = currentTime.format(DateTimeFormatter.ofPattern("dd MMMM yyyy")),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = currentTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
-        )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = currentTime.format(DateTimeFormatter.ofPattern("dd MMMM yyyy")),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = currentTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
     }
 }
 
+@Composable
+private fun LoadingBadgeIndicator() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(48.dp)
+            )
+            Text(
+                text = "Caricamento badge...",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
 
 @Composable
 fun QRCodeImage(data: String, modifier: Modifier = Modifier) {
-    val context = LocalContext.current
     val qrBitmap by remember(data) {
         mutableStateOf(generateQRCodeBitmap(data).asImageBitmap())
     }
 
-    Image(
-        bitmap = qrBitmap,
-        contentDescription = "QR Code",
-        modifier = modifier
-    )
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Image(
+            bitmap = qrBitmap,
+            contentDescription = "QR Code",
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        )
+    }
 }
-
 
 fun generateQRCodeBitmap(text: String, size: Int = 512): Bitmap {
     val bitMatrix: BitMatrix = MultiFormatWriter().encode(
@@ -369,5 +528,3 @@ fun generateQRCodeBitmap(text: String, size: Int = 512): Bitmap {
 
     return bitmap
 }
-
-

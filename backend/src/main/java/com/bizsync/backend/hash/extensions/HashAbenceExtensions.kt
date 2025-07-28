@@ -11,6 +11,7 @@ fun Absence.generateAbsenceHash(): String {
     val absenceString = listOf(
         id,
         idUser,
+        submittedName,
         idAzienda,
         type.name,
         status.name,

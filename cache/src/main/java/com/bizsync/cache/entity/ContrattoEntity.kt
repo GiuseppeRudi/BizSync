@@ -18,6 +18,10 @@ data class ContrattoEntity(
     val settoreAziendale: String = "",
     val dataInizio: String = "",
 
-    @Embedded val ccnlInfo: CcnlnfoEntity = CcnlnfoEntity()
+    @Embedded val ccnlInfo: CcnlnfoEntity = CcnlnfoEntity(),
+
+    val ferieUsate: Int = 0,             // in giorni
+    val rolUsate: Int = 0,               // in ore
+    val malattiaUsata: Int = 0           // in giorni
 )
 

@@ -8,6 +8,7 @@ data class Chat(
     val id: String,
     val tipo: ChatType,
     val nome: String,
+    val idAzienda: String,
     val dipartimento: String? = null,
     val partecipanti: List<String>,
     val ultimoMessaggio: String? = null,

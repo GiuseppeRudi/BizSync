@@ -18,7 +18,12 @@ object UserEntityMapper {
             idAzienda = idAzienda,
             isManager = isManager,
             posizioneLavorativa = posizioneLavorativa,
-            dipartimento = dipartimento
+            dipartimento = dipartimento,
+            numeroTelefono = numeroTelefono,
+            indirizzo = indirizzo,
+            codiceFiscale = codiceFiscale,
+            dataNascita = dataNascita,
+            luogoNascita = luogoNascita
         )
     }
 
@@ -32,7 +37,12 @@ object UserEntityMapper {
             idAzienda = idAzienda,
             isManager = isManager,
             posizioneLavorativa = posizioneLavorativa,
-            dipartimento = dipartimento
+            dipartimento = dipartimento,
+            numeroTelefono = numeroTelefono,
+            indirizzo = indirizzo,
+            codiceFiscale = codiceFiscale,
+            dataNascita = dataNascita,
+            luogoNascita = luogoNascita
         )
     }
 }

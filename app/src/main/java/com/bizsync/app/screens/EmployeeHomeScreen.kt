@@ -1037,74 +1037,82 @@ fun ProssimoTurnoCard(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .width(IntrinsicSize.Max)
+                        .height(IntrinsicSize.Min), // o un'altezza fissa, ad esempio 80.dp
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f)
                     )
                 ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize(),
+                        contentAlignment = Alignment.Center // centra tutto il contenuto nella Card
                     ) {
-                        // Indicatore entrata
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceEvenly,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = if (prossimoTurno.haTimbratoEntrata)
-                                    Icons.Default.CheckCircle
-                                else Icons.Default.RadioButtonUnchecked,
-                                contentDescription = "Entrata",
-                                modifier = Modifier.size(20.dp),
-                                tint = if (prossimoTurno.haTimbratoEntrata)
-                                    Color.Green
-                                else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = "Entrata",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = if (prossimoTurno.haTimbratoEntrata)
-                                    Color.Green
-                                else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-
-                        // Linea di collegamento
-                        Box(
-                            modifier = Modifier
-                                .height(2.dp)
-                                .width(40.dp)
-                                .background(
-                                    if (prossimoTurno.haTimbratoEntrata)
+                            // Indicatore entrata
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(
+                                    imageVector = if (prossimoTurno.haTimbratoEntrata)
+                                        Icons.Default.CheckCircle
+                                    else Icons.Default.RadioButtonUnchecked,
+                                    contentDescription = "Entrata",
+                                    modifier = Modifier.size(20.dp),
+                                    tint = if (prossimoTurno.haTimbratoEntrata)
                                         Color.Green
-                                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    RoundedCornerShape(1.dp)
+                                    else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
-                        )
+                                Text(
+                                    text = "Entrata",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (prossimoTurno.haTimbratoEntrata)
+                                        Color.Green
+                                    else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
 
-                        // Indicatore uscita
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Icon(
-                                imageVector = if (prossimoTurno.haTimbratoUscita)
-                                    Icons.Default.CheckCircle
-                                else Icons.Default.RadioButtonUnchecked,
-                                contentDescription = "Uscita",
-                                modifier = Modifier.size(20.dp),
-                                tint = if (prossimoTurno.haTimbratoUscita)
-                                    Color.Green
-                                else MaterialTheme.colorScheme.onSurfaceVariant
+                            // Linea di collegamento
+                            Box(
+                                modifier = Modifier
+                                    .height(2.dp)
+                                    .width(40.dp)
+                                    .background(
+                                        if (prossimoTurno.haTimbratoEntrata)
+                                            Color.Green
+                                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        RoundedCornerShape(1.dp)
+                                    )
                             )
-                            Text(
-                                text = "Uscita",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = if (prossimoTurno.haTimbratoUscita)
-                                    Color.Green
-                                else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+
+                            // Indicatore uscita
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(
+                                    imageVector = if (prossimoTurno.haTimbratoUscita)
+                                        Icons.Default.CheckCircle
+                                    else Icons.Default.RadioButtonUnchecked,
+                                    contentDescription = "Uscita",
+                                    modifier = Modifier.size(20.dp),
+                                    tint = if (prossimoTurno.haTimbratoUscita)
+                                        Color.Green
+                                    else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = "Uscita",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (prossimoTurno.haTimbratoUscita)
+                                        Color.Green
+                                    else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
                 }
@@ -1227,26 +1235,36 @@ fun ProssimoTurnoCard(
             } else {
                 Spacer(modifier = Modifier.height(20.dp))
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(80.dp), // o altra altezza a piacere
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
                     )
                 ) {
-                    Text(
-                        text = when {
-                            prossimoTurno.haTimbratoEntrata && prossimoTurno.haTimbratoUscita ->
-                                "✅ Turno completato"
-                            (prossimoTurno.tempoMancante?.toMinutes() ?: 0) > 30 ->
-                                "Timbratura non ancora disponibile"
-                            else -> "Finestra di timbratura non attiva"
-                        },
-                        modifier = Modifier.padding(16.dp),
-                        style = MaterialTheme.typography.bodyMedium,
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = when {
+                                prossimoTurno.haTimbratoEntrata && prossimoTurno.haTimbratoUscita ->
+                                    "✅ Turno completato"
+
+                                (prossimoTurno.tempoMancante?.toMinutes() ?: 0) > 30 ->
+                                    "Timbratura non ancora disponibile"
+
+                                else -> "Finestra di timbratura non attiva"
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                    }
                 }
+
             }
         }
     }

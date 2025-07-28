@@ -10,7 +10,23 @@ import com.bizsync.cache.mapper.UserEntityMapper.toDomain
 
 // FUNZIONE HASH SEMPLICE PER DOMAIN USER
 fun User.generateUserHash(): String {
-    val userString = "$uid|$email|$nome|$cognome|$photourl|$idAzienda|$isManager|$posizioneLavorativa|$dipartimento"
+    val userString = listOf(
+        uid,
+        email,
+        nome,
+        cognome,
+        photourl,
+        idAzienda,
+        isManager.toString(),
+        posizioneLavorativa,
+        dipartimento,
+        numeroTelefono,
+        indirizzo,
+        codiceFiscale,
+        dataNascita,
+        luogoNascita
+    ).joinToString("|")
+
     return HashManager.generateHash(userString)
 }
 

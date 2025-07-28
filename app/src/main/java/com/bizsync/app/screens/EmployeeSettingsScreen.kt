@@ -121,7 +121,7 @@ fun EmployeeSettingsScreen(
                 title = {
                     Column {
                         Text(
-                            text = "Impostazioni Profilo",
+                            text = "Profilo",
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp
                         )
