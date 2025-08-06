@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
@@ -24,11 +25,8 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-
-    // stato di login
     private val currentUserLogin = mutableStateOf<Boolean?>(null)
-    private val loginSessionKey = mutableStateOf(0)
-
+    private val loginSessionKey = mutableIntStateOf(0)
 
     // launcher per FirebaseUI
     private val signInLauncher = registerForActivityResult(
@@ -52,21 +50,7 @@ class MainActivity : ComponentActivity() {
                 DebugAppCheckProviderFactory.getInstance()
             )
 
-
-
-
-
-//        PER FARE DI DEPLOY
-//        FirebaseAppCheck.getInstance()
-//            .installAppCheckProviderFactory(
-//                PlayIntegrityAppCheckProviderFactory.getInstance()
-//            )
-
-
-
         setContent {
-            val navController = rememberNavController()
-            val userViewModel: UserViewModel = hiltViewModel()
             val firebaseUser = FirebaseAuth.getInstance().currentUser
 
             if (firebaseUser != null) {
@@ -76,10 +60,14 @@ class MainActivity : ComponentActivity() {
             }
 
             currentUserLogin.value?.let {
-                androidx.compose.runtime.key(loginSessionKey.value) {
+                androidx.compose.runtime.key(loginSessionKey.intValue) {
                     if (!it) {
                         LoginScreen(onLogin = { launchLoginFlow() })
                     } else {
+                        // Crea navController e userViewModel dentro il key() per resettarli al logout
+                        val navController = rememberNavController()
+                        val userViewModel: UserViewModel = hiltViewModel()
+
                         CompositionLocalProvider(
                             LocalNavController provides navController,
                             LocalUserViewModel provides userViewModel
@@ -93,7 +81,6 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-
     }
 
     /** Avvia FirebaseUI con Smart Lock + auto-sign-in */
@@ -113,10 +100,9 @@ class MainActivity : ComponentActivity() {
             .signOut(this)
             .addOnCompleteListener {
                 currentUserLogin.value = false
-                loginSessionKey.value++ // forza il reset della UI
+                loginSessionKey.intValue++ // forza il reset della UI e dei CompositionLocal
             }
     }
-
 
     /** Helper per toast */
     private fun Context.showToast(msg: String) {

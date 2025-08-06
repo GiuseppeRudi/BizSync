@@ -478,7 +478,7 @@ fun AbsencePeriodSelector(
     absenceVM: AbsenceViewModel,
     timeType: AbsenceTimeType,
     isFlexibleModeFullDay: Boolean,
-    minimumDate: LocalDate // 🆕 Nuovo parametro
+    minimumDate: LocalDate
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
