@@ -12,6 +12,7 @@ data class PianificaState(
     // Stati di caricamento e errori
     val isLoading: Boolean = false,
     val errorMsg: String? = null,
+    val loadingWeekly : Boolean = true,
 
     val hasUnsavedChanges: Boolean = false,
     val isSyncing: Boolean = false,

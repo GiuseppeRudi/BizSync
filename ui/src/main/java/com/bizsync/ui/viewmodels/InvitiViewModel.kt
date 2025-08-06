@@ -1,17 +1,18 @@
 package com.bizsync.ui.viewmodels
 
-import com.bizsync.domain.model.Contratto
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bizsync.backend.repository.ContractRepository
-import com.bizsync.backend.repository.InvitoRepository
 import com.bizsync.domain.constants.enumClass.StatusInvite
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.constants.sealedClass.Resource.Success
+import com.bizsync.domain.model.Contratto
+import com.bizsync.domain.usecases.GetInvitesByEmailUseCase
+import com.bizsync.domain.usecases.SaveContractUseCase
+import com.bizsync.domain.usecases.UpdateInvitoUseCase
+import com.bizsync.ui.components.DialogStatusType
 import com.bizsync.ui.mapper.toDomain
 import com.bizsync.ui.mapper.toUiStateList
-import com.bizsync.ui.components.DialogStatusType
 import com.bizsync.ui.model.InvitiState
 import com.bizsync.ui.model.InvitoUi
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,8 +26,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class InvitiViewModel @Inject constructor(
-    private val invitoRepository: InvitoRepository,
-    private val contractRepository: ContractRepository
+    private val getInvitesByEmailUseCase: GetInvitesByEmailUseCase,
+    private val updateInvitoUseCase: UpdateInvitoUseCase,
+    private val saveContractUseCase: SaveContractUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(InvitiState())
@@ -39,7 +41,7 @@ class InvitiViewModel @Inject constructor(
         Log.d("INVITI_DEBUG", "Fetching invites for: $email")
 
         try {
-            val result = invitoRepository.getInvitesByEmail(email)
+            val result = getInvitesByEmailUseCase(email)
             Log.d("INVITI_DEBUG", "Result: $result")
 
             when (result) {
@@ -108,7 +110,7 @@ class InvitiViewModel @Inject constructor(
             val oggi = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
             val newInvite = invite.copy(acceptedDate = oggi, stato = StatusInvite.ACCEPTED)
 
-            val result = invitoRepository.updateInvito(newInvite.toDomain())
+            val result = updateInvitoUseCase(newInvite.toDomain())
 
             Log.d("INVITI_DEBUG", "Update invite result: $result")
 
@@ -129,7 +131,7 @@ class InvitiViewModel @Inject constructor(
                     )
 
                     // Salva contratto
-                    val contrattoResult = contractRepository.saveContract(contratto)
+                    val contrattoResult = saveContractUseCase(contratto)
 
                     Log.d("INVITI_DEBUG", "Contract save result: $contrattoResult")
 
@@ -206,7 +208,7 @@ class InvitiViewModel @Inject constructor(
 
         try {
             val newInvite = invite.copy(stato = StatusInvite.REJECTED)
-            val result = invitoRepository.updateInvito(newInvite.toDomain())
+            val result = updateInvitoUseCase(newInvite.toDomain())
 
             when (result) {
                 is Success -> {

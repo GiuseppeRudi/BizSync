@@ -3,65 +3,53 @@ package com.bizsync.ui.viewmodels
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bizsync.backend.orchestrator.AbsenceOrchestrator
-import com.bizsync.backend.orchestrator.ContrattoOrchestrator
-import com.bizsync.backend.orchestrator.TurnoOrchestrator
-import com.bizsync.backend.orchestrator.UserOrchestrator
 import com.bizsync.domain.constants.sealedClass.Resource
-import com.bizsync.domain.model.Contratto
-import com.bizsync.domain.model.Turno
-import com.bizsync.domain.model.User
+import com.bizsync.domain.usecases.ClearObsoleteCacheUseCase
+import com.bizsync.domain.usecases.GetAbsencesUseCase
+import com.bizsync.domain.usecases.GetContrattiUseCase
+import com.bizsync.domain.usecases.GetTurniUseCase
+import com.bizsync.domain.usecases.GetUsersUseCase
 import com.bizsync.ui.components.DialogStatusType
 import com.bizsync.ui.mapper.toUi
-import com.bizsync.ui.model.AbsenceUi
+import com.bizsync.ui.model.SplashState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.DayOfWeek
 import java.time.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
 class SplashViewModel @Inject constructor(
-    private val userOrchestrator: UserOrchestrator,
-    private val contrattoOrchestrator: ContrattoOrchestrator,
-    private val absenceOrchestrator: AbsenceOrchestrator,
-    private val turnoOrchestrator: TurnoOrchestrator
+    private val getUsersUseCase: GetUsersUseCase,
+    private val getContrattiUseCase: GetContrattiUseCase,
+    private val getAbsencesUseCase: GetAbsencesUseCase,
+    private val getTurniUseCase: GetTurniUseCase,
+    private val clearObsoleteCacheUseCase: ClearObsoleteCacheUseCase
 ) : ViewModel() {
 
-    data class SplashState(
-        val isLoading: Boolean = false,
-        val users: List<User> = emptyList(),
-        val contratti: List<Contratto> = emptyList(),
-        val absence : List<AbsenceUi> = emptyList(),
-        val turni : Map<LocalDate,List<Turno>> = emptyMap(),
-        val errorMsg: String? = null,
-        val statusType: DialogStatusType = DialogStatusType.ERROR,
-        val syncInProgress: Boolean = false,
-        val lastSyncTime: Long? = null
-    )
+
 
     private val _uiState = MutableStateFlow(SplashState())
     val uiState: StateFlow<SplashState> = _uiState
 
-
     fun clearObsoleteCacheIfNeeded(today: LocalDate = LocalDate.now()) {
-        if (today.dayOfWeek == DayOfWeek.MONDAY) {
-            viewModelScope.launch {
-                try {
-                    turnoOrchestrator.deleteOldCachedData(today)
-                    absenceOrchestrator.deleteOldCachedData(today)
-                    Log.d("CACHE_CLEANER", "✅ Pulizia completata")
-                } catch (e: Exception) {
-                    Log.e("CACHE_CLEANER", "❌ Errore nella pulizia: ${e.message}")
-                }
+        viewModelScope.launch {
+            try {
+                clearObsoleteCacheUseCase(today)
+                Log.d("CACHE_CLEANER", "✅ Pulizia completata")
+            } catch (e: Exception) {
+                Log.e("CACHE_CLEANER", "❌ Errore nella pulizia: ${e.message}")
             }
         }
     }
 
-    fun getAllTurniByIdAzienda(idAzienda: String, idEmployee : String? = null,forceRefresh: Boolean = false) {
+    fun getAllTurniByIdAzienda(
+        idAzienda: String,
+        idEmployee: String? = null,
+        forceRefresh: Boolean = false
+    ) {
         if (idAzienda.isEmpty()) {
             setError("ID Azienda non valido")
             return
@@ -71,7 +59,7 @@ class SplashViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, syncInProgress = true) }
 
             try {
-                when (val result = turnoOrchestrator.getTurni(idAzienda,idEmployee, forceRefresh)) {
+                when (val result = getTurniUseCase(idAzienda, idEmployee, forceRefresh)) {
                     is Resource.Success -> {
                         val turniPerData = result.data.groupBy { it.data }
 
@@ -131,8 +119,11 @@ class SplashViewModel @Inject constructor(
         }
     }
 
-
-    fun getAllAbsencesByIdAzienda(idAzienda: String, idEmployee : String? = null , forceRefresh: Boolean = false) {
+    fun getAllAbsencesByIdAzienda(
+        idAzienda: String,
+        idEmployee: String? = null,
+        forceRefresh: Boolean = false
+    ) {
         if (idAzienda.isEmpty()) {
             setError("ID Azienda non valido")
             return
@@ -142,9 +133,9 @@ class SplashViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, syncInProgress = true) }
 
             try {
-                when (val result = absenceOrchestrator.getAbsences(idAzienda = idAzienda, idEmployee, forceRefresh = forceRefresh)) {
+                when (val result = getAbsencesUseCase(idAzienda, idEmployee, forceRefresh)) {
                     is Resource.Success -> {
-                        val absenceUiList = result.data.map { it.toUi() } // Converti da Domain a UI
+                        val absenceUiList = result.data.map { it.toUi() }
 
                         _uiState.update { currentState ->
                             currentState.copy(
@@ -205,8 +196,6 @@ class SplashViewModel @Inject constructor(
         }
     }
 
-
-
     fun getAllContrattiByIdAzienda(idAzienda: String, forceRefresh: Boolean = false) {
         if (idAzienda.isEmpty()) {
             setError("ID Azienda non valido")
@@ -217,7 +206,7 @@ class SplashViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, syncInProgress = true) }
 
             try {
-                when (val result = contrattoOrchestrator.getContratti(idAzienda, forceRefresh)) {
+                when (val result = getContrattiUseCase(idAzienda, forceRefresh)) {
                     is Resource.Success -> {
                         _uiState.update { currentState ->
                             currentState.copy(
@@ -271,13 +260,16 @@ class SplashViewModel @Inject constructor(
                     )
                 }
 
-                println("🚨 Eccezione in getAllContrattiByIdAzienda: ${e.message}")
+                Log.e("CONTRATTI_DEBUG", "🚨 Eccezione in getAllContrattiByIdAzienda: ${e.message}")
             }
         }
     }
 
-
-    fun getAllUserByIdAgency(idAzienda: String, idUser : String, forceRefresh: Boolean = false) {
+    fun getAllUserByIdAgency(
+        idAzienda: String,
+        idUser: String,
+        forceRefresh: Boolean = false
+    ) {
         if (idAzienda.isEmpty()) {
             setError("ID Azienda non valido")
             return
@@ -287,7 +279,7 @@ class SplashViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, syncInProgress = true) }
 
             try {
-                when (val result = userOrchestrator.getDipendenti(idAzienda, idUser,forceRefresh)) {
+                when (val result = getUsersUseCase(idAzienda, idUser, forceRefresh)) {
                     is Resource.Success -> {
                         _uiState.update { currentState ->
                             currentState.copy(
@@ -319,7 +311,6 @@ class SplashViewModel @Inject constructor(
                     }
 
                     is Resource.Empty -> {
-                        // 📭 STEP 4: Nessun dipendente trovato
                         _uiState.update { currentState ->
                             currentState.copy(
                                 isLoading = false,
@@ -329,12 +320,10 @@ class SplashViewModel @Inject constructor(
                                 lastSyncTime = System.currentTimeMillis()
                             )
                         }
-
                     }
                 }
 
             } catch (e: Exception) {
-                // 🚨 STEP 5: Gestisci eccezioni impreviste
                 _uiState.update { currentState ->
                     currentState.copy(
                         isLoading = false,
@@ -344,7 +333,7 @@ class SplashViewModel @Inject constructor(
                     )
                 }
 
-                println("🚨 Eccezione in getAllUserByIdAgency: ${e.message}")
+                Log.e("DIPENDENTI_DEBUG", "🚨 Eccezione in getAllUserByIdAgency: ${e.message}")
             }
         }
     }
@@ -366,6 +355,4 @@ class SplashViewModel @Inject constructor(
     fun clearError() {
         _uiState.update { it.copy(errorMsg = null) }
     }
-
-
 }

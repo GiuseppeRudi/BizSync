@@ -6,8 +6,8 @@ import android.location.Geocoder
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bizsync.backend.repository.AziendaRepository
 import com.bizsync.domain.constants.sealedClass.Resource
+import com.bizsync.domain.usecases.CreateAziendaUseCase
 import com.bizsync.ui.mapper.toDomain
 import com.bizsync.ui.model.AddAziendaState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,13 +18,12 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.IOException
-import java.time.DayOfWeek
 import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
 class AddAziendaViewModel @Inject constructor(
-    private val aziendaRepository: AziendaRepository
+    private val createAziendaUseCase: CreateAziendaUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AddAziendaState())
@@ -32,36 +31,45 @@ class AddAziendaViewModel @Inject constructor(
 
     fun aggiungiAzienda() {
         viewModelScope.launch(Dispatchers.IO) {
-            Log.d("ADD_AZIENDA_DEBUG", "=== INIZIO CREAZIONE AZIENDA ===")
+            try {
+                Log.d("ADD_AZIENDA_DEBUG", "=== INIZIO CREAZIONE AZIENDA ===")
 
-            val azienda = _uiState.value.azienda
-            val indirizzoSelezionato = _uiState.value.indirizzoSelezionato
+                val azienda = _uiState.value.azienda
+                val indirizzoSelezionato = _uiState.value.indirizzoSelezionato
 
-            Log.d("ADD_AZIENDA_DEBUG", "Dati azienda:")
-            Log.d("ADD_AZIENDA_DEBUG", "  Nome: ${azienda.nome}")
-            Log.d("ADD_AZIENDA_DEBUG", "  Latitudine: ${azienda.latitudine}")
-            Log.d("ADD_AZIENDA_DEBUG", "  Longitudine: ${azienda.longitudine}")
-            Log.d("ADD_AZIENDA_DEBUG", "  Indirizzo selezionato: ${indirizzoSelezionato?.getAddressLine(0)}")
+                Log.d("ADD_AZIENDA_DEBUG", "Dati azienda:")
+                Log.d("ADD_AZIENDA_DEBUG", "  Nome: ${azienda.nome}")
+                Log.d("ADD_AZIENDA_DEBUG", "  Latitudine: ${azienda.latitudine}")
+                Log.d("ADD_AZIENDA_DEBUG", "  Longitudine: ${azienda.longitudine}")
+                Log.d("ADD_AZIENDA_DEBUG", "  Indirizzo selezionato: ${indirizzoSelezionato?.getAddressLine(0)}")
 
-            val result = aziendaRepository.creaAzienda(azienda.toDomain())
+                // ✅ Usa Use Case invece del repository diretto
+                when (val result = createAziendaUseCase(azienda.toDomain())) {
+                    is Resource.Success -> {
+                        Log.d("ADD_AZIENDA_DEBUG", "✅ Azienda creata con successo. ID: ${result.data}")
+                        _uiState.update {
+                            it.copy(
+                                azienda = it.azienda.copy(idAzienda = result.data),
+                                isAgencyAdded = true
+                            )
+                        }
+                    }
 
-            when (result) {
-                is Resource.Success -> {
-                    Log.d("ADD_AZIENDA_DEBUG", "Azienda creata con successo. ID: ${result.data}")
-                    _uiState.update {
-                        it.copy(
-                            azienda = it.azienda.copy(idAzienda = result.data),
-                            isAgencyAdded = true
-                        )
+                    is Resource.Error -> {
+                        Log.e("ADD_AZIENDA_DEBUG", "❌ Errore creazione azienda: ${result.message}")
+                        _uiState.update { it.copy(resultMsg = result.message) }
+                    }
+
+                    is Resource.Empty -> {
+                        Log.e("ADD_AZIENDA_DEBUG", "⚠️ Risultato vuoto")
+                        _uiState.update { it.copy(resultMsg = "Errore nella creazione dell'azienda") }
                     }
                 }
-                is Resource.Error -> {
-                    Log.e("ADD_AZIENDA_DEBUG", " Errore creazione azienda: ${result.message}")
-                    _uiState.update { it.copy(resultMsg = result.message) }
-                }
-                else -> {
-                    Log.e("ADD_AZIENDA_DEBUG", " Stato loading inaspettato")
-                    _uiState.update { it.copy(resultMsg = "Errore nella creazione dell'azienda") }
+
+            } catch (e: Exception) {
+                Log.e("ADD_AZIENDA_DEBUG", "🚨 Eccezione imprevista: ${e.message}")
+                _uiState.update {
+                    it.copy(resultMsg = "Errore imprevisto: ${e.message}")
                 }
             }
         }
@@ -88,7 +96,6 @@ class AddAziendaViewModel @Inject constructor(
             azienda = _uiState.value.azienda.copy(nome = newValue)
         )
     }
-
 
     fun onIndirizzoChanged(newValue: String) {
         _uiState.update {

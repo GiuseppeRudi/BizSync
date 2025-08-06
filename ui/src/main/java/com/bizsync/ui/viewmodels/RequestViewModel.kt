@@ -1,189 +1,64 @@
 package com.bizsync.ui.viewmodels
 
-import android.util.Log
-import com.bizsync.backend.repository.AbsenceRepository
 import com.bizsync.ui.model.RequestState
-
-
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bizsync.backend.orchestrator.ContrattoOrchestrator
-import com.bizsync.domain.constants.enumClass.AbsenceStatus
-import com.bizsync.domain.constants.enumClass.AbsenceType
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.Contratto
+import com.bizsync.domain.model.RequestDecisionResult
+import com.bizsync.domain.usecases.FetchAllContractsUseCase
+import com.bizsync.domain.usecases.FetchAllRequestsUseCase
+import com.bizsync.domain.usecases.HandleRequestDecisionUseCase
 import com.bizsync.ui.mapper.toDomain
 import com.bizsync.ui.mapper.toUi
-
 import com.bizsync.ui.components.DialogStatusType
-import com.bizsync.ui.mapper.toUiData
 import com.bizsync.ui.model.AbsenceUi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.LocalDate
 import javax.inject.Inject
-
+import com.bizsync.domain.model.RequestsData
 @HiltViewModel
 class RequestViewModel @Inject constructor(
-    private val absenceRepository: AbsenceRepository,
-    private val contractOrchestrator: ContrattoOrchestrator
+    private val fetchAllRequestsUseCase: FetchAllRequestsUseCase,
+    private val fetchAllContractsUseCase: FetchAllContractsUseCase,
+    private val handleRequestDecisionUseCase: HandleRequestDecisionUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RequestState())
     val uiState: StateFlow<RequestState> = _uiState
 
-
-    fun fetchAllContract(idAzienda: String)
-    {
+    fun fetchAllContract(idAzienda: String) {
         viewModelScope.launch {
-           when ( val result = contractOrchestrator.getContratti(idAzienda)){
-               is Resource.Success -> {
-                   _uiState.update {
-                       it.copy(
-                           contracts = result.data
-                       )
-                   }
-               }
-
-               Resource.Empty -> TODO()
-               is Resource.Error -> TODO()
-           }
-        }
-
-    }
-    fun fetchAllRequests(idAzienda: String) {
-        viewModelScope.launch {
-            when (val result = absenceRepository.getAllAbsencesByAzienda(idAzienda)) {
-                is Resource.Success -> {
-                    val allAbsences = result.data.map { it.toUi() }
-                    val pending = allAbsences.filter {
-                        it.statusUi == AbsenceStatus.PENDING.toUiData()
-                    }
-                    val history = allAbsences.filter {
-                        it.statusUi != AbsenceStatus.PENDING.toUiData()
-                    }
-                    _uiState.update {
-                        it.copy(
-                            pendingRequests = pending,
-                            historyRequests = history,
-                            hasLoadedAbsences = true,
-                            resultMsg = null,
-                            statusMsg = DialogStatusType.SUCCESS
-                        )
-                    }
-                }
-                is Resource.Error -> {
-                    _uiState.update {
-                        it.copy(
-                            hasLoadedAbsences = true,
-                            resultMsg = result.message ?: "Errore nel caricamento delle richieste",
-                            statusMsg = DialogStatusType.ERROR
-                        )
-                    }
-                }
-                is Resource.Empty -> {
-                    _uiState.update {
-                        it.copy(
-                            pendingRequests = emptyList(),
-                            historyRequests = emptyList(),
-                            hasLoadedAbsences = true,
-                            resultMsg = "Nessuna richiesta trovata",
-                            statusMsg = DialogStatusType.ERROR
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-
-
-    private fun updateUIAfterDecision(updatedRequest: AbsenceUi) {
-        _uiState.update { currentState ->
-            val newPending = currentState.pendingRequests.filter { r -> r.id != updatedRequest.id }
-            val newHistory = currentState.historyRequests + updatedRequest
-
-            currentState.copy(
-                pendingRequests = newPending,
-                historyRequests = newHistory,
-                resultMsg = if (updatedRequest.statusUi.status == AbsenceStatus.APPROVED) {
-                    "Richiesta approvata con successo"
-                } else {
-                    "Richiesta rifiutata"
-                },
-                statusMsg = DialogStatusType.SUCCESS
-            )
-        }
-    }
-
-    fun handleRequestDecision(
-        approver: String,
-        request: AbsenceUi,
-        isApproved: Boolean,
-        comment: String,
-        employeeContract: Contratto?
-    ) {
-        viewModelScope.launch {
-            val updatedRequest = request.copy(
-                statusUi = if (isApproved) AbsenceStatus.APPROVED.toUiData() else AbsenceStatus.REJECTED.toUiData(),
-                comments = comment,
-                approver = approver,
-                approvedDate = LocalDate.now()
-            )
-
             try {
-                // 1. Aggiorna la richiesta di assenza
-                when (val result = absenceRepository.updateAbsence(updatedRequest.toDomain())) {
+                // ✅ Usa Use Case invece di orchestrator diretto
+                when (val result = fetchAllContractsUseCase(idAzienda)) {
                     is Resource.Success -> {
-                        // 2. Se approvata e ha contratto, aggiorna il contratto
-                        if (isApproved && employeeContract != null) {
-                            val updatedContract = updateContractForApprovedAbsence(employeeContract, updatedRequest)
-
-                            if (updatedContract != employeeContract) {
-                                // 3. SEMPLICISSIMO: Update Firebase + Force Sync
-                                when (val contractResult = contractOrchestrator.updateContratto(updatedContract)) {
-                                    is Resource.Success -> {
-                                        Log.d("REQUEST_DECISION", " Contratto aggiornato e sincronizzato")
-
-                                        // 4. Aggiorna UI con i nuovi dati
-                                        updateUIAfterSuccessfulApproval(updatedRequest, updatedContract)
-                                    }
-                                    is Resource.Error -> {
-                                        Log.e("REQUEST_DECISION", " Errore aggiornamento contratto: ${contractResult.message}")
-
-                                        // Anche se il contratto fallisce, la richiesta è stata approvata
-                                        _uiState.update {
-                                            it.copy(
-                                                resultMsg = "Richiesta approvata ma errore aggiornamento contratto: ${contractResult.message}",
-                                                statusMsg = DialogStatusType.ERROR
-                                            )
-                                        }
-                                    }
-
-                                    Resource.Empty -> TODO()
-                                }
-                            } else {
-                                // Nessun aggiornamento contratto necessario (es. PERSONAL_LEAVE)
-                                updateUIAfterDecision(updatedRequest)
-                            }
-                        } else {
-                            // Richiesta rifiutata o senza contratto
-                            updateUIAfterDecision(updatedRequest)
+                        _uiState.update {
+                            it.copy(contracts = result.data)
                         }
                     }
+
                     is Resource.Error -> {
                         _uiState.update {
                             it.copy(
-                                resultMsg = result.message ?: "Errore durante l'aggiornamento",
+                                resultMsg = result.message ?: "Errore nel caricamento contratti",
                                 statusMsg = DialogStatusType.ERROR
                             )
                         }
                     }
 
-                    Resource.Empty -> TODO()
+                    is Resource.Empty -> {
+                        _uiState.update {
+                            it.copy(
+                                contracts = emptyList(),
+                                resultMsg = "Nessun contratto trovato",
+                                statusMsg = DialogStatusType.SUCCESS
+                            )
+                        }
+                    }
                 }
             } catch (e: Exception) {
                 _uiState.update {
@@ -196,56 +71,163 @@ class RequestViewModel @Inject constructor(
         }
     }
 
-    // Funzione helper per aggiornare UI dopo successo completo
-    private fun updateUIAfterSuccessfulApproval(updatedRequest: AbsenceUi, updatedContract: Contratto) {
-        _uiState.update { currentState ->
-            // Aggiorna la lista dei contratti con quello nuovo
-            val updatedContracts = currentState.contracts.map { contract ->
-                if (contract.id == updatedContract.id) updatedContract else contract
-            }
+    fun fetchAllRequests(idAzienda: String) {
+        viewModelScope.launch {
+            try {
+                // ✅ Usa Use Case invece del repository diretto
+                when (val result = fetchAllRequestsUseCase(idAzienda)) {
+                    is Resource.Success -> {
+                        val data  : RequestsData = result.data
 
-            val newPending = currentState.pendingRequests.filter { r -> r.id != updatedRequest.id }
-            val newHistory = currentState.historyRequests + updatedRequest
+                        _uiState.update {
+                            it.copy(
+                                pendingRequests = data.pendingRequests.map { absence -> absence.toUi() },
+                                historyRequests = data.historyRequests.map { absence -> absence.toUi() },
+                                hasLoadedAbsences = true,
+                                resultMsg = null,
+                                statusMsg = DialogStatusType.SUCCESS
+                            )
+                        }
+                    }
+
+                    is Resource.Error -> {
+                        _uiState.update {
+                            it.copy(
+                                hasLoadedAbsences = true,
+                                resultMsg = result.message,
+                                statusMsg = DialogStatusType.ERROR
+                            )
+                        }
+                    }
+
+                    is Resource.Empty -> {
+                        _uiState.update {
+                            it.copy(
+                                pendingRequests = emptyList(),
+                                historyRequests = emptyList(),
+                                hasLoadedAbsences = true,
+                                resultMsg = "Nessuna richiesta trovata",
+                                statusMsg = DialogStatusType.SUCCESS
+                            )
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        hasLoadedAbsences = true,
+                        resultMsg = "Errore imprevisto: ${e.message}",
+                        statusMsg = DialogStatusType.ERROR
+                    )
+                }
+            }
+        }
+    }
+
+    fun handleRequestDecision(
+        approver: String,
+        request: AbsenceUi,
+        isApproved: Boolean,
+        comment: String,
+        employeeContract: Contratto?
+    ) {
+        viewModelScope.launch {
+            try {
+                // ✅ Usa Use Case invece della logica complessa nel ViewModel
+                when (val result = handleRequestDecisionUseCase(
+                    approver = approver,
+                    request = request.toDomain(),
+                    isApproved = isApproved,
+                    comment = comment,
+                    employeeContract = employeeContract
+                )) {
+                    is Resource.Success -> {
+                        val decisionResult = result.data
+
+                        if (decisionResult.contractUpdateSuccess || decisionResult.updatedContract == null) {
+                            // ✅ Successo completo o nessun aggiornamento contratto necessario
+                            updateUIAfterSuccessfulDecision(decisionResult)
+                        } else {
+                            // ✅ Richiesta aggiornata ma errore contratto
+                            updateUIAfterPartialSuccess(decisionResult)
+                        }
+                    }
+
+                    is Resource.Error -> {
+                        _uiState.update {
+                            it.copy(
+                                resultMsg = result.message ?: "Errore durante l'aggiornamento",
+                                statusMsg = DialogStatusType.ERROR
+                            )
+                        }
+                    }
+
+                    is Resource.Empty -> {
+                        _uiState.update {
+                            it.copy(
+                                resultMsg = "Risposta vuota dal server",
+                                statusMsg = DialogStatusType.ERROR
+                            )
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        resultMsg = "Errore imprevisto: ${e.message}",
+                        statusMsg = DialogStatusType.ERROR
+                    )
+                }
+            }
+        }
+    }
+
+    private fun updateUIAfterSuccessfulDecision(result: RequestDecisionResult) {
+        _uiState.update { currentState ->
+            // Aggiorna contratti se necessario
+            val updatedContracts = result.updatedContract?.let { updated ->
+                currentState.contracts.map { contract ->
+                    if (contract.id == updated.id) updated else contract
+                }
+            } ?: currentState.contracts
+
+
+            // Aggiorna liste richieste
+            val updatedRequestUi = result.updatedRequest.toUi()
+            val newPending = currentState.pendingRequests.filter { r -> r.id != updatedRequestUi.id }
+            val newHistory = currentState.historyRequests + updatedRequestUi
 
             currentState.copy(
-                contracts = updatedContracts,
+                contracts = updatedContracts ,
                 pendingRequests = newPending,
                 historyRequests = newHistory,
-                resultMsg = "Richiesta approvata e contratto aggiornato con successo!",
+                resultMsg = if (result.isApproved) {
+                    if (result.updatedContract != null) {
+                        "Richiesta approvata e contratto aggiornato con successo!"
+                    } else {
+                        "Richiesta approvata con successo!"
+                    }
+                } else {
+                    "Richiesta rifiutata"
+                },
                 statusMsg = DialogStatusType.SUCCESS
             )
         }
     }
 
-    // Funzione helper per aggiornare il contratto quando si approva
-    private fun updateContractForApprovedAbsence(
-        contract: Contratto,
-        approvedAbsence: AbsenceUi
-    ): Contratto {
-        return when (approvedAbsence.typeUi.type) {
-            AbsenceType.VACATION -> {
-                val daysToAdd = approvedAbsence.totalDays ?: 0
-                contract.copy(ferieUsate = contract.ferieUsate + daysToAdd)
-            }
+    private fun updateUIAfterPartialSuccess(result: RequestDecisionResult) {
+        _uiState.update { currentState ->
+            val updatedRequestUi = result.updatedRequest.toUi()
+            val newPending = currentState.pendingRequests.filter { r -> r.id != updatedRequestUi.id }
+            val newHistory = currentState.historyRequests + updatedRequestUi
 
-            AbsenceType.ROL -> {
-                val hoursToAdd = approvedAbsence.totalHours ?: 0
-                contract.copy(rolUsate = contract.rolUsate + hoursToAdd)
-            }
-
-            AbsenceType.SICK_LEAVE -> {
-                val daysToAdd = approvedAbsence.totalDays ?: 0
-                contract.copy(malattiaUsata = contract.malattiaUsata + daysToAdd)
-            }
-
-            AbsenceType.PERSONAL_LEAVE,
-            AbsenceType.UNPAID_LEAVE,
-            AbsenceType.STRIKE -> {
-                contract
-            }
+            currentState.copy(
+                pendingRequests = newPending,
+                historyRequests = newHistory,
+                resultMsg = "Richiesta approvata ma errore aggiornamento contratto: ${result.contractError}",
+                statusMsg = DialogStatusType.ERROR
+            )
         }
     }
-
-
-
 }
+

@@ -3,15 +3,15 @@ package com.bizsync.ui.viewmodels
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bizsync.backend.orchestrator.BadgeOrchestrator
-import com.bizsync.backend.repository.WeeklyShiftRepository
-import com.bizsync.cache.dao.TimbraturaDao
-import com.bizsync.cache.dao.TurnoDao
-import com.bizsync.cache.mapper.toDomain
-import com.bizsync.cache.mapper.toDomainList
 import com.bizsync.domain.constants.enumClass.*
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.*
+import com.bizsync.domain.usecases.CreaTimbrnaturaUseCase
+import com.bizsync.domain.usecases.GetProssimoTurnoUseCase
+import com.bizsync.domain.usecases.GetTimbratureByDateUseCase
+import com.bizsync.domain.usecases.GetTimbratureGiornaliereUseCase
+import com.bizsync.domain.usecases.GetTurniByDateUseCase
+import com.bizsync.domain.usecases.GetWeeklyShiftPublicationUseCase
 import com.bizsync.domain.utils.WeeklyPublicationCalculator
 import com.bizsync.ui.mapper.toDomain
 import com.bizsync.ui.model.EmployeeHomeState
@@ -24,14 +24,14 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.inject.Inject
 
-
-
 @HiltViewModel
 class EmployeeHomeViewModel @Inject constructor(
-    private val turnoDao: TurnoDao,
-    private val timbratureDao: TimbraturaDao,
-    private val badgeOrchestrator: BadgeOrchestrator,
-    private val weeklyShiftRepository: WeeklyShiftRepository
+    private val getTurniByDateUseCase: GetTurniByDateUseCase,
+    private val getTimbratureByDateUseCase: GetTimbratureByDateUseCase,
+    private val getTimbratureGiornaliereUseCase: GetTimbratureGiornaliereUseCase,
+    private val getProssimoTurnoUseCase: GetProssimoTurnoUseCase,
+    private val creaTimbrnaturaUseCase: CreaTimbrnaturaUseCase,
+    private val getWeeklyShiftPublicationUseCase: GetWeeklyShiftPublicationUseCase
 ) : ViewModel() {
 
     private val _homeState = MutableStateFlow(EmployeeHomeState())
@@ -107,28 +107,20 @@ class EmployeeHomeViewModel @Inject constructor(
         try {
             val today = LocalDate.now()
 
-            val turniOggiEntities = turnoDao
-                .getTurniByDateAndUser(today)
-                .first()
-            Log.d(TAG, "loadTodayTurnoSuspend: DAO returned ${turniOggiEntities.size} turniOggi")
+            val turniOggi = getTurniByDateUseCase(today).first()
+            Log.d(TAG, "loadTodayTurnoSuspend: UseCase returned ${turniOggi.size} turniOggi")
 
-            if (turniOggiEntities.isNotEmpty()) {
-                val turnoEntity = turniOggiEntities.first()
-                Log.d(TAG, "loadTodayTurnoSuspend: using turnoEntity=$turnoEntity")
+            if (turniOggi.isNotEmpty()) {
+                val turno = turniOggi.first()
+                Log.d(TAG, "loadTodayTurnoSuspend: using turno=$turno")
 
                 val startOfDay = today.atStartOfDay().toString()
                 val endOfDay = today.atTime(23, 59, 59).toString()
 
-                val timbratureEntities = timbratureDao
-                    .getTimbratureByDateAndUser(startOfDay, endOfDay, userId)
+                val timbrature = getTimbratureByDateUseCase(startOfDay, endOfDay).first()
+                Log.d(TAG, "loadTodayTurnoSuspend: UseCase returned ${timbrature.size} timbrature")
 
-                Log.d(TAG, "loadTodayTurnoSuspend: DAO returned ${timbratureEntities.size} timbratureOggi")
-
-                val turnoDomain = turnoEntity.toDomain()
-                val timbratureDomain = timbratureEntities.toDomainList()
-                Log.d(TAG, "loadTodayTurnoSuspend: mapped to domain models")
-
-                val turnoWithDetails = createTurnoWithDetails(turnoDomain, timbratureDomain)
+                val turnoWithDetails = createTurnoWithDetails(turno, timbrature)
 
                 withContext(Dispatchers.Main) {
                     _homeState.update { prev ->
@@ -157,17 +149,13 @@ class EmployeeHomeViewModel @Inject constructor(
             val today = LocalDate.now()
             val startOfDay = today.atStartOfDay().toString()
             val endOfDay = today.atTime(23, 59, 59).toString()
-            val timbratureEntities = timbratureDao
-                .getTimbratureByDateAndUser(startOfDay, endOfDay, userId)
 
-            Log.d(TAG, "loadTimbratureOggiSuspend: DAO returned ${timbratureEntities.size} entities")
-
-            val timbratureDomain = timbratureEntities.toDomainList()
-            Log.d(TAG, "loadTimbratureOggiSuspend: Mapped to domain models")
+            val timbrature = getTimbratureByDateUseCase(startOfDay, endOfDay).first()
+            Log.d(TAG, "loadTimbratureOggiSuspend: UseCase returned ${timbrature.size} entities")
 
             withContext(Dispatchers.Main) {
                 _homeState.update { prev ->
-                    val newState = prev.copy(timbratureOggi = timbratureDomain)
+                    val newState = prev.copy(timbratureOggi = timbrature)
                     Log.d(TAG, "loadTimbratureOggiSuspend: Updated state")
                     newState
                 }
@@ -189,7 +177,7 @@ class EmployeeHomeViewModel @Inject constructor(
             val weekStartRiferimento = WeeklyPublicationCalculator.getReferenceWeekStart(LocalDate.now())
             val idAzienda = _homeState.value.azienda.idAzienda
 
-            val publicationRecord = weeklyShiftRepository.getThisWeekPublishedShift(idAzienda, weekStartRiferimento)
+            val publicationRecord = getWeeklyShiftPublicationUseCase(idAzienda, weekStartRiferimento)
             Log.d(TAG, "loadShiftPublicationInfoSuspend: publicationRecord=$publicationRecord")
 
             when (publicationRecord) {
@@ -228,7 +216,7 @@ class EmployeeHomeViewModel @Inject constructor(
     private suspend fun loadTimbratureFunzionanteSuspend() {
         Log.d(TAG, "loadTimbratureFunzionanteSuspend: start")
         try {
-            when (val result = badgeOrchestrator.getTimbratureGiornaliere(
+            when (val result = getTimbratureGiornaliereUseCase(
                 _homeState.value.user.uid,
                 LocalDate.now()
             )) {
@@ -263,14 +251,13 @@ class EmployeeHomeViewModel @Inject constructor(
     }
 
     private fun startTurnoTimer() {
-        // Cancella il timer precedente se esiste
         timerJob?.cancel()
 
         timerJob = viewModelScope.launch(Dispatchers.IO) {
             Log.d(TAG, "startTurnoTimer: started")
             while (isActive) {
                 try {
-                    when (val result = badgeOrchestrator.getProssimoTurno(_homeState.value.user.uid)) {
+                    when (val result = getProssimoTurnoUseCase(_homeState.value.user.uid)) {
                         is Resource.Success -> {
                             withContext(Dispatchers.Main) {
                                 _timerState.value = result.data
@@ -316,9 +303,6 @@ class EmployeeHomeViewModel @Inject constructor(
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             Log.d("VIEWMODEL_DEBUG", "=== VIEWMODEL onTimbra chiamato ===")
-            Log.d("VIEWMODEL_DEBUG", "Tipo timbratura: $tipoTimbratura")
-            Log.d("VIEWMODEL_DEBUG", "Latitudine ricevuta: $latitudine")
-            Log.d("VIEWMODEL_DEBUG", "Longitudine ricevuta: $longitudine")
 
             val turno = _homeState.value.prossimoTurno?.turno
             if (turno == null) {
@@ -331,16 +315,12 @@ class EmployeeHomeViewModel @Inject constructor(
                 return@launch
             }
 
-            Log.d("VIEWMODEL_DEBUG", "Turno trovato: ${turno.id} - ${turno.titolo}")
-
             withContext(Dispatchers.Main) {
                 _homeState.update { it.copy(isLoading = true) }
             }
 
             try {
-                Log.d("VIEWMODEL_DEBUG", "Chiamata badgeOrchestrator.creaTimbratura")
-
-                when (val result = badgeOrchestrator.creaTimbratura(
+                when (val result = creaTimbrnaturaUseCase(
                     turno = turno,
                     dipendente = _homeState.value.user,
                     azienda = _homeState.value.azienda,
@@ -350,7 +330,6 @@ class EmployeeHomeViewModel @Inject constructor(
                 )) {
                     is Resource.Success -> {
                         Log.d("VIEWMODEL_DEBUG", "✅ Timbratura creata con successo")
-                        Log.d("VIEWMODEL_DEBUG", "Timbratura risultante: ID=${result.data.idFirebase}")
 
                         withContext(Dispatchers.Main) {
                             _homeState.update {
@@ -398,8 +377,8 @@ class EmployeeHomeViewModel @Inject constructor(
     }
 
     fun daysUntilNextFriday(date: LocalDate): Int {
-        val todayValue = date.dayOfWeek.value        // lun=1 … dom=7
-        val fridayValue = DayOfWeek.FRIDAY.value     // 5
+        val todayValue = date.dayOfWeek.value
+        val fridayValue = DayOfWeek.FRIDAY.value
         return (fridayValue - todayValue + 7) % 7
     }
 
@@ -412,7 +391,6 @@ class EmployeeHomeViewModel @Inject constructor(
         val haEntrata = entrataTimbratura != null
         val haUscita = uscitaTimbratura != null
 
-        // Calcola ritardi e anticipi
         val minutiRitardo = if (haEntrata) {
             val orarioEntrata = entrataTimbratura.dataOraTimbratura.toLocalTime()
             val orarioPrevisto = turno.orarioInizio
@@ -429,7 +407,6 @@ class EmployeeHomeViewModel @Inject constructor(
             } else 0
         } else 0
 
-        // Determina stato turno
         val now = LocalDateTime.now()
         val turnoStart = turno.data.atTime(turno.orarioInizio)
         val turnoEnd = turno.data.atTime(turno.orarioFine)

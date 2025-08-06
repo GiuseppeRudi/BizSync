@@ -3,13 +3,14 @@ package com.bizsync.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bizsync.backend.repository.TimbraturaRepository
-import com.bizsync.backend.repository.TurnoRepository
-import com.bizsync.cache.dao.TimbraturaDao
-import com.bizsync.cache.dao.TurnoDao
-import com.bizsync.cache.mapper.toDomainList
 import com.bizsync.domain.constants.enumClass.*
 import com.bizsync.domain.model.*
+import com.bizsync.domain.usecases.GetTimbratureInRangeForUserUseCase
+import com.bizsync.domain.usecases.GetTurniInRangeForUserUseCase
+import com.bizsync.domain.usecases.SyncTimbratureForUserInRangeUseCase
+import com.bizsync.domain.usecases.SyncTurniForUserInRangeUseCase
+import com.bizsync.ui.model.ShiftsManagementState
+import com.bizsync.ui.model.TurnoWithTimbratureDetails
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -18,56 +19,14 @@ import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
 import javax.inject.Inject
 
-data class ShiftsManagementState(
-    val selectedFilter: ShiftTimeFilter = ShiftTimeFilter.DEFAULT_WINDOW,
-    val turniWithTimbrature: List<TurnoWithTimbratureDetails> = emptyList(),
-    val isLoading: Boolean = false,
-    val error: String? = null,
-    val hasMoreData: Boolean = true
-)
 
-data class TurnoWithTimbratureDetails(
-    val turno: Turno,
-    val timbratureEntrata: Timbratura? = null,
-    val timbratureUscita: Timbratura? = null,
-    val statoTurno: StatoTurnoDettagliato,
-    val minutiRitardoEntrata: Int = 0,
-    val minutiRitardoUscita: Int = 0,
-    val minutiLavoratiEffettivi: Int = 0,
-    val completezza: CompletenessaTurno
-)
-
-enum class ShiftTimeFilter(val displayName: String) {
-    DEFAULT_WINDOW("Ultimo Mese"),
-    LAST_3_MONTHS("Ultimi 3 Mesi"),
-    LAST_6_MONTHS("Ultimi 6 Mesi"),
-    LAST_YEAR("Ultimo Anno"),
-    ALL_TIME("Tutti i Turni")
-}
-
-enum class StatoTurnoDettagliato {
-    NON_INIZIATO,           // Non ancora iniziato
-    COMPLETATO_REGOLARE,    // Entrata e uscita in orario
-    COMPLETATO_RITARDO,     // Completato ma con ritardi
-    COMPLETATO_ANTICIPO,    // Completato con uscita anticipata
-    PARZIALE_SOLO_ENTRATA, // Solo entrata, nessuna uscita
-    ASSENTE,               // Nessuna timbratura
-    TURNO_FUTURO           // Turno programmato futuro
-}
-
-enum class CompletenessaTurno {
-    COMPLETO,      // Entrata + Uscita
-    PARZIALE,      // Solo entrata O solo uscita
-    ASSENTE,       // Nessuna timbratura
-    NON_RICHIESTO  // Turno futuro
-}
 
 @HiltViewModel
 class ShiftsManagementViewModel @Inject constructor(
-    private val turnoDao: TurnoDao,
-    private val timbraturaDao: TimbraturaDao,
-    private val turnoRepository: TurnoRepository,
-    private val timbraturaRepository: TimbraturaRepository
+    private val getTurniInRangeForUserUseCase: GetTurniInRangeForUserUseCase,
+    private val getTimbratureInRangeForUserUseCase: GetTimbratureInRangeForUserUseCase,
+    private val syncTurniForUserInRangeUseCase: SyncTurniForUserInRangeUseCase,
+    private val syncTimbratureForUserInRangeUseCase: SyncTimbratureForUserInRangeUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ShiftsManagementState())
@@ -118,18 +77,17 @@ class ShiftsManagementViewModel @Inject constructor(
         }
     }
 
-
     private suspend fun loadDataFromCache(startDate: LocalDate, endDate: LocalDate) {
         try {
             currentUser?.let { user ->
                 // Carica turni dalla cache per il dipendente
-                val turni = turnoDao.getTurniInRangeForUser(startDate, endDate).first()
+                val turni = getTurniInRangeForUserUseCase(startDate, endDate).first()
 
                 // Carica timbrature associate
-                val timbrature = timbraturaDao.getTimbratureInRangeForUser(startDate, endDate, user.uid).first()
+                val timbrature = getTimbratureInRangeForUserUseCase(startDate, endDate, user.uid).first()
 
                 // Combina turni con timbrature
-                val turniWithDetails = createTurniWithTimbratureDetails(turni.toDomainList(), timbrature.toDomainList())
+                val turniWithDetails = createTurniWithTimbratureDetails(turni, timbrature)
 
                 _uiState.update {
                     it.copy(
@@ -160,8 +118,8 @@ class ShiftsManagementViewModel @Inject constructor(
                     val endDate = LocalDate.now().plusDays(30)
 
                     // Sincronizza da Firebase
-                    turnoRepository.syncTurniForUserInRange(user.uid, azienda.idAzienda, startDate, endDate)
-                    timbraturaRepository.syncTimbratureForUserInRange(user.uid, azienda.idAzienda, startDate, endDate)
+                    syncTurniForUserInRangeUseCase(user.uid, azienda.idAzienda, startDate, endDate)
+                    syncTimbratureForUserInRangeUseCase(user.uid, azienda.idAzienda, startDate, endDate)
 
                     // Ricarica dalla cache aggiornata
                     loadDataFromCache(startDate, endDate)
@@ -238,12 +196,12 @@ class ShiftsManagementViewModel @Inject constructor(
         turno: Turno,
         entrata: Timbratura?,
         uscita: Timbratura?
-    ): CompletenessaTurno {
+    ): CompletenezzaTurno {
         return when {
-            turno.data.isAfter(LocalDate.now()) -> CompletenessaTurno.NON_RICHIESTO
-            entrata != null && uscita != null -> CompletenessaTurno.COMPLETO
-            entrata != null || uscita != null -> CompletenessaTurno.PARZIALE
-            else -> CompletenessaTurno.ASSENTE
+            turno.data.isAfter(LocalDate.now()) -> CompletenezzaTurno.NON_RICHIESTO
+            entrata != null && uscita != null -> CompletenezzaTurno.COMPLETO
+            entrata != null || uscita != null -> CompletenezzaTurno.PARZIALE
+            else -> CompletenezzaTurno.ASSENTE
         }
     }
 
@@ -295,7 +253,3 @@ class ShiftsManagementViewModel @Inject constructor(
         _uiState.update { it.copy(error = null) }
     }
 }
-
-
-
-

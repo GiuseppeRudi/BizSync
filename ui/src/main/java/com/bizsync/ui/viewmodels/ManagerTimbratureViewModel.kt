@@ -2,9 +2,11 @@ package com.bizsync.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bizsync.backend.repository.TimbraturaRepository
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.Timbratura
+import com.bizsync.domain.usecases.GetTimbratureByAziendaUseCase
+import com.bizsync.domain.usecases.VerificaTimbrnaturaUseCase
+import com.bizsync.ui.model.ManagerTimbratureState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,11 +17,12 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ManagerTimbratureViewModel @Inject constructor(
-    private val timbraturaRepository: TimbraturaRepository
+    private val getTimbratureByAziendaUseCase: GetTimbratureByAziendaUseCase,
+    private val verificaTimbrnaturaUseCase: VerificaTimbrnaturaUseCase
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(ManagerTimbratureUiState())
-    val uiState: StateFlow<ManagerTimbratureUiState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow(ManagerTimbratureState())
+    val uiState: StateFlow<ManagerTimbratureState> = _uiState.asStateFlow()
 
     fun loadTimbrature(idAzienda: String, startDate: LocalDate, endDate: LocalDate) {
         viewModelScope.launch {
@@ -28,9 +31,7 @@ class ManagerTimbratureViewModel @Inject constructor(
                 idAzienda = idAzienda
             )
 
-            when (val result = timbraturaRepository.getTimbratureByAzienda(
-                idAzienda, startDate, endDate
-            )) {
+            when (val result = getTimbratureByAziendaUseCase(idAzienda, startDate, endDate)) {
                 is Resource.Success -> {
                     val timbrature = result.data
                     val anomale = timbrature.filter { it.isAnomala() }
@@ -61,7 +62,7 @@ class ManagerTimbratureViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
 
-            when (val result = timbraturaRepository.verificaTimbratura(idTimbratura)) {
+            when (val result = verificaTimbrnaturaUseCase(idTimbratura)) {
                 is Resource.Success -> {
                     // Ricarica le timbrature per aggiornare lo stato
                     _uiState.value.selectedDate?.let { date ->
@@ -95,7 +96,6 @@ class ManagerTimbratureViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(selectedTimbratura = timbratura)
     }
 
-    // NUOVA FUNZIONE: Per chiudere il dialog dei dettagli
     fun clearSelectedTimbratura() {
         _uiState.value = _uiState.value.copy(selectedTimbratura = null)
     }
@@ -107,18 +107,5 @@ class ManagerTimbratureViewModel @Inject constructor(
     fun dismissSuccess() {
         _uiState.value = _uiState.value.copy(showSuccess = false)
     }
-
 }
 
-data class ManagerTimbratureUiState(
-    val idAzienda: String = "",
-    val timbrature: List<Timbratura> = emptyList(),
-    val timbratureAnomale: List<Timbratura> = emptyList(),
-    val timbratureDaVerificare: List<Timbratura> = emptyList(),
-    val selectedTimbratura: Timbratura? = null,
-    val selectedDate: LocalDate? = null,
-    val isLoading: Boolean = false,
-    val error: String? = null,
-    val showSuccess: Boolean = false,
-    val successMessage: String = ""
-)

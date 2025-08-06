@@ -1,9 +1,10 @@
 package com.bizsync.ui.model
 
 import com.bizsync.domain.model.Azienda
-import com.bizsync.ui.viewmodels.TimbratureWithUser
-import com.bizsync.ui.viewmodels.TodayStats
-import com.bizsync.ui.viewmodels.TurnoWithUsers
+import com.bizsync.domain.model.TimbratureWithUser
+import com.bizsync.domain.model.TodayStats
+import com.bizsync.domain.model.TurnoWithUsers
+
 
 data class ManagerHomeState(
     val azienda : Azienda = Azienda(),

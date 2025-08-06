@@ -2,11 +2,12 @@ package com.bizsync.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bizsync.backend.repository.AbsenceRepository
 import com.bizsync.domain.constants.enumClass.AbsenceStatus
 import com.bizsync.domain.constants.enumClass.AbsenceType
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.Contratto
+import com.bizsync.domain.usecases.GetAllAbsencesUseCase
+import com.bizsync.domain.usecases.SaveAbsenceUseCase
 import com.bizsync.ui.mapper.toUiData
 import com.bizsync.ui.model.AbsenceTypeUi
 import com.bizsync.ui.model.AbsenceUi
@@ -27,10 +28,134 @@ import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 
 @HiltViewModel
-class AbsenceViewModel @Inject constructor(private val absenceRepository: AbsenceRepository) : ViewModel() {
+class AbsenceViewModel @Inject constructor(
+    private val saveAbsenceUseCase: SaveAbsenceUseCase,
+    private val getAllAbsencesUseCase: GetAllAbsencesUseCase,
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AbsenceState())
     val uiState: StateFlow<AbsenceState> = _uiState
+
+    fun saveAbsence(fullName: String, idAzienda: String, idUser: String, contratto: Contratto) {
+        viewModelScope.launch {
+            try {
+                _uiState.update {
+                    it.copy(
+                        addAbsence = it.addAbsence.copy(
+                            statusUi = AbsenceStatus.PENDING.toUiData(),
+                            submittedDate = LocalDate.now(),
+                            idAzienda = idAzienda,
+                            idUser = idUser,
+                            submittedName = fullName
+                        )
+                    )
+                }
+
+                val absence = _uiState.value.addAbsence.toDomain()
+
+                when (val result = saveAbsenceUseCase(absence)) {
+                    is Resource.Success -> {
+                        val updatedAbsence = _uiState.value.addAbsence.copy(id = result.data)
+
+                        // Business logic nel ViewModel
+                        val updatedContract = when (updatedAbsence.typeUi.type) {
+                            AbsenceType.VACATION -> {
+                                val daysToAdd = updatedAbsence.totalDays ?: 0
+                                contratto.copy(ferieUsate = contratto.ferieUsate + daysToAdd)
+                            }
+                            AbsenceType.ROL -> {
+                                val hoursToAdd = updatedAbsence.totalHours ?: 0
+                                contratto.copy(rolUsate = contratto.rolUsate + hoursToAdd)
+                            }
+                            AbsenceType.SICK_LEAVE -> {
+                                val daysToAdd = updatedAbsence.totalDays ?: 0
+                                contratto.copy(malattiaUsata = contratto.malattiaUsata + daysToAdd)
+                            }
+                            else -> contratto
+                        }
+
+                        _uiState.update { currentState ->
+                            currentState.copy(
+                                absences = currentState.absences + updatedAbsence,
+                                contract = updatedContract,
+                                addAbsence = AbsenceUi(),
+                                resultMsg = "Richiesta di assenza inviata con successo",
+                                statusMsg = DialogStatusType.SUCCESS
+                            )
+                        }
+                    }
+                    is Resource.Error -> {
+                        _uiState.update {
+                            it.copy(
+                                resultMsg = result.message ?: "Errore sconosciuto durante il salvataggio",
+                                statusMsg = DialogStatusType.ERROR
+                            )
+                        }
+                    }
+                    is Resource.Empty -> {
+                        _uiState.update {
+                            it.copy(
+                                resultMsg = "Nessun dato salvato",
+                                statusMsg = DialogStatusType.ERROR
+                            )
+                        }
+                    }
+                }
+
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        resultMsg = "Errore imprevisto: ${e.message}",
+                        statusMsg = DialogStatusType.ERROR
+                    )
+                }
+            }
+        }
+    }
+
+    fun fetchAllAbsences(idUser: String) {
+        viewModelScope.launch {
+            try {
+                // ✅ Use Case invece del repository diretto
+                when (val result = getAllAbsencesUseCase(idUser)) {
+                    is Resource.Success -> {
+                        _uiState.update {
+                            it.copy(
+                                absences = result.data.map { absence -> absence.toUi() },
+                                hasLoadedAbsences = true,
+                            )
+                        }
+                    }
+                    is Resource.Error -> {
+                        _uiState.update {
+                            it.copy(
+                                hasLoadedAbsences = true,
+                                resultMsg = result.message ?: "Errore nel caricamento delle assenze",
+                                statusMsg = DialogStatusType.ERROR
+                            )
+                        }
+                    }
+                    is Resource.Empty -> {
+                        _uiState.update {
+                            it.copy(
+                                absences = emptyList(),
+                                hasLoadedAbsences = true,
+                            )
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        hasLoadedAbsences = true,
+                        resultMsg = "Errore imprevisto: ${e.message}",
+                        statusMsg = DialogStatusType.ERROR
+                    )
+                }
+            }
+        }
+    }
+
 
     fun updateAddAbsenceTotalHours(totalHours: Int?) {
         _uiState.update { currentState ->
@@ -47,7 +172,6 @@ class AbsenceViewModel @Inject constructor(private val absenceRepository: Absenc
             currentState.copy(isFlexibleModeFullDay = isFullDay)
         }
     }
-
 
     fun updateAddAbsenceType(typeUi: AbsenceTypeUi) {
         val timeType = typeUi.type.getTimeType()
@@ -72,86 +196,10 @@ class AbsenceViewModel @Inject constructor(private val absenceRepository: Absenc
         updateAddAbsenceTotalHours(null)
     }
 
-    fun saveAbsence(fullName : String,idAzienda: String, idUser: String, contratto : Contratto ) {
-        viewModelScope.launch {
-
-            _uiState.update {
-                it.copy(addAbsence = it.addAbsence.copy(
-                    statusUi = AbsenceStatus.PENDING.toUiData(),
-                    submittedDate = LocalDate.now(),
-                    idAzienda = idAzienda,
-                    idUser = idUser,
-                    submittedName = fullName
-                ))
-            }
-
-            val absence = _uiState.value.addAbsence
-
-            when (val result = absenceRepository.salvaAbsence(absence.toDomain())) {
-                is Resource.Success -> {
-
-                    val updatedAbsence = _uiState.value.addAbsence.copy(id = result.data)
-
-                    // Aggiorna il contratto in base al tipo di assenza
-                    val updatedContract = when (updatedAbsence.typeUi.type) {
-                        AbsenceType.VACATION -> {
-                            // Ferie: aggiorna ferieUsate con i giorni
-                            val daysToAdd = updatedAbsence.totalDays ?: 0
-                            contratto.copy(ferieUsate = contratto.ferieUsate + daysToAdd)
-                        }
-
-                        AbsenceType.ROL -> {
-                            // ROL: aggiorna rolUsate con le ore
-                            val hoursToAdd = updatedAbsence.totalHours ?: 0
-                            contratto.copy(rolUsate = contratto.rolUsate + hoursToAdd)
-                        }
-
-                        AbsenceType.SICK_LEAVE -> {
-                            // Malattia: aggiorna malattiaUsata con i giorni
-                            val daysToAdd = updatedAbsence.totalDays ?: 0
-                            contratto.copy(malattiaUsata = contratto.malattiaUsata + daysToAdd)
-                        }
-
-                        else -> contratto
-                    }
-
-                        _uiState.update { currentState ->
-                            currentState.copy(
-                                absences = currentState.absences + updatedAbsence,
-                                contract = updatedContract,
-                                addAbsence = AbsenceUi(),
-                                resultMsg = "Richiesta di assenza inviata con successo",
-                                statusMsg = DialogStatusType.SUCCESS
-                            )
-                        }
-
-                }
-                is Resource.Error -> {
-                    _uiState.update {
-                        it.copy(
-                            resultMsg = result.message ?: "Errore sconosciuto durante il salvataggio",
-                            statusMsg = DialogStatusType.ERROR
-                        )
-                    }
-                }
-                is Resource.Empty -> {
-                    _uiState.update {
-                        it.copy(
-                            resultMsg = "Nessun dato salvato",
-                            statusMsg = DialogStatusType.ERROR
-                        )
-                    }
-                }
-            }
-        }
-    }
-
     fun changePendingStatus() {
-        _uiState.update { it.copy( pendingStats = calculatePendingStats(it.absences) ) }
-
+        _uiState.update { it.copy(pendingStats = calculatePendingStats(it.absences)) }
     }
 
-    // Funzione per calcolare le statistiche pending
     private fun calculatePendingStats(absences: List<AbsenceUi>): PendingStats {
         val pendingAbsences = absences.filter { it.statusUi.status == AbsenceStatus.PENDING }
 
@@ -183,43 +231,9 @@ class AbsenceViewModel @Inject constructor(private val absenceRepository: Absenc
         )
     }
 
-    fun fetchAllAbsences(idUser : String) {
-        viewModelScope.launch {
-            when (val result = absenceRepository.getAllAbsences(idUser)) {
-                is Resource.Success -> {
-                    _uiState.update {
-                        it.copy(
-                            absences = result.data.map { absence -> absence.toUi() },
-                            hasLoadedAbsences = true,
-                        )
-                    }
-                }
-                is Resource.Error -> {
-                    _uiState.update {
-                        it.copy(
-                            hasLoadedAbsences = true,
-                            resultMsg = result.message ?: "Errore nel caricamento delle assenze",
-                            statusMsg = DialogStatusType.ERROR
-                        )
-                    }
-                }
-                is Resource.Empty -> {
-                    _uiState.update {
-                        it.copy(
-                            absences = emptyList(),
-                            hasLoadedAbsences = true,
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    // Funzione per cambiare tab selezionata
     fun setSelectedTab(index: Int) {
         _uiState.update { it.copy(selectedTab = index) }
     }
-
 
     fun updateAddAbsenceStartDate(date: LocalDate?) {
         _uiState.value = _uiState.value.copy(
@@ -233,7 +247,6 @@ class AbsenceViewModel @Inject constructor(private val absenceRepository: Absenc
         )
     }
 
-
     fun updateAddAbsenceStartTime(time: LocalTime?) {
         _uiState.value = _uiState.value.copy(
             addAbsence = _uiState.value.addAbsence.copy(startTime = time)
@@ -245,7 +258,6 @@ class AbsenceViewModel @Inject constructor(private val absenceRepository: Absenc
             addAbsence = _uiState.value.addAbsence.copy(endTime = time)
         )
     }
-
 
     fun updateAddAbsenceReason(reason: String) {
         _uiState.value = _uiState.value.copy(
@@ -281,7 +293,6 @@ class AbsenceViewModel @Inject constructor(private val absenceRepository: Absenc
         _uiState.value = _uiState.value.copy(showEndDatePicker = show)
     }
 
-
     fun resetAddAbsence() {
         _uiState.value = _uiState.value.copy(addAbsence = AbsenceUi())
     }
@@ -289,5 +300,4 @@ class AbsenceViewModel @Inject constructor(private val absenceRepository: Absenc
     fun clearResultMessage() {
         _uiState.value = _uiState.value.copy(resultMsg = null)
     }
-
 }

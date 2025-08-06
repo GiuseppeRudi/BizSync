@@ -3,15 +3,14 @@ package com.bizsync.ui.viewmodels
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bizsync.backend.repository.TurnoRepository
-import com.bizsync.cache.dao.ContrattoDao
-import com.bizsync.cache.dao.TurnoDao
-import com.bizsync.cache.dao.UserDao
-import com.bizsync.cache.mapper.toDomain
-import com.bizsync.cache.mapper.toDomainList
-import com.bizsync.cache.mapper.toEntityList
 import com.bizsync.domain.constants.enumClass.EmployeeSection
 import com.bizsync.domain.constants.sealedClass.Resource
+import com.bizsync.domain.usecases.GetContrattoUseCase
+import com.bizsync.domain.usecases.GetDipendentiUseCase
+import com.bizsync.domain.usecases.GetFutureShiftsUseCase
+import com.bizsync.domain.usecases.GetPastShiftsUseCase
+import com.bizsync.domain.usecases.GetTurniRemoteUseCase
+import com.bizsync.domain.usecases.SaveTurniLocalUseCase
 import com.bizsync.ui.mapper.toUiList
 import com.bizsync.ui.model.EmployeeManagementState
 import com.bizsync.ui.model.UserUi
@@ -23,12 +22,15 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import javax.inject.Inject
 
+
 @HiltViewModel
 class EmployeeManagementViewModel @Inject constructor(
-    private val userDao: UserDao,
-    private val contractDao: ContrattoDao,
-    private val turniDao: TurnoDao,
-    private val turnoRepository: TurnoRepository
+    private val getDipendentiUseCase: GetDipendentiUseCase,
+    private val getContrattoUseCase: GetContrattoUseCase,
+    private val getPastShiftsUseCase: GetPastShiftsUseCase,
+    private val getFutureShiftsUseCase: GetFutureShiftsUseCase,
+    private val getTurniRemoteUseCase: GetTurniRemoteUseCase,
+    private val saveTurniLocalUseCase: SaveTurniLocalUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(EmployeeManagementState())
@@ -43,9 +45,8 @@ class EmployeeManagementViewModel @Inject constructor(
             try {
                 _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-                val result = userDao.getDipendenti()
-                val resultDomain = result.toDomainList()
-                _uiState.update { it.copy(employees = resultDomain.toUiList()) }
+                val result = getDipendentiUseCase()
+                _uiState.update { it.copy(employees = result.toUiList()) }
 
             } catch (e: Exception) {
                 _uiState.update {
@@ -63,10 +64,10 @@ class EmployeeManagementViewModel @Inject constructor(
             try {
                 _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-                val contract = contractDao.getContratto(employeeId)
+                val contract = getContrattoUseCase(employeeId)
 
                 if (contract != null)
-                    _uiState.update { it.copy(contract = contract.toDomain()) }
+                    _uiState.update { it.copy(contract = contract) }
 
             } catch (e: Exception) {
                 _uiState.update {
@@ -79,44 +80,34 @@ class EmployeeManagementViewModel @Inject constructor(
         }
     }
 
-
     fun loadEmployeePastShifts(
         employeeId: String,
         startDate: LocalDate = LocalDate.now().minusMonths(3),
         endDate: LocalDate = LocalDate.now(),
-        idAzienda : String
+        idAzienda: String
     ) {
         viewModelScope.launch {
             try {
                 _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-                Log.d("ShiftsViewModel", " Caricamento turni passati per $employeeId dal $startDate al $endDate")
+                Log.d("ShiftsViewModel", "Caricamento turni passati per $employeeId dal $startDate al $endDate")
 
                 // 1. Prova prima dalla cache
-                val tuttiTurni = turniDao.getPastShifts(idAzienda, startDate, endDate)
-                val turniDelDip = tuttiTurni.filter { it.idDipendenti.contains(employeeId) }
-                val turniDelDipendente = turniDelDip.toDomainList()
+                val tuttiTurni = getPastShiftsUseCase(idAzienda, startDate, endDate)
+                val turniDelDipendente = tuttiTurni.filter { it.idDipendenti.contains(employeeId) }
 
-                Log.d("ShiftsViewModel", " Trovati ${turniDelDipendente.size} turni in cache")
+                Log.d("ShiftsViewModel", "Trovati ${turniDelDipendente.size} turni in cache")
 
                 // 2. Se la cache è vuota o insufficiente per il range richiesto, carica da Firebase
                 if (shouldLoadFromFirebase(turniDelDipendente, startDate, endDate)) {
-                    Log.d("ShiftsViewModel", " Caricamento da Firebase necessario")
+                    Log.d("ShiftsViewModel", "Caricamento da Firebase necessario")
 
-
-
-                    when (val result = turnoRepository.getTurniRangeByAzienda(
-                        idAzienda = idAzienda,
-                        startRange = startDate,
-                        endRange = endDate,
-                        idEmployee = employeeId
-                    )) {
+                    when (val result = getTurniRemoteUseCase(idAzienda, startDate, endDate, employeeId)) {
                         is Resource.Success -> {
-                            Log.d("ShiftsViewModel", " Caricati ${result.data.size} turni da Firebase")
+                            Log.d("ShiftsViewModel", "Caricati ${result.data.size} turni da Firebase")
 
                             // Salva in cache i nuovi turni
-                            val turniEntity = result.data.toEntityList()
-                            turniDao.insertAll(turniEntity)
+                            saveTurniLocalUseCase(result.data)
 
                             // Aggiorna lo stato con i turni da Firebase
                             val turniPassati = result.data.filter {
@@ -125,7 +116,7 @@ class EmployeeManagementViewModel @Inject constructor(
                             _uiState.update { it.copy(shifts = turniPassati) }
                         }
                         is Resource.Error -> {
-                            Log.e("ShiftsViewModel", " Errore Firebase: ${result.message}")
+                            Log.e("ShiftsViewModel", "Errore Firebase: ${result.message}")
                             _uiState.update {
                                 it.copy(
                                     shifts = turniDelDipendente,
@@ -140,7 +131,7 @@ class EmployeeManagementViewModel @Inject constructor(
                     }
                 } else {
                     // Usa i dati dalla cache
-                    Log.d("ShiftsViewModel", " Utilizzando dati dalla cache")
+                    Log.d("ShiftsViewModel", "Utilizzando dati dalla cache")
                     _uiState.update { it.copy(shifts = turniDelDipendente) }
                 }
 
@@ -155,40 +146,32 @@ class EmployeeManagementViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Carica i turni futuri di un dipendente (principalmente dalla cache)
-     * @param employeeId ID del dipendente
-     */
-    fun loadEmployeeFutureShifts(employeeId: String, idAzienda : String) {
+    fun loadEmployeeFutureShifts(employeeId: String, idAzienda: String) {
         viewModelScope.launch {
             try {
                 _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-                Log.d("ShiftsViewModel", " Caricamento turni futuri per $employeeId")
+                Log.d("ShiftsViewModel", "Caricamento turni futuri per $employeeId")
 
-                val tuttiTurni = turniDao.getFutureShiftsFromToday(idAzienda, LocalDate.now())
-                val turniDelD = tuttiTurni.filter { it.idDipendenti.contains(employeeId) }
-                val turniDelDipendente = turniDelD.toDomainList()
+                val tuttiTurni = getFutureShiftsUseCase(idAzienda, LocalDate.now())
+                val turniDelDipendente = tuttiTurni.filter { it.idDipendenti.contains(employeeId) }
 
-                Log.d("ShiftsViewModel", " Trovati ${turniDelDipendente.size} turni futuri in cache")
+                Log.d("ShiftsViewModel", "Trovati ${turniDelDipendente.size} turni futuri in cache")
 
                 _uiState.update { it.copy(shifts = turniDelDipendente) }
 
                 // Opzionale: verifica se servono aggiornamenti da Firebase
                 if (turniDelDipendente.isEmpty()) {
-                    Log.d("ShiftsViewModel", " Nessun turno futuro in cache, provo Firebase")
+                    Log.d("ShiftsViewModel", "Nessun turno futuro in cache, provo Firebase")
 
-
-
-                    when (val result = turnoRepository.getTurniRangeByAzienda(
-                        idAzienda = idAzienda,
-                        startRange = LocalDate.now(),
-                        endRange = LocalDate.now().plusMonths(2),
-                        idEmployee = employeeId
+                    when (val result = getTurniRemoteUseCase(
+                        idAzienda,
+                        LocalDate.now(),
+                        LocalDate.now().plusMonths(2),
+                        employeeId
                     )) {
                         is Resource.Success -> {
-                            val turniEntity = result.data.toEntityList()
-                            turniDao.insertAll(turniEntity)
+                            saveTurniLocalUseCase(result.data)
 
                             val turniFuturi = result.data.filter {
                                 it.data >= LocalDate.now()
@@ -218,10 +201,6 @@ class EmployeeManagementViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Determina se è necessario caricare i dati da Firebase
-     * basandosi sulla completezza dei dati in cache per il range richiesto
-     */
     private fun shouldLoadFromFirebase(
         cachedShifts: List<com.bizsync.domain.model.Turno>,
         startDate: LocalDate,

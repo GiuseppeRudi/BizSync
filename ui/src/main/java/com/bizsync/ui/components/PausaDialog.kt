@@ -22,9 +22,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.bizsync.domain.constants.enumClass.TipoPausa
+import com.bizsync.domain.constants.sealedClass.ValidationResult
 import com.bizsync.domain.model.Pausa
 import com.bizsync.ui.viewmodels.PianificaManagerViewModel
-import com.bizsync.ui.viewmodels.ValidationResult
 import java.time.Duration
 
 @OptIn(ExperimentalMaterial3Api::class)

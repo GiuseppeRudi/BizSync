@@ -70,6 +70,22 @@ object DateUtils {
             .toLocalDateTime()
     }
 
+    // Aggiungi questa funzione al tuo DateUtils object:
+
+    // Per estrarre solo l'orario da un Timestamp Firebase
+    fun Timestamp.toLocalTime(): LocalTime {
+        return this.toDate().toInstant()
+            .atZone(ZoneOffset.UTC)
+            .toLocalTime()
+    }
+
+    // E per completezza, anche la funzione inversa:
+    fun LocalTime.toFirebaseTimestamp(date: LocalDate = LocalDate.now()): Timestamp {
+        val dateTime = LocalDateTime.of(date, this)
+        val instant = dateTime.atZone(ZoneOffset.UTC).toInstant()
+        return Timestamp(Date.from(instant))
+    }
+
     // Utility per oggi in UTC (per confronti)
     fun todayUTC(): LocalDate {
         return LocalDate.now(ZoneOffset.UTC)

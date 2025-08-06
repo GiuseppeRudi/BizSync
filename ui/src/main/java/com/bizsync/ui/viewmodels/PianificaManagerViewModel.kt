@@ -1,23 +1,27 @@
 package com.bizsync.ui.viewmodels
 
+
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bizsync.backend.orchestrator.TurnoOrchestrator
-import com.bizsync.backend.repository.TurniAIRepository
-import com.bizsync.cache.dao.AbsenceDao
-import com.bizsync.cache.dao.ContrattoDao
-import com.bizsync.cache.dao.TurnoDao
-import com.bizsync.cache.mapper.toDomain
-import com.bizsync.cache.mapper.toDomainList
-import com.bizsync.cache.mapper.toEntity
-import com.bizsync.cache.mapper.toEntityList
 import com.bizsync.domain.constants.enumClass.AbsenceStatus
 import com.bizsync.domain.constants.enumClass.TipoNota
 import com.bizsync.domain.constants.enumClass.TipoPausa
 import com.bizsync.domain.constants.enumClass.ZonaLavorativa
 import com.bizsync.domain.constants.sealedClass.Resource
+import com.bizsync.domain.constants.sealedClass.ValidationResult
 import com.bizsync.domain.model.*
+import com.bizsync.domain.usecases.DeleteTurnoUseCase
+import com.bizsync.domain.usecases.FetchTurniSettimaanaUseCase
+import com.bizsync.domain.usecases.GenerateTurniAIUseCase
+import com.bizsync.domain.usecases.GetLocalAbsenceUseCase
+import com.bizsync.domain.usecases.GetLocalContrattiUseCase
+import com.bizsync.domain.usecases.GetTurnoByIdUseCase
+import com.bizsync.domain.usecases.InsertTurniUseCase
+import com.bizsync.domain.usecases.InsertTurnoUseCase
+import com.bizsync.domain.usecases.SaveTurnoUseCase
+import com.bizsync.domain.usecases.TurnoExistsUseCase
+import com.bizsync.domain.usecases.UpdateTurnoUseCase
 import com.bizsync.ui.model.ManagerState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
@@ -34,11 +38,17 @@ import javax.inject.Inject
 
 @HiltViewModel
 class PianificaManagerViewModel @Inject constructor(
-    private val turnoOrchestrator: TurnoOrchestrator,
-    private val turnoDao : TurnoDao,
-    private val absenceDao: AbsenceDao,
-    private val contrattiDao : ContrattoDao,
-    var turniAIRepository: TurniAIRepository
+    private val generateTurniAIUseCase: GenerateTurniAIUseCase,
+    private val fetchTurniSettimaanaUseCase: FetchTurniSettimaanaUseCase,
+    private val getTurnoByIdUseCase: GetTurnoByIdUseCase,
+    private val turnoExistsUseCase: TurnoExistsUseCase,
+    private val insertTurnoUseCase: InsertTurnoUseCase,
+    private val updateTurnoUseCase: UpdateTurnoUseCase,
+    private val saveTurnoUseCase: SaveTurnoUseCase,
+    private val insertTurniUseCase: InsertTurniUseCase,
+    private val getLocalAbsenceUseCase: GetLocalAbsenceUseCase,
+    private val getLocalContrattiUseCase: GetLocalContrattiUseCase,
+    private val deleteTurnoUseCase: DeleteTurnoUseCase
 ) : ViewModel() {
 
     companion object {
@@ -47,8 +57,6 @@ class PianificaManagerViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(ManagerState())
     val uiState: StateFlow<ManagerState> = _uiState
-
-
 
     fun setLoading(loading: Boolean) {
         _uiState.update { it.copy(loading = loading) }
@@ -59,13 +67,12 @@ class PianificaManagerViewModel @Inject constructor(
         giornoSelezionato: LocalDate,
         descrizioneAggiuntiva: String = "",
         idAzienda: String
-
     ) {
         viewModelScope.launch {
             try {
                 _uiState.update { it.copy(isGeneratingTurni = true) }
 
-                val result = turniAIRepository.generateTurni(
+                val result = generateTurniAIUseCase(
                     dipartimento = dipartimento,
                     giornoSelezionato = giornoSelezionato,
                     dipendentiDisponibili = _uiState.value.disponibilitaMembriTurno,
@@ -79,10 +86,9 @@ class PianificaManagerViewModel @Inject constructor(
                         turnoAI = turnoAI,
                         dipartimento = dipartimento.nomeArea,
                         giornoSelezionato = giornoSelezionato,
-                        idAzienda =  idAzienda
+                        idAzienda = idAzienda
                     )
                 }
-
 
                 _uiState.update {
                     it.copy(
@@ -109,11 +115,6 @@ class PianificaManagerViewModel @Inject constructor(
         }
     }
 
-
-
-    /**
-     * Aggiorna la zona lavorativa per un singolo dipendente
-     */
     fun aggiornaZonaLavorativaDipendente(idDipendente: String, zonaLavorativa: ZonaLavorativa) {
         val turnoCorrente = _uiState.value.turnoInModifica
 
@@ -128,7 +129,6 @@ class PianificaManagerViewModel @Inject constructor(
         _uiState.update { it.copy(turnoInModifica = turnoAggiornato) }
         Log.d(TAG, "Zona lavorativa aggiornata per dipendente $idDipendente: $zonaLavorativa")
     }
-
 
     fun sincronizzaZoneLavorativeConDipendenti(dipendentiSelezionati: List<String>) {
         val turnoCorrente = _uiState.value.turnoInModifica
@@ -155,19 +155,11 @@ class PianificaManagerViewModel @Inject constructor(
         Log.d(TAG, "Zone lavorative sincronizzate con ${dipendentiSelezionati.size} dipendenti")
     }
 
-
-
-
     fun getZoneLavorativeAssegnate(): Map<String, ZonaLavorativa> {
         val turno = _uiState.value.turnoInModifica
         return turno.zoneLavorative
     }
 
-
-
-    /**
-     * Aggiorna la funzione aggiornaDipendenti esistente per sincronizzare le zone lavorative
-     */
     fun aggiornaDipendentiConZone(nuoviDipendenti: List<String>) {
         val turnoCorrente = _uiState.value.turnoInModifica
 
@@ -213,6 +205,9 @@ class PianificaManagerViewModel @Inject constructor(
             )
         } ?: emptyList()
 
+        // Crea la mappa delle zone lavorative con default IN_SEDE per tutti i dipendenti
+        val zoneLavorative = turnoAI.idDipendenti.associateWith { ZonaLavorativa.IN_SEDE }
+
         return Turno(
             id = UUID.randomUUID().toString(),
             titolo = turnoAI.titolo,
@@ -222,13 +217,13 @@ class PianificaManagerViewModel @Inject constructor(
             data = giornoSelezionato,
             orarioInizio = LocalTime.parse(turnoAI.orarioInizio),
             orarioFine = LocalTime.parse(turnoAI.orarioFine),
+            zoneLavorative = zoneLavorative, // Aggiungi la nuova proprietà
             pause = pause,
             note = note,
             createdAt = LocalDate.now(),
             updatedAt = LocalDate.now()
         )
     }
-
     private fun convertTipoPausa(tipo: String): TipoPausa {
         return when (tipo) {
             "PAUSA_PRANZO" -> TipoPausa.PAUSA_PRANZO
@@ -243,8 +238,7 @@ class PianificaManagerViewModel @Inject constructor(
     fun confermaAITurni() {
         viewModelScope.launch {
             val turniAI = _uiState.value.turniGeneratiAI
-            turnoDao.insertAll(turniAI.toEntityList())
-
+            insertTurniUseCase(turniAI)
 
             _uiState.update {
                 it.copy(
@@ -254,7 +248,6 @@ class PianificaManagerViewModel @Inject constructor(
                     successMessage = "Turni AI aggiunti con successo!"
                 )
             }
-
         }
     }
 
@@ -289,24 +282,20 @@ class PianificaManagerViewModel @Inject constructor(
                 it.copy(disponibilitaMembriTurno = nuovoDipendentiGiorno)
             }
 
-            Log.d("TURNO_DEBUG", "✅ DAIIIII per $giorno e dipartimento $idDipartimento: ${_uiState.value.disponibilitaMembriTurno }}")
-
+            Log.d("TURNO_DEBUG", "✅ DAIIIII per $giorno e dipartimento $idDipartimento: ${_uiState.value.disponibilitaMembriTurno}}")
         }
     }
 
-
-    fun inizializzaDatiDipendenti(dipendenti : List<User>)
-    {
+    fun inizializzaDatiDipendenti(dipendenti: List<User>) {
         _uiState.update { it.copy(dipendenti = dipendenti) }
     }
 
-    fun inizializzaDatiWeeklyRiferimento( dipendenti : List<User>) {
+    fun inizializzaDatiWeeklyRiferimento(dipendenti: List<User>) {
         viewModelScope.launch {
             try {
-
                 // LE ASSENZE MI SERVONO SOLO DELLA SETTIMANA DI RIFERIMENTO
-                val assDeferred = async { absenceDao.getAbsences().toDomainList() }
-                val contrDeferred = async { contrattiDao.getContratti().toDomainList() }
+                val assDeferred = async { getLocalAbsenceUseCase() }
+                val contrDeferred = async { getLocalContrattiUseCase() }
 
                 val assenze = assDeferred.await()
                 val contratti = contrDeferred.await()
@@ -326,8 +315,8 @@ class PianificaManagerViewModel @Inject constructor(
             }
         }
     }
-    fun setDipendentiStato()
-    {
+
+    fun setDipendentiStato() {
         val listaDipendenti = _uiState.value.dipendenti
         val assenzeFiltrate = _uiState.value.assenze
         val contratti = _uiState.value.contratti
@@ -339,10 +328,9 @@ class PianificaManagerViewModel @Inject constructor(
         Log.d(TAG, "caricamento dipendenti settimana: $dipendentiSettimana")
         _uiState.update { it.copy(dipendentiSettimana = dipendentiSettimana) }
 
-        _uiState.update { it.copy( statoSettimanaleDipendenti = calcolaStatoSettimanaleDipendenti(listaDipendenti, contratti)) }
+        _uiState.update { it.copy(statoSettimanaleDipendenti = calcolaStatoSettimanaleDipendenti(listaDipendenti, contratti)) }
 
         Log.d(TAG, "caricamento dipendenti stato settimanale: ${_uiState.value.statoSettimanaleDipendenti}")
-
     }
 
     fun calcolaStatoSettimanaleDipendenti(
@@ -351,7 +339,7 @@ class PianificaManagerViewModel @Inject constructor(
     ): Map<String, StatoSettimanaleDipendente> {
         return dipendenti.associate { user ->
             val contratto = contratti.find { it.idDipendente == user.uid }
-            val maxOre  : Int =  toIntSafe(contratto?.oreSettimanali  )?: 0
+            val maxOre: Int = toIntSafe(contratto?.oreSettimanali) ?: 0
             user.uid to StatoSettimanaleDipendente(
                 oreContrattoSettimana = maxOre
             )
@@ -361,9 +349,6 @@ class PianificaManagerViewModel @Inject constructor(
     fun toIntSafe(input: String?): Int? {
         return input?.toIntOrNull()
     }
-
-
-
 
     fun calcolaDipendentiSettimana(
         dipendenti: List<User>,
@@ -433,9 +418,8 @@ class PianificaManagerViewModel @Inject constructor(
         return false
     }
 
-
     suspend fun setTurniSettimanaliSuspend(startWeek: LocalDate) {
-        when (val result = turnoOrchestrator.fetchTurniSettimana(startWeek)) {
+        when (val result = fetchTurniSettimaanaUseCase(startWeek)) {
             is Resource.Success -> {
                 val turni = result.data
                 val grouped = turni.groupBy { it.data.dayOfWeek }
@@ -458,13 +442,12 @@ class PianificaManagerViewModel @Inject constructor(
         }
     }
 
-
     fun setTurniSettimanali(startWeek: LocalDate, idAzienda: String) {
         viewModelScope.launch {
             // Inizio caricamento
             _uiState.update { it.copy(isLoadingTurni = true) }
 
-            when (val result = turnoOrchestrator.fetchTurniSettimana(startWeek, idAzienda)) {
+            when (val result = fetchTurniSettimaanaUseCase(startWeek, idAzienda)) {
                 is Resource.Success -> {
                     val turni = result.data
                     val grouped = turni.groupBy { it.data.dayOfWeek }
@@ -492,10 +475,6 @@ class PianificaManagerViewModel @Inject constructor(
         }
     }
 
-
-
-
-
     fun setTurniGiornalieri(dayOfWeek: DayOfWeek, dipartimentiDelGiorno: List<AreaLavoro>) {
         viewModelScope.launch {
             val currentTurniSettimanali = _uiState.value.turniSettimanali
@@ -505,13 +484,11 @@ class PianificaManagerViewModel @Inject constructor(
                 dipartimento.nomeArea to turniDelGiorno.filter { it.dipartimento == dipartimento.nomeArea }
             }
 
-
             _uiState.update { current ->
                 current.copy(turniGiornalieri = turniPerDipartimento, loading = false)
             }
         }
     }
-
 
     fun caricaTurniSettimanaEDipartimento(weekStart: LocalDate, dipartimento: String) {
         viewModelScope.launch {
@@ -531,7 +508,6 @@ class PianificaManagerViewModel @Inject constructor(
         }
     }
 
-
     fun pulisciTurnoInModifica() {
         _uiState.update {
             it.copy(
@@ -541,10 +517,6 @@ class PianificaManagerViewModel @Inject constructor(
         }
     }
 
-
-    /**
-     * Chiude il dialog per gestire le pause
-     */
     fun chiudiGestionePause() {
         _uiState.update {
             it.copy(
@@ -556,9 +528,6 @@ class PianificaManagerViewModel @Inject constructor(
         Log.d(TAG, "Chiuso dialog gestione pause")
     }
 
-    /**
-     * Inizializza una nuova pausa per la modifica
-     */
     fun iniziaNuovaPausa() {
         val nuovaPausa = Pausa(
             id = "",
@@ -577,7 +546,6 @@ class PianificaManagerViewModel @Inject constructor(
         Log.d(TAG, "Iniziata nuova pausa")
     }
 
-
     fun caricaPausaPerModifica(pausa: Pausa) {
         _uiState.update {
             it.copy(
@@ -588,9 +556,6 @@ class PianificaManagerViewModel @Inject constructor(
         Log.d(TAG, "Caricata pausa per modifica: ${pausa.tipo}")
     }
 
-    /**
-     * Pulisce la pausa in modifica
-     */
     fun pulisciPausaInModifica() {
         _uiState.update {
             it.copy(
@@ -601,10 +566,6 @@ class PianificaManagerViewModel @Inject constructor(
         Log.d(TAG, "Pulita pausa in modifica")
     }
 
-
-    /**
-     * Aggiorna il tipo della pausa in modifica
-     */
     fun aggiornaTipoPausa(nuovoTipo: TipoPausa) {
         val pausaCorrente = _uiState.value.pausaInModifica ?: return
         val pausaAggiornata = pausaCorrente.copy(tipo = nuovoTipo)
@@ -612,9 +573,6 @@ class PianificaManagerViewModel @Inject constructor(
         Log.d(TAG, "Tipo pausa aggiornato: $nuovoTipo")
     }
 
-    /**
-     * Aggiorna la durata della pausa in modifica
-     */
     fun aggiornaDurataPausa(nuovaDurata: Duration) {
         val pausaCorrente = _uiState.value.pausaInModifica ?: return
         val pausaAggiornata = pausaCorrente.copy(durata = nuovaDurata)
@@ -622,9 +580,6 @@ class PianificaManagerViewModel @Inject constructor(
         Log.d(TAG, "Durata pausa aggiornata: ${nuovaDurata.toMinutes()} minuti")
     }
 
-    /**
-     * Aggiorna se la pausa è retribuita
-     */
     fun aggiornaRetribuitaPausa(isRetribuita: Boolean) {
         val pausaCorrente = _uiState.value.pausaInModifica ?: return
         val pausaAggiornata = pausaCorrente.copy(èRetribuita = isRetribuita)
@@ -632,9 +587,6 @@ class PianificaManagerViewModel @Inject constructor(
         Log.d(TAG, "Retribuita pausa aggiornata: $isRetribuita")
     }
 
-    /**
-     * Aggiorna le note della pausa in modifica
-     */
     fun aggiornaNotePausa(nuoveNote: String?) {
         val pausaCorrente = _uiState.value.pausaInModifica ?: return
         val pausaAggiornata = pausaCorrente.copy(note = nuoveNote?.takeIf { it.isNotBlank() })
@@ -642,10 +594,6 @@ class PianificaManagerViewModel @Inject constructor(
         Log.d(TAG, "Note pausa aggiornate")
     }
 
-
-    /**
-     * Salva la pausa in modifica nella lista delle pause del turno
-     */
     fun salvaPausaInTurno() {
         val pausaCorrente = _uiState.value.pausaInModifica ?: return
         val turnoCorrente = _uiState.value.turnoInModifica
@@ -688,9 +636,6 @@ class PianificaManagerViewModel @Inject constructor(
         Log.d(TAG, "Pausa salvata nel turno. Totale pause: ${pauseAttuali.size}")
     }
 
-    /**
-     * Elimina una pausa dalla lista del turno
-     */
     fun eliminaPausaDalTurno(pausaId: String) {
         val turnoCorrente = _uiState.value.turnoInModifica
 
@@ -705,10 +650,6 @@ class PianificaManagerViewModel @Inject constructor(
         Log.d(TAG, "Pausa eliminata dal turno. Pause rimanenti: ${pauseAggiornate.size}")
     }
 
-
-    /**
-     * Valida la pausa corrente
-     */
     fun validaPausa(): ValidationResult {
         val pausa = _uiState.value.pausaInModifica
             ?: return ValidationResult.Error("Nessuna pausa in modifica")
@@ -727,7 +668,6 @@ class PianificaManagerViewModel @Inject constructor(
             errori.add("Le note non possono superare i 200 caratteri")
         }
 
-
         return if (errori.isEmpty()) {
             ValidationResult.Success
         } else {
@@ -735,12 +675,9 @@ class PianificaManagerViewModel @Inject constructor(
         }
     }
 
-    fun setShowPauseDialog(show: Boolean)
-    {
+    fun setShowPauseDialog(show: Boolean) {
         _uiState.update { it.copy(showPauseDialog = show) }
     }
-
-
 
     fun aggiornaTitolo(nuovoTitolo: String) {
         val turnoCorrente = _uiState.value.turnoInModifica
@@ -772,8 +709,6 @@ class PianificaManagerViewModel @Inject constructor(
         Log.d(TAG, "Orario fine aggiornato: $nuovoOrario")
     }
 
-
-
     fun aggiornaNote(nuoveNote: List<Nota>) {
         val turnoCorrente = _uiState.value.turnoInModifica
         val turnoAggiornato = turnoCorrente.copy(
@@ -784,23 +719,15 @@ class PianificaManagerViewModel @Inject constructor(
         Log.d(TAG, "Note aggiornate: ${nuoveNote.size} note")
     }
 
-
-
-    /**
-     * Carica un turno esistente per la modifica
-     */
     fun editTurno(turnoId: String) {
         viewModelScope.launch {
             try {
                 setLoading(true)
 
                 // Recupera il turno dal database locale
-                val turnoEntity = turnoDao.getTurnoById(turnoId)
+                val turno = getTurnoByIdUseCase(turnoId)
 
-                if (turnoEntity != null && !turnoEntity.isDeleted) {
-                    // Converti in domain model e caricalo per la modifica
-                    val turno = turnoEntity.toDomain()
-
+                if (turno != null) {
                     _uiState.update {
                         it.copy(
                             turnoInModifica = turno,
@@ -832,17 +759,16 @@ class PianificaManagerViewModel @Inject constructor(
         }
     }
 
-
     fun deleteTurnoWithConfirmation(turnoId: String, onConfirm: () -> Unit) {
         viewModelScope.launch {
             try {
-                val turnoEntity = turnoDao.getTurnoById(turnoId)
+                val turno = getTurnoByIdUseCase(turnoId)
 
-                if (turnoEntity != null && !turnoEntity.isDeleted) {
+                if (turno != null) {
                     // Mostra dialog di conferma
                     _uiState.update {
                         it.copy(
-                            turnoToDelete = turnoEntity.toDomain(),
+                            turnoToDelete = turno,
                             showDeleteConfirmDialog = true
                         )
                     }
@@ -853,9 +779,6 @@ class PianificaManagerViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Annulla l'eliminazione del turno
-     */
     fun cancelDeleteTurno() {
         _uiState.update {
             it.copy(
@@ -865,54 +788,46 @@ class PianificaManagerViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Elimina un turno (soft delete - imposta isDeleted = true)
-     */
     fun deleteTurno(turnoId: String) {
         viewModelScope.launch {
             try {
                 setLoading(true)
 
-                // Recupera il turno dal database
-                val turnoEntity = turnoDao.getTurnoById(turnoId)
-
-                if (turnoEntity != null && !turnoEntity.isDeleted) {
-                    // Effettua soft delete impostando isDeleted = true
-                    val turnoEliminato = turnoEntity.copy(
-                        isDeleted = true,
-                        isSynced = false, // Marca come non sincronizzato per propagare la modifica
-                        updatedAt = com.google.firebase.Timestamp.now()
-                    )
-
-                    turnoDao.update(turnoEliminato)
-
-                    Log.d(TAG, "✅ Turno eliminato (soft delete): ${turnoEntity.titolo}")
-
-                    _uiState.update {
-                        it.copy(
-                            hasChangeShift = true,
-                            successMessage = "Turno eliminato con successo"
-                        )
+                when (val result = deleteTurnoUseCase(turnoId)) {
+                    is Resource.Success -> {
+                        Log.d(TAG, "✅ ${result.data}")
+                        _uiState.update {
+                            it.copy(
+                                hasChangeShift = true,
+                                successMessage = result.data
+                            )
+                        }
                     }
 
-                } else {
-                    _uiState.update {
-                        it.copy(
-                            errorMessage = if (turnoEntity?.isDeleted == true) {
-                                "Il turno è già stato eliminato"
-                            } else {
-                                "Turno non trovato"
-                            }
-                        )
+                    is Resource.Error -> {
+                        Log.e(TAG, "❌ Errore eliminazione: ${result.message}")
+                        _uiState.update {
+                            it.copy(
+                                errorMessage = result.message
+                            )
+                        }
                     }
-                    Log.e(TAG, "❌ Turno non trovato o già eliminato: $turnoId")
+
+                    is Resource.Empty -> {
+                        Log.w(TAG, "⚠️ Risposta vuota durante eliminazione")
+                        _uiState.update {
+                            it.copy(
+                                errorMessage = "Errore imprevisto durante l'eliminazione"
+                            )
+                        }
+                    }
                 }
 
             } catch (e: Exception) {
-                Log.e(TAG, "❌ Errore durante l'eliminazione turno: ${e.message}")
+                Log.e(TAG, "🚨 Errore imprevisto: ${e.message}")
                 _uiState.update {
                     it.copy(
-                        errorMessage = "Errore durante l'eliminazione: ${e.message}"
+                        errorMessage = "Errore imprevisto: ${e.message}"
                     )
                 }
             } finally {
@@ -921,9 +836,6 @@ class PianificaManagerViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Conferma l'eliminazione del turno
-     */
     fun confirmDeleteTurno() {
         val turnoToDelete = _uiState.value.turnoToDelete
         if (turnoToDelete != null) {
@@ -953,57 +865,54 @@ class PianificaManagerViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Salva il turno corrente
-     */
-    fun saveTurno(dipartimento : String, giornoSelezionato : LocalDate, idAzienda: String) {
+    fun saveTurno(dipartimento: String, giornoSelezionato: LocalDate, idAzienda: String) {
         viewModelScope.launch {
-
-            _uiState.update { it.copy(loading = true) }
-
-
-            val turno = _uiState.value.turnoInModifica
-            Log.d("SAVE_TURNO", "💾 Salvataggio turno in Room: ${turno.id}")
-
-            val isNewTurno = !turnoDao.exists(turno.id)
-
-            Log.d("SAVE_TURNO", " è NUOVO : $isNewTurno")
-
-
-            val turnoToSave = if (isNewTurno) {
-                turno.copy(
-                    dipartimento = dipartimento,
-                    data = giornoSelezionato,
-                    idAzienda = idAzienda
-                )
-            } else
-                turno
-
-
-            val turnoEntity = turnoToSave.toEntity()
-
-
-
             try {
-                if (isNewTurno) {
-                    turnoDao.insert(turnoEntity) // Inserisci nuovo
-                } else {
-                    val turnoDaAggiornare = turnoEntity
+                _uiState.update { it.copy(loading = true) }
 
-                    val turnoDaSync = turnoDaAggiornare.copy(isSynced = false)
-                    turnoDao.update(turnoDaSync)
+                val turno = _uiState.value.turnoInModifica
+                Log.d(TAG, "💾 Inizio salvataggio turno: ${turno.id}")
+
+                when (val result = saveTurnoUseCase(turno, dipartimento, giornoSelezionato, idAzienda)) {
+                    is Resource.Success -> {
+                        Log.d(TAG, "✅ ${result.data}")
+                        _uiState.update {
+                            it.copy(
+                                hasChangeShift = true,
+                                loading = false,
+                                turnoInModifica = Turno(),
+                                successMessage = result.data
+                            )
+                        }
+                    }
+
+                    is Resource.Error -> {
+                        Log.e(TAG, "❌ Errore salvataggio: ${result.message}")
+                        _uiState.update {
+                            it.copy(
+                                loading = false,
+                                errorMessage = result.message
+                            )
+                        }
+                    }
+
+                    is Resource.Empty -> {
+                        Log.w(TAG, "⚠️ Risposta vuota durante salvataggio")
+                        _uiState.update {
+                            it.copy(
+                                loading = false,
+                                errorMessage = "Errore imprevisto durante il salvataggio"
+                            )
+                        }
+                    }
                 }
 
-                Log.d(TAG, "✅ Turno salvato localmente in Room")
-
-                _uiState.update { it.copy(hasChangeShift = true, loading = false, turnoInModifica = Turno()) }
-
             } catch (e: Exception) {
-                Log.e(TAG, "❌ Errore salvataggio turno locale: ${e.message}")
+                Log.e(TAG, "🚨 Errore imprevisto: ${e.message}")
                 _uiState.update {
                     it.copy(
                         loading = false,
-                        errorMessage = "Errore durante il salvataggio locale: ${e.message}"
+                        errorMessage = "Errore imprevisto: ${e.message}"
                     )
                 }
             }
@@ -1019,10 +928,6 @@ class PianificaManagerViewModel @Inject constructor(
         }
     }
 
-
-    /**
-     * Ottiene i dipendenti selezionati per il turno corrente
-     */
     fun getDipendentiSelezionati(): List<User> {
         val turno = _uiState.value.turnoInModifica
         val tuttiDipendenti = _uiState.value.dipendenti
@@ -1030,10 +935,6 @@ class PianificaManagerViewModel @Inject constructor(
         return tuttiDipendenti.filter { it.uid in turno.idDipendenti }
     }
 
-
-    /**
-     * Calcola la durata totale del turno corrente
-     */
     fun calcolaDurataTurnoCorrente(): String {
         val turno = _uiState.value.turnoInModifica
 
@@ -1047,11 +948,3 @@ class PianificaManagerViewModel @Inject constructor(
         return "${ore}h ${minuti}m"
     }
 }
-
-
-sealed class ValidationResult {
-    object Success : ValidationResult()
-    data class Error(val message: String) : ValidationResult()
-}
-
-

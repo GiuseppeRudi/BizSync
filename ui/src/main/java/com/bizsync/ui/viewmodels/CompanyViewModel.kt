@@ -3,14 +3,13 @@ package com.bizsync.ui.viewmodels
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bizsync.backend.repository.AziendaRepository
-import com.bizsync.backend.repository.UserRepository
-import com.bizsync.cache.dao.UserDao
-import com.bizsync.cache.mapper.toDomainList
 import com.bizsync.domain.constants.enumClass.CompanyOperation
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.AreaLavoro
 import com.bizsync.domain.model.User
+import com.bizsync.domain.usecases.LoadDipendentiAziendaUseCase
+import com.bizsync.domain.usecases.SaveCompanyChangesUseCase
+import com.bizsync.domain.usecases.UpdateDipartimentoDipendentiUseCase
 import com.bizsync.ui.components.DialogStatusType
 import com.bizsync.ui.model.AziendaUi
 import com.bizsync.ui.model.CompanyState
@@ -23,12 +22,11 @@ import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalTime
 import javax.inject.Inject
-
 @HiltViewModel
 class CompanyViewModel @Inject constructor(
-    private val aziendaRepository: AziendaRepository,
-    private val userRepository: UserRepository,
-    private val userDao : UserDao
+    private val loadDipendentiAziendaUseCase: LoadDipendentiAziendaUseCase,
+    private val saveCompanyChangesUseCase: SaveCompanyChangesUseCase,
+    private val updateDipartimentoDipendentiUseCase: UpdateDipartimentoDipendentiUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CompanyState())
@@ -38,15 +36,25 @@ class CompanyViewModel @Inject constructor(
         _uiState.update { it.copy(orariSettimanaliModificati = orari) }
     }
 
-
-     fun loadDipendentiAzienda() {
+    fun loadDipendentiAzienda() {
         viewModelScope.launch {
             try {
-                val dipendenti = userDao.getDipendentiFull()
-                _uiState.update { it.copy(dipendenti = dipendenti.toDomainList()) }
+                // ✅ Usa Use Case invece di DAO diretto
+                when (val result = loadDipendentiAziendaUseCase()) {
+                    is Resource.Success -> {
+                        _uiState.update { it.copy(dipendenti = result.data) }
+                    }
+                    is Resource.Error -> {
+                        Log.e("CompanyViewModel", "Errore nel caricamento dipendenti: ${result.message}")
+                        setStatusMessage(result.message, DialogStatusType.ERROR)
+                    }
+                    is Resource.Empty -> {
+                        _uiState.update { it.copy(dipendenti = emptyList()) }
+                    }
+                }
             } catch (e: Exception) {
-                // Gestione errore
                 Log.e("CompanyViewModel", "Errore nel caricamento dipendenti", e)
+                setStatusMessage("Errore imprevisto: ${e.message}", DialogStatusType.ERROR)
             }
         }
     }
@@ -74,35 +82,77 @@ class CompanyViewModel @Inject constructor(
 
     fun salvaDipendentiModificati(onComplete: () -> Unit) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-
             try {
+                _uiState.update { it.copy(isLoading = true) }
+
                 val dipendentiDaAggiornare = _uiState.value.dipendentiModificati.values.toList()
 
-                // Prima aggiorna Firebase
-                userRepository.updateDipartimentoDipendenti(dipendentiDaAggiornare)
+                // ✅ Usa Use Case invece del repository diretto
+                when (val result = updateDipartimentoDipendentiUseCase(dipendentiDaAggiornare)) {
+                    is Resource.Success -> {
+                        // Ricarica i dipendenti aggiornati
+                        loadDipendentiAzienda()
 
-                // Ricarica i dipendenti aggiornati
-                loadDipendentiAzienda()
+                        // Reset delle modifiche
+                        _uiState.update {
+                            it.copy(
+                                dipendentiModificati = emptyMap(),
+                                isLoading = false
+                            )
+                        }
 
-                // Reset delle modifiche
-                _uiState.update {
-                    it.copy(
-                        dipendentiModificati = emptyMap(),
-                        isLoading = false
-                    )
+                        onComplete()
+                    }
+
+                    is Resource.Error -> {
+                        _uiState.update { it.copy(isLoading = false) }
+                        setStatusMessage(result.message ?: "Errore nel salvataggio dipendenti", DialogStatusType.ERROR)
+                    }
+
+                    is Resource.Empty -> {
+                        _uiState.update { it.copy(isLoading = false) }
+                        setStatusMessage("Nessun dipendente aggiornato", DialogStatusType.ERROR)
+                    }
                 }
-
-                onComplete()
 
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false) }
                 Log.e("CompanyViewModel", "Errore nel salvataggio dipendenti", e)
-                // Mostra errore all'utente
+                setStatusMessage("Errore imprevisto: ${e.message}", DialogStatusType.ERROR)
             }
         }
     }
 
+    fun onSaveChanges(idAzienda: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+
+            try {
+                // Salva le modifiche ai dipartimenti
+                val nuoviDipartimenti = _uiState.value.areeModificate
+
+                // Aggiorna Firebase
+                saveCompanyChangesUseCase(idAzienda, nuoviDipartimenti)
+
+                // Salva i nuovi dipartimenti temporaneamente per la verifica
+                _uiState.update {
+                    it.copy(
+                        nuoviDipartimenti = nuoviDipartimenti,
+                        isLoading = false,
+                        hasChanges = false
+                    )
+                }
+
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false) }
+                Log.e("CompanyViewModel", "Errore nel salvataggio dipartimenti", e)
+            }
+        }
+    }
+
+
+
+    // ✅ RESTO DELLE FUNZIONI IDENTICHE
     fun openOrariDialog(areaId: String) {
         val orariEsistenti = _uiState.value.orariSettimanaliModificati[areaId] ?: emptyMap()
         _uiState.update {
@@ -134,7 +184,6 @@ class CompanyViewModel @Inject constructor(
             current.copy(orariTemp = nuoviOrari)
         }
     }
-
 
     fun onOrarioFineChanged(giorno: DayOfWeek, orario: LocalTime) {
         _uiState.update { current ->
@@ -188,47 +237,14 @@ class CompanyViewModel @Inject constructor(
         }
     }
 
-    fun onSaveChanges(idAzienda: String) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-
-            try {
-                // Salva le modifiche ai dipartimenti
-                val nuoviDipartimenti = _uiState.value.areeModificate
-
-                // Aggiorna Firebase
-                aziendaRepository.updateAreeLavoro(idAzienda, nuoviDipartimenti)
-
-
-                // Salva i nuovi dipartimenti temporaneamente per la verifica
-                _uiState.update {
-                    it.copy(
-                        nuoviDipartimenti = nuoviDipartimenti,
-                        isLoading = false,
-                        hasChanges = false
-                    )
-                }
-
-            } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false) }
-                Log.e("CompanyViewModel", "Errore nel salvataggio dipartimenti", e)
-            }
-        }
-    }
-
-
     fun setSelectedOperation(operation: CompanyOperation?) {
         _uiState.update { it.copy(selectedOperation = operation) }
     }
 
-    fun checkOnBoardingStatus(azienda : AziendaUi)
-    {
-        if(azienda.areeLavoro.isNotEmpty() && azienda.turniFrequenti.isNotEmpty())
-        {
+    fun checkOnBoardingStatus(azienda: AziendaUi) {
+        if (azienda.areeLavoro.isNotEmpty() && azienda.turniFrequenti.isNotEmpty()) {
             _uiState.update { it.copy(onBoardingDone = true) }
-        }
-        else
-        {
+        } else {
             _uiState.update { it.copy(onBoardingDone = false) }
         }
     }
@@ -241,18 +257,14 @@ class CompanyViewModel @Inject constructor(
         _uiState.update { it.copy(editingArea = area) }
     }
 
-    /** Imposta lo stato di caricamento */
     fun setLoading(isLoading: Boolean) {
         _uiState.update { it.copy(isLoading = isLoading) }
     }
 
-    /** Imposta messaggio e tipo stato per i dialog */
     fun setStatusMessage(message: String?, type: DialogStatusType) {
         _uiState.update { it.copy(resultMsg = message, statusMsg = type) }
     }
 
-
-    /** Aggiunge una nuova area modificata */
     fun addAreaModificata(area: AreaLavoro) {
         _uiState.update { current ->
             val nuoveAree = current.areeModificate.toMutableList().apply { add(area) }
@@ -260,7 +272,6 @@ class CompanyViewModel @Inject constructor(
         }
     }
 
-    /** Modifica un'area esistente nell'elenco */
     fun updateAreaModificata(id: String, nuovoNome: String) {
         _uiState.update { current ->
             val nuoveAree = current.areeModificate.map {
@@ -270,20 +281,15 @@ class CompanyViewModel @Inject constructor(
         }
     }
 
-    /** Imposta se ci sono modifiche da salvare */
     fun setHasChanges(value: Boolean) {
         _uiState.update { it.copy(hasChanges = value) }
     }
 
-    /** Mostra o nasconde il dialog di aggiunta */
     fun setShowAddDialog(show: Boolean) {
         _uiState.update { it.copy(showAddDialog = show) }
     }
 
-
-    /** Imposta le aree modificate (ad esempio dopo editing) */
     fun setAreeModificate(aree: List<AreaLavoro>) {
         _uiState.update { it.copy(areeModificate = aree, hasChanges = true) }
     }
-
 }

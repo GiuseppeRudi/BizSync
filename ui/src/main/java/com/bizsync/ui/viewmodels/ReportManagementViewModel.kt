@@ -1,20 +1,24 @@
 package com.bizsync.ui.viewmodels
 
-import com.bizsync.backend.repository.AbsenceRepository
-import com.bizsync.backend.repository.ContractRepository
-import com.bizsync.backend.repository.TurnoRepository
-import com.bizsync.cache.dao.AbsenceDao
-import com.bizsync.cache.dao.ContrattoDao
-import com.bizsync.cache.dao.TurnoDao
-import com.bizsync.cache.dao.UserDao
-import com.bizsync.ui.model.ReportData
-
-
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bizsync.cache.mapper.toDomainList
 import com.bizsync.domain.constants.enumClass.ReportFilter
+import com.bizsync.domain.usecases.GetAbsencesInRangeUseCase
+import com.bizsync.domain.usecases.GetAbsencesUseCase
+import com.bizsync.domain.usecases.GetLocalContrattiUseCase
+import com.bizsync.domain.usecases.GetDipendentiUseCase
+import com.bizsync.domain.usecases.GetLocalAbsenceUseCase
+import com.bizsync.domain.usecases.GetLocalTurniUseCase
+import com.bizsync.domain.usecases.GetTurniInRangeUseCase
+import com.bizsync.domain.usecases.GetTurniUseCase
+import com.bizsync.domain.usecases.SyncAbsencesInRangeUseCase
+import com.bizsync.domain.usecases.SyncAllAbsencesUseCase
+import com.bizsync.domain.usecases.SyncAllContrattiUseCase
+import com.bizsync.domain.usecases.SyncAllTurniUseCase
+import com.bizsync.domain.usecases.SyncRecentContrattiUseCase
+import com.bizsync.domain.usecases.SyncTurniInRangeUseCase
 import com.bizsync.ui.model.CacheStatus
+import com.bizsync.ui.model.ReportData
 import com.bizsync.ui.model.ReportsUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -22,18 +26,20 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import javax.inject.Inject
 
-
-
-
 @HiltViewModel
 class ReportsManagementViewModel @Inject constructor(
-    private val contrattoDao: ContrattoDao,
-    private val userDao: UserDao,
-    private val absenceDao: AbsenceDao,
-    private val turnoDao: TurnoDao,
-    private val contrattoRepository: ContractRepository,
-    private val absenceRepository: AbsenceRepository,
-    private val turnoRepository: TurnoRepository
+    private val getLocalContrattiUseCase: GetLocalContrattiUseCase,
+    private val getDipendentiUseCase: GetDipendentiUseCase,
+    private val getAbsencesUseCase: GetLocalAbsenceUseCase,
+    private val getTurniUseCase: GetLocalTurniUseCase,
+    private val getTurniInRangeUseCase: GetTurniInRangeUseCase,
+    private val getAbsencesInRangeUseCase: GetAbsencesInRangeUseCase,
+    private val syncRecentContrattiUseCase: SyncRecentContrattiUseCase,
+    private val syncAbsencesInRangeUseCase: SyncAbsencesInRangeUseCase,
+    private val syncTurniInRangeUseCase: SyncTurniInRangeUseCase,
+    private val syncAllContrattiUseCase: SyncAllContrattiUseCase,
+    private val syncAllAbsencesUseCase: SyncAllAbsencesUseCase,
+    private val syncAllTurniUseCase: SyncAllTurniUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ReportsUiState())
@@ -120,18 +126,17 @@ class ReportsManagementViewModel @Inject constructor(
 
     private suspend fun loadDataFromCache() {
         try {
-
             // Carica tutti i dati dalla cache locale
-            val contratti = contrattoDao.getContratti()
-            val users = userDao.getDipendenti()
-            val absences = absenceDao.getAbsences()
-            val turni = turnoDao.getTurni()
+            val contratti = getLocalContrattiUseCase()
+            val users = getDipendentiUseCase()
+            val absences = getAbsencesUseCase()
+            val turni = getTurniUseCase()
 
             val reportData = ReportData(
-                contratti = contratti.toDomainList(),
-                users = users.toDomainList(),
-                absences = absences.toDomainList(),
-                turni = turni.toDomainList()
+                contratti = contratti,
+                users = users,
+                absences = absences,
+                turni = turni
             )
 
             val departments = listOf("Tutti") + users.map { it.dipartimento }.distinct().sorted()
@@ -162,9 +167,9 @@ class ReportsManagementViewModel @Inject constructor(
             val today = LocalDate.now()
 
             // Carica dati recenti da Firebase (ultimi 2 settimane + oggi)
-            contrattoRepository.syncRecentContratti()
-            absenceRepository.syncAbsencesInRange(twoWeeksAgo, today)
-            turnoRepository.syncTurniInRange(twoWeeksAgo, today)
+            syncRecentContrattiUseCase()
+            syncAbsencesInRangeUseCase(twoWeeksAgo, today)
+            syncTurniInRangeUseCase(twoWeeksAgo, today)
 
             _cacheStatus.update {
                 it.copy(
@@ -196,8 +201,8 @@ class ReportsManagementViewModel @Inject constructor(
             val twoWeeksAgo = LocalDate.now().minusWeeks(2)
 
             // Carica solo i dati che non abbiamo già (da 1 mese fa a 2 settimane fa)
-            absenceRepository.syncAbsencesInRange(oneMonthAgo, twoWeeksAgo)
-            turnoRepository.syncTurniInRange(oneMonthAgo, twoWeeksAgo)
+            syncAbsencesInRangeUseCase(oneMonthAgo, twoWeeksAgo)
+            syncTurniInRangeUseCase(oneMonthAgo, twoWeeksAgo)
 
             _cacheStatus.update {
                 it.copy(
@@ -228,8 +233,8 @@ class ReportsManagementViewModel @Inject constructor(
             val oneMonthAgo = LocalDate.now().minusMonths(1)
 
             // Carica dati da 3 mesi fa a 1 mese fa (escludendo quello che abbiamo già)
-            absenceRepository.syncAbsencesInRange(threeMonthsAgo, oneMonthAgo)
-            turnoRepository.syncTurniInRange(threeMonthsAgo, oneMonthAgo)
+            syncAbsencesInRangeUseCase(threeMonthsAgo, oneMonthAgo)
+            syncTurniInRangeUseCase(threeMonthsAgo, oneMonthAgo)
 
             _cacheStatus.update {
                 it.copy(
@@ -261,14 +266,14 @@ class ReportsManagementViewModel @Inject constructor(
             val threeMonthsAgo = LocalDate.now().minusMonths(3)
 
             // Carica dati da 1 anno fa a 3 mesi fa
-            absenceRepository.syncAbsencesInRange(oneYearAgo, threeMonthsAgo)
-            turnoRepository.syncTurniInRange(oneYearAgo, threeMonthsAgo)
+            syncAbsencesInRangeUseCase(oneYearAgo, threeMonthsAgo)
+            syncTurniInRangeUseCase(oneYearAgo, threeMonthsAgo)
 
             // Per ALL_TIME potremmo voler caricare tutto lo storico
             if (_uiState.value.selectedFilter == ReportFilter.ALL_TIME) {
-                contrattoRepository.syncAllContratti()
-                absenceRepository.syncAllAbsences()
-                turnoRepository.syncAllTurni()
+                syncAllContrattiUseCase()
+                syncAllAbsencesUseCase()
+                syncAllTurniUseCase()
             }
 
             _cacheStatus.update {
@@ -295,8 +300,8 @@ class ReportsManagementViewModel @Inject constructor(
 
     private suspend fun checkIfCacheHasRecentData(fromDate: LocalDate): Boolean {
         return try {
-            val turni = turnoDao.getTurniInRange(fromDate, LocalDate.now())
-            val absences = absenceDao.getAbsencesInRange(fromDate, LocalDate.now()).first()
+            val turni = getTurniInRangeUseCase(fromDate, LocalDate.now())
+            val absences = getAbsencesInRangeUseCase(fromDate, LocalDate.now()).first()
 
             turni.isNotEmpty() || absences.isNotEmpty()
         } catch (e: Exception) {

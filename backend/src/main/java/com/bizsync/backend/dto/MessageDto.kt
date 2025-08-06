@@ -14,5 +14,4 @@ data class MessageDto(
     val timestamp: Timestamp? = null,
     val tipo: String = "text",
     val lettoDa: List<String> = emptyList(),
-    val categoria: String? = null
 )

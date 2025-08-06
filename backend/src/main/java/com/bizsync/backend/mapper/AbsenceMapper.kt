@@ -4,6 +4,9 @@ import com.bizsync.backend.dto.AbsenceDto
 import com.bizsync.domain.constants.enumClass.AbsenceStatus
 import com.bizsync.domain.constants.enumClass.AbsenceType
 import com.bizsync.domain.model.Absence
+import com.bizsync.domain.utils.DateUtils.toFirebaseTimestamp
+import com.bizsync.domain.utils.DateUtils.toLocalDate
+import com.bizsync.domain.utils.DateUtils.toLocalTime
 import com.google.firebase.Timestamp
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -17,13 +20,13 @@ fun Absence.toDto(): AbsenceDto {
         type = type.name,
         idUser = idUser,
         idAzienda = idAzienda,
-        startDateTime = startDate.atTime(startTime ?: LocalTime.MIDNIGHT).toTimestamp(),
-        endDateTime = endDate.atTime(endTime ?: LocalTime.MIDNIGHT).toTimestamp(),
+        startDateTime = startDate.atTime(startTime ?: LocalTime.MIDNIGHT).toFirebaseTimestamp(),
+        endDateTime = endDate.atTime(endTime ?: LocalTime.MIDNIGHT).toFirebaseTimestamp(),
         reason = reason,
         status = status.name,
-        submittedDate = submittedDate.atStartOfDay().toTimestamp(),
+        submittedDate = submittedDate.atStartOfDay().toFirebaseTimestamp(),
         approvedBy = approvedBy,
-        approvedDate = approvedDate?.atStartOfDay()?.toTimestamp(),
+        approvedDate = approvedDate?.atStartOfDay()?.toFirebaseTimestamp(),
         comments = comments,
         submittedName = submittedName,
         totalHours = totalHours,
@@ -59,15 +62,3 @@ fun AbsenceDto.toDomain(): Absence {
     )
 }
 
-fun LocalDateTime.toTimestamp(): Timestamp {
-    val instant = this.atZone(ZoneOffset.UTC).toInstant()
-    return Timestamp(instant.epochSecond, instant.nano)
-}
-
-fun Timestamp.toLocalDate(): LocalDate = this.toDate().toInstant()
-    .atZone(ZoneOffset.UTC)
-    .toLocalDate()
-
-fun Timestamp.toLocalTime(): LocalTime = this.toDate().toInstant()
-    .atZone(ZoneOffset.UTC)
-    .toLocalTime()

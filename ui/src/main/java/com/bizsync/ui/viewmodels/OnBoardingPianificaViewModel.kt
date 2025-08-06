@@ -2,11 +2,12 @@ package com.bizsync.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bizsync.backend.repository.AziendaRepository
-import com.bizsync.backend.repository.OnBoardingPianificaRepository
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.AreaLavoro
 import com.bizsync.domain.model.TurnoFrequente
+import com.bizsync.domain.usecases.GeneraAreeAiUseCase
+import com.bizsync.domain.usecases.GeneraTurniAiUseCase
+import com.bizsync.domain.usecases.SalvaPianificaSetupUseCase
 import com.bizsync.ui.model.OnBoardingPianificaState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,13 +20,13 @@ import javax.inject.Inject
 
 @HiltViewModel
 class OnBoardingPianificaViewModel @Inject constructor(
-    private val aziendaRepository: AziendaRepository,
-    private val onBoardingPianificaRepository: OnBoardingPianificaRepository
+    private val generaAreeAiUseCase: GeneraAreeAiUseCase,
+    private val generaTurniAiUseCase: GeneraTurniAiUseCase,
+    private val salvaPianificaSetupUseCase: SalvaPianificaSetupUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(OnBoardingPianificaState())
     val uiState: StateFlow<OnBoardingPianificaState> = _uiState
-
 
     fun setStep(step: Int) {
         _uiState.update { it.copy(currentStep = step) }
@@ -38,7 +39,6 @@ class OnBoardingPianificaViewModel @Inject constructor(
     fun clearError() {
         _uiState.update { it.copy(errorMsg = null) }
     }
-
 
     fun onNuovaAreaChangeName(name: String) {
         _uiState.update { it.copy(nuovaArea = it.nuovaArea.copy(nomeArea = name)) }
@@ -62,11 +62,10 @@ class OnBoardingPianificaViewModel @Inject constructor(
 
     fun generaAreeAi(nomeAzienda: String) {
         viewModelScope.launch {
-            val aree = onBoardingPianificaRepository.setAreaAi(nomeAzienda)
+            val aree = generaAreeAiUseCase(nomeAzienda)
             _uiState.update { it.copy(aree = aree, areePronte = true) }
         }
     }
-
 
     fun onAreaSelectionChanged(areaId: String, isSelected: Boolean) {
         _uiState.update { state ->
@@ -213,7 +212,6 @@ class OnBoardingPianificaViewModel @Inject constructor(
         }
     }
 
-
     fun onRimuoviTurnoById(idDaRimuovere: String) {
         _uiState.update { state ->
             state.copy(
@@ -257,29 +255,26 @@ class OnBoardingPianificaViewModel @Inject constructor(
 
     fun generaTurniAi(nomeAzienda: String) {
         viewModelScope.launch {
-            val turni = onBoardingPianificaRepository.setTurniAi(nomeAzienda)
+            val turni = generaTurniAiUseCase(nomeAzienda)
             _uiState.update { it.copy(turni = turni, turniPronti = true) }
         }
     }
 
-
     fun onComplete(idAzienda: String) {
         viewModelScope.launch {
-            val result = aziendaRepository.addPianificaSetup(
+            val result = salvaPianificaSetupUseCase(
                 idAzienda,
                 _uiState.value.aree,
-                _uiState.value.turni,
+                _uiState.value.turni
             )
 
             when (result) {
                 is Resource.Success -> {
                     _uiState.update { it.copy(onDone = true) }
                 }
-
                 is Resource.Error -> {
                     _uiState.update { it.copy(errorMsg = result.message) }
                 }
-
                 is Resource.Empty -> {
                     _uiState.update { it.copy(errorMsg = "Nessun dato da salvare") }
                 }

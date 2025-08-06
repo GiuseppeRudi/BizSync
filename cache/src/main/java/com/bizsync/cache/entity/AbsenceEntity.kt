@@ -5,6 +5,8 @@ package com.bizsync.cache.entity
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import java.time.LocalDate
+import java.time.LocalTime
 
 @Entity(
     tableName = "absences",
@@ -24,23 +26,21 @@ data class AbsenceEntity(
     val idAzienda: String,
     val type: String,
 
-    val startDate: String,
-    val endDate: String,
-    val submittedDate: String,
-    val approvedDate: String?,
+    val startDate: LocalDate,        // ← Direttamente LocalDate
+    val endDate: LocalDate,          // ← Direttamente LocalDate
+    val submittedDate: LocalDate,    // ← Direttamente LocalDate
+    val approvedDate: LocalDate?,    // ← Direttamente LocalDate
 
-    val startTime: String?,
-    val endTime: String?,
+    val startTime: LocalTime?,       // ← Direttamente LocalTime
+    val endTime: LocalTime?,         // ← Direttamente LocalTime
 
     val reason: String,
     val status: String,
     val comments: String?,
     val approver: String?,
 
-
     val totalDays: Int?,
     val totalHours: Int?,
 
     val lastUpdated: Long = System.currentTimeMillis()
 )
-

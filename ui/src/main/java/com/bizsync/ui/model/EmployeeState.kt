@@ -1,13 +1,11 @@
 package com.bizsync.ui.model
 
-import com.bizsync.ui.viewmodels.DettagliGiornalieri
-import com.bizsync.ui.viewmodels.StatisticheSettimanali
+
 
 
 import com.bizsync.domain.model.*
 import java.time.DayOfWeek
 import java.time.LocalDate
-import java.time.LocalTime
 
 data class EmployeeState(
     // Dati utente corrente

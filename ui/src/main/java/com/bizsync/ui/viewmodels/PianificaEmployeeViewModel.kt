@@ -3,12 +3,11 @@ package com.bizsync.ui.viewmodels
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bizsync.backend.orchestrator.TurnoOrchestrator
-import com.bizsync.cache.dao.AbsenceDao
-import com.bizsync.cache.dao.UserDao
-import com.bizsync.cache.mapper.toDomainList
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.*
+import com.bizsync.domain.usecases.GetAssenzeByUserUseCase
+import com.bizsync.domain.usecases.GetColleghiUseCase
+import com.bizsync.domain.usecases.GetTurniSettimanaliUseCase
 import com.bizsync.ui.model.EmployeeState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
@@ -18,14 +17,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalDate
-import java.time.LocalTime
 import javax.inject.Inject
 
 @HiltViewModel
 class PianificaEmployeeViewModel @Inject constructor(
-    private val turnoOrchestrator: TurnoOrchestrator,
-    private val userDao: UserDao,
-    private val absenceDao: AbsenceDao,
+    private val getTurniSettimanaliUseCase: GetTurniSettimanaliUseCase,
+    private val getColleghiUseCase: GetColleghiUseCase,
+    private val getAssenzeByUserUseCase: GetAssenzeByUserUseCase
 ) : ViewModel() {
 
     companion object {
@@ -43,26 +41,31 @@ class PianificaEmployeeViewModel @Inject constructor(
         viewModelScope.launch {
             setLoading(true)
             try {
-                when (val result = turnoOrchestrator.fetchTurniSettimana(startWeek, idAzienda, idUser)) {
+                when (val result = getTurniSettimanaliUseCase(idAzienda, idUser, startWeek)) {
                     is Resource.Success -> {
                         val turni = result.data
-                        val grouped = turni.groupBy { it.data.dayOfWeek }
+                        // Filtra i turni per la settimana richiesta
+                        val turniSettimana = turni.filter { turno ->
+                            turno.data >= startWeek && turno.data < startWeek.plusWeeks(1)
+                        }
+
+                        val grouped = turniSettimana.groupBy { it.data.dayOfWeek }
                         val allDays = DayOfWeek.entries.associateWith { grouped[it] ?: emptyList() }
 
                         _uiState.update { current ->
                             current.copy(
                                 turniSettimanali = allDays,
-                                turniEmployee = turni
+                                turniEmployee = turniSettimana
                             )
                         }
 
                         // Calcola statistiche settimanali
-                        calcolaStatisticheSettimanali(startWeek, turni)
+                        calcolaStatisticheSettimanali(startWeek, turniSettimana)
 
-                        Log.d(TAG, " Turni settimanali caricati: ${turni.size}")
+                        Log.d(TAG, "Turni settimanali caricati: ${turniSettimana.size}")
                     }
                     is Resource.Error -> {
-                        Log.e(TAG, " Errore caricamento turni: ${result.message}")
+                        Log.e(TAG, "Errore caricamento turni: ${result.message}")
                         val allDays = DayOfWeek.entries.associateWith { emptyList<Turno>() }
                         _uiState.update { current ->
                             current.copy(
@@ -77,7 +80,7 @@ class PianificaEmployeeViewModel @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, " Errore imprevisto: ${e.message}")
+                Log.e(TAG, "Errore imprevisto: ${e.message}")
                 _uiState.update { it.copy(errorMessage = "Errore imprevisto: ${e.message}") }
             } finally {
                 setLoading(false)
@@ -104,10 +107,10 @@ class PianificaEmployeeViewModel @Inject constructor(
                     )
                 }
 
-                Log.d(TAG, " Turni giornalieri impostati: ${turniGiorno.size} turni")
+                Log.d(TAG, "Turni giornalieri impostati: ${turniGiorno.size} turni")
 
             } catch (e: Exception) {
-                Log.e(TAG, " Errore caricamento turni giornalieri: ${e.message}")
+                Log.e(TAG, "Errore caricamento turni giornalieri: ${e.message}")
                 _uiState.update { it.copy(errorMessage = "Errore caricamento turni giornalieri: ${e.message}") }
             }
         }
@@ -168,19 +171,16 @@ class PianificaEmployeeViewModel @Inject constructor(
         _uiState.update { it.copy(statisticheSettimanali = statistiche) }
     }
 
-    fun inizializzaDatiEmployee(userId: String, dipartimento : AreaLavoro) {
+    fun inizializzaDatiEmployee(userId: String, dipartimento: AreaLavoro) {
         viewModelScope.launch {
             try {
                 setLoading(true)
 
-                val colleghiDeferred = async { userDao.getDipendenti() }
-                val assenzeDeferred = async { absenceDao.getAbsencesByUser(userId) }
+                val colleghiDeferred = async { getColleghiUseCase() }
+                val assenzeDeferred = async { getAssenzeByUserUseCase(userId) }
 
-                val colleghiEntity = colleghiDeferred.await()
-                val assenzeEntity = assenzeDeferred.await()
-
-                val colleghi = colleghiEntity.toDomainList()
-                val assenze = assenzeEntity.toDomainList()
+                val colleghi = colleghiDeferred.await()
+                val assenze = assenzeDeferred.await()
 
                 _uiState.update {
                     it.copy(
@@ -201,44 +201,12 @@ class PianificaEmployeeViewModel @Inject constructor(
         }
     }
 
-
-    fun  inizializzaContratto(contratti: Contratto) {
-
-
+    fun inizializzaContratto(contratti: Contratto) {
         _uiState.update {
             it.copy(
                 contrattoEmployee = contratti
             )
         }
     }
-
-
 }
 
-
-
-data class DettagliGiornalieri(
-    val data: LocalDate,
-    val oreTotaliAssegnate: Int,
-    val oreEffettive: Double,
-    val orarioInizio: LocalTime?,
-    val orarioFine: LocalTime?,
-    val numeroTurni: Int,
-    val colleghi: List<User>,
-    val pause: List<Pausa>,
-    val note: List<Nota>,
-    // Informazioni dipartimento
-    val nomeDipartimento: String? = null,
-    val orarioAperturaDipartimento: LocalTime? = null,
-    val orarioChiusuraDipartimento: LocalTime? = null
-)
-
-data class StatisticheSettimanali(
-    val weekStart: LocalDate,
-    val oreContrattuali: Int,
-    val oreAssegnate: Int,
-    val oreEffettive: Double,
-    val giorniLavorativi: Int,
-    val turniTotali: Int,
-    val differenzaOre: Int
-)

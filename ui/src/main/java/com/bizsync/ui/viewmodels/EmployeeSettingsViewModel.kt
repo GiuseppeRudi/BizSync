@@ -3,36 +3,21 @@ package com.bizsync.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bizsync.backend.repository.UserRepository
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.User
+import com.bizsync.domain.usecases.UpdateUserPersonalInfoUseCase
+import com.bizsync.ui.model.EditableUserFields
+import com.bizsync.ui.model.EmployeeSettingsState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class EmployeeSettingsState(
-    val originalUser: User = User(),
-    val editableFields: EditableUserFields = EditableUserFields(),
-    val isLoading: Boolean = false,
-    val isSaving: Boolean = false,
-    val hasUnsavedChanges: Boolean = false,
-    val error: String? = null,
-    val successMessage: String? = null,
-    val showConfirmDialog: Boolean = false
-)
 
-data class EditableUserFields(
-    val numeroTelefono: String = "",
-    val indirizzo: String = "",
-    val codiceFiscale: String = "",
-    val dataNascita: String = "",
-    val luogoNascita: String = ""
-)
 
 @HiltViewModel
 class EmployeeSettingsViewModel @Inject constructor(
-    private val userRepository: UserRepository
+    private val updateUserPersonalInfoUseCase: UpdateUserPersonalInfoUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(EmployeeSettingsState())
@@ -118,10 +103,13 @@ class EmployeeSettingsViewModel @Inject constructor(
         val currentState = _uiState.value
         if (!currentState.hasUnsavedChanges) return
 
-        viewModelScope.launch {
-            _uiState.update { it.copy(isSaving = true, error = null) }
+        // ✅ OPZIONE 1: Validazione nel ViewModel (come prima)
+        if (!validateFields()) return
 
+        viewModelScope.launch {
             try {
+                _uiState.update { it.copy(isSaving = true, error = null) }
+
                 val updatedUser = currentState.originalUser.copy(
                     numeroTelefono = currentState.editableFields.numeroTelefono.trim(),
                     indirizzo = currentState.editableFields.indirizzo.trim(),
@@ -130,13 +118,12 @@ class EmployeeSettingsViewModel @Inject constructor(
                     luogoNascita = currentState.editableFields.luogoNascita.trim()
                 )
 
-                val result = userRepository.updateUserPersonalInfo(updatedUser)
-
-                when (result) {
+                // ✅ Usa Use Case invece del repository diretto
+                when (val result = updateUserPersonalInfoUseCase(updatedUser)) {
                     is Resource.Success -> {
                         _uiState.update { state ->
                             state.copy(
-                                originalUser = updatedUser,
+                                originalUser = result.data,
                                 isSaving = false,
                                 hasUnsavedChanges = false,
                                 successMessage = "Profilo aggiornato con successo!",
@@ -144,6 +131,7 @@ class EmployeeSettingsViewModel @Inject constructor(
                             )
                         }
                     }
+
                     is Resource.Error -> {
                         _uiState.update { state ->
                             state.copy(
@@ -152,6 +140,7 @@ class EmployeeSettingsViewModel @Inject constructor(
                             )
                         }
                     }
+
                     is Resource.Empty -> {
                         _uiState.update { state ->
                             state.copy(
@@ -166,12 +155,13 @@ class EmployeeSettingsViewModel @Inject constructor(
                 _uiState.update { state ->
                     state.copy(
                         isSaving = false,
-                        error = "Errore di connessione: ${e.message}"
+                        error = "Errore imprevisto: ${e.message}"
                     )
                 }
             }
         }
     }
+
 
     fun resetChanges() {
         val currentState = _uiState.value
@@ -231,18 +221,5 @@ class EmployeeSettingsViewModel @Inject constructor(
     private fun isValidPhoneNumber(phone: String): Boolean {
         // Validazione semplice per numero di telefono (solo cifre, +, spazi, -, parentesi)
         return phone.matches(Regex("^[+]?[0-9\\s\\-()]{6,20}$"))
-    }
-}
-
-suspend fun UserRepository.updateUserPersonalInfo(user: User): Resource<Unit> {
-    return try {
-        val success = this.updateUser(user, user.uid)
-        if (success) {
-            Resource.Success(Unit)
-        } else {
-            Resource.Error("Errore nell'aggiornamento del profilo")
-        }
-    } catch (e: Exception) {
-        Resource.Error("Errore di connessione: ${e.message}")
     }
 }

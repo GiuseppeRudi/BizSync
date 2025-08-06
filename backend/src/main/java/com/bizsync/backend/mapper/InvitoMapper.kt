@@ -3,6 +3,7 @@ package com.bizsync.backend.mapper
 import com.bizsync.backend.dto.InvitoDto
 import com.bizsync.domain.model.Invito
 import com.bizsync.domain.utils.DateUtils.toFirebaseTimestamp
+import com.bizsync.domain.utils.DateUtils.toLocalDate
 import com.google.firebase.Timestamp
 
 object InvitoMapper {

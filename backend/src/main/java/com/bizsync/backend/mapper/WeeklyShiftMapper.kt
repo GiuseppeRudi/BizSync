@@ -9,7 +9,6 @@ import com.bizsync.domain.utils.DateUtils.toLocalDateTime
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-// Domain → DTO
 fun WeeklyShift.toDto(): WeeklyShiftDto {
     return WeeklyShiftDto(
         idAzienda = idAzienda,
@@ -23,7 +22,7 @@ fun WeeklyShift.toDto(): WeeklyShiftDto {
         finalizedAt = null,
         notes = "",
         dipartimentiAttivi = dipartimentiAttivi.toDtoList(),
-        dipendentiAttivi = dipendentiAttivi.toDtoList()
+        dipendentiAttivi = dipendentiAttivi.toDipendenteDtoList()
 
     )
 }
@@ -38,7 +37,7 @@ fun WeeklyShiftDto.toDomain(id: String): WeeklyShift {
         createdAt = createdAt?.toLocalDateTime() ?: LocalDateTime.MIN,
         status = WeeklyShiftStatus.valueOf(status),
         dipartimentiAttivi = dipartimentiAttivi.toDomainList(),
-        dipendentiAttivi = dipendentiAttivi.toDomainList()
+        dipendentiAttivi = dipendentiAttivi.toUserDomainList()
     )
 }
 

@@ -21,7 +21,6 @@ object MessageMapper {
                 else -> MessageType.TEXT
             },
             isLetto = currentUserId in dto.lettoDa,
-            categoria = dto.categoria
         )
     }
 

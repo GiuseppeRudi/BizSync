@@ -4,9 +4,8 @@ import com.bizsync.cache.entity.AbsenceEntity
 import com.bizsync.domain.constants.enumClass.AbsenceStatus
 import com.bizsync.domain.constants.enumClass.AbsenceType
 import com.bizsync.domain.model.Absence
-import java.time.LocalDate
-import java.time.LocalTime
 
+// AbsenceEntity → Absence (Domain)
 fun AbsenceEntity.toDomain(): Absence {
     return Absence(
         id = this.id,
@@ -14,15 +13,15 @@ fun AbsenceEntity.toDomain(): Absence {
         submittedName = this.submittedName,
         idAzienda = this.idAzienda,
         type = AbsenceType.valueOf(this.type),
-        startDate = LocalDate.parse(this.startDate),
-        endDate = LocalDate.parse(this.endDate),
-        startTime = this.startTime?.let { LocalTime.parse(it) },
-        endTime = this.endTime?.let { LocalTime.parse(it) },
+        startDate = this.startDate,              // ← Diretto, nessun parsing!
+        endDate = this.endDate,                  // ← Diretto, nessun parsing!
+        startTime = this.startTime,              // ← Diretto, nessun parsing!
+        endTime = this.endTime,                  // ← Diretto, nessun parsing!
         reason = this.reason,
         status = AbsenceStatus.valueOf(this.status),
-        submittedDate = LocalDate.parse(this.submittedDate),
+        submittedDate = this.submittedDate,      // ← Diretto, nessun parsing!
         approvedBy = this.approver,
-        approvedDate = this.approvedDate?.let { LocalDate.parse(it) },
+        approvedDate = this.approvedDate,        // ← Diretto, nessun parsing!
         comments = this.comments,
         totalDays = this.totalDays,
         totalHours = this.totalHours
@@ -37,23 +36,21 @@ fun Absence.toEntity(): AbsenceEntity {
         submittedName = this.submittedName,
         idAzienda = this.idAzienda,
         type = this.type.name,
-        startDate = this.startDate.toString(),
-        endDate = this.endDate.toString(),
-        startTime = this.startTime?.toString(),
-        endTime = this.endTime?.toString(),
+        startDate = this.startDate,              // ← Diretto, nessuna conversione!
+        endDate = this.endDate,                  // ← Diretto, nessuna conversione!
+        startTime = this.startTime,              // ← Diretto, nessuna conversione!
+        endTime = this.endTime,                  // ← Diretto, nessuna conversione!
         reason = this.reason,
         status = this.status.name,
-        submittedDate = this.submittedDate.toString(),
+        submittedDate = this.submittedDate,      // ← Diretto, nessuna conversione!
         approver = this.approvedBy,
-        approvedDate = this.approvedDate?.toString(),
+        approvedDate = this.approvedDate,        // ← Diretto, nessuna conversione!
         comments = this.comments,
         totalDays = this.totalDays,
         totalHours = this.totalHours,
         lastUpdated = System.currentTimeMillis()
     )
 }
-
-
 
 // List mappers
 fun List<AbsenceEntity>.toDomainList(): List<Absence> = this.map { it.toDomain() }

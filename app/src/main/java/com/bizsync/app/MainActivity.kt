@@ -9,9 +9,9 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
-import com.bizsync.app.navigation.LocalNavController
-import com.bizsync.app.navigation.LocalUserViewModel
-import com.bizsync.app.screens.LoginScreen
+import com.bizsync.ui.navigation.LocalNavController
+import com.bizsync.ui.navigation.LocalUserViewModel
+import com.bizsync.ui.screens.LoginScreen
 import com.bizsync.ui.viewmodels.UserViewModel
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
@@ -27,6 +27,8 @@ class MainActivity : ComponentActivity() {
 
     // stato di login
     private val currentUserLogin = mutableStateOf<Boolean?>(null)
+    private val loginSessionKey = mutableStateOf(0)
+
 
     // launcher per FirebaseUI
     private val signInLauncher = registerForActivityResult(
@@ -35,7 +37,7 @@ class MainActivity : ComponentActivity() {
         val user = FirebaseAuth.getInstance().currentUser
         if (result.resultCode == RESULT_OK && user != null) {
             currentUserLogin.value = true
-            showToast("Login riuscito: ${user.email}")
+            showToast("Benvenuto: ${user.displayName}")
         } else {
             showToast("Login annullato o fallito")
         }
@@ -61,34 +63,37 @@ class MainActivity : ComponentActivity() {
 //            )
 
 
+
         setContent {
             val navController = rememberNavController()
             val userViewModel: UserViewModel = hiltViewModel()
             val firebaseUser = FirebaseAuth.getInstance().currentUser
 
-            // Se già loggato, salto al MainApp
             if (firebaseUser != null) {
                 currentUserLogin.value = true
-            }
-            else {
+            } else {
                 currentUserLogin.value = false
             }
 
             currentUserLogin.value?.let {
-                if (!it) {
-                    LoginScreen(onLogin = { launchLoginFlow() })
-                } else {
-                    CompositionLocalProvider(
-                        LocalNavController provides navController,
-                        LocalUserViewModel provides userViewModel
-                    ) {
-                        MainApp(onLogout = { userViewModel.clear()
-                            performLogout() })
+                androidx.compose.runtime.key(loginSessionKey.value) {
+                    if (!it) {
+                        LoginScreen(onLogin = { launchLoginFlow() })
+                    } else {
+                        CompositionLocalProvider(
+                            LocalNavController provides navController,
+                            LocalUserViewModel provides userViewModel
+                        ) {
+                            MainApp(onLogout = {
+                                userViewModel.clear()
+                                performLogout()
+                            })
+                        }
                     }
                 }
             }
-
         }
+
     }
 
     /** Avvia FirebaseUI con Smart Lock + auto-sign-in */
@@ -108,12 +113,10 @@ class MainActivity : ComponentActivity() {
             .signOut(this)
             .addOnCompleteListener {
                 currentUserLogin.value = false
-                showToast("Logout effettuato")
+                loginSessionKey.value++ // forza il reset della UI
             }
-
-
-
     }
+
 
     /** Helper per toast */
     private fun Context.showToast(msg: String) {

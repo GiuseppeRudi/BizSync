@@ -4,7 +4,8 @@ import android.util.Log
 import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bizsync.backend.repository.UserRepository
+import com.bizsync.domain.constants.sealedClass.Resource
+import com.bizsync.domain.usecases.AddUserUseCase
 import com.bizsync.ui.mapper.toDomain
 import com.bizsync.ui.mapper.toUi
 import com.bizsync.ui.model.AddUtenteState
@@ -17,56 +18,70 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AddUtenteViewModel @Inject constructor(
-    private val userRepository: UserRepository
+    private val addUserUseCase: AddUserUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AddUtenteState(user = UserUi()))
     val uiState: StateFlow<AddUtenteState> = _uiState
 
     fun addUser() {
+        // ✅ OPZIONE 1: Validazione nel ViewModel (come prima)
         if (!validateUser()) return
 
         viewModelScope.launch {
-            updateState { it.copy(isLoading = true, error = null) }
-
-            Log.d("ADD_USER_DEBUG", "=== INIZIO CREAZIONE UTENTE ===")
-            Log.d("ADD_USER_DEBUG", "UID: ${_uiState.value.uid}")
-            Log.d("ADD_USER_DEBUG", "Dati utente:")
-            Log.d("ADD_USER_DEBUG", "  Nome: ${_uiState.value.user.nome}")
-            Log.d("ADD_USER_DEBUG", "  Cognome: ${_uiState.value.user.cognome}")
-            Log.d("ADD_USER_DEBUG", "  Email: ${_uiState.value.user.email}")
-
             try {
+                updateState { it.copy(isLoading = true, error = null) }
+
+                Log.d("ADD_USER_DEBUG", "=== INIZIO CREAZIONE UTENTE ===")
+                Log.d("ADD_USER_DEBUG", "UID: ${_uiState.value.uid}")
+                Log.d("ADD_USER_DEBUG", "Dati utente:")
+                Log.d("ADD_USER_DEBUG", "  Nome: ${_uiState.value.user.nome}")
+                Log.d("ADD_USER_DEBUG", "  Cognome: ${_uiState.value.user.cognome}")
+                Log.d("ADD_USER_DEBUG", "  Email: ${_uiState.value.user.email}")
+
                 val utenteCreato = _uiState.value.user.toDomain().copy(uid = "")
-                val success = userRepository.addUser(utenteCreato, _uiState.value.uid)
 
-                if (success) {
-                    val utenteConUid = utenteCreato.copy(uid = _uiState.value.uid)
+                // ✅ Usa Use Case invece del repository diretto
+                when (val result = addUserUseCase(utenteCreato, _uiState.value.uid)) {
+                    is Resource.Success -> {
+                        Log.d("ADD_USER_DEBUG", "✅ Utente creato con successo")
 
-                    Log.d("ADD_USER_DEBUG", " Utente creato con successo")
-
-                    updateState {
-                        it.copy(
-                            user = utenteConUid.toUi(),
-                            isLoading = false,
-                            isUserAdded = true
-                        )
+                        updateState {
+                            it.copy(
+                                user = result.data.toUi(),
+                                isLoading = false,
+                                isUserAdded = true
+                            )
+                        }
                     }
-                } else {
-                    Log.e("ADD_USER_DEBUG", " Errore durante il salvataggio")
-                    updateState {
-                        it.copy(
-                            isLoading = false,
-                            error = "Errore durante il salvataggio dell'utente. Riprova."
-                        )
+
+                    is Resource.Error -> {
+                        Log.e("ADD_USER_DEBUG", "❌ Errore durante il salvataggio: ${result.message}")
+                        updateState {
+                            it.copy(
+                                isLoading = false,
+                                error = result.message ?: "Errore durante il salvataggio dell'utente. Riprova."
+                            )
+                        }
+                    }
+
+                    is Resource.Empty -> {
+                        Log.e("ADD_USER_DEBUG", "⚠️ Risultato vuoto")
+                        updateState {
+                            it.copy(
+                                isLoading = false,
+                                error = "Errore durante il salvataggio dell'utente. Riprova."
+                            )
+                        }
                     }
                 }
+
             } catch (e: Exception) {
-                Log.e("ADD_USER_DEBUG", " Eccezione: ${e.message}")
+                Log.e("ADD_USER_DEBUG", "🚨 Eccezione imprevista: ${e.message}")
                 updateState {
                     it.copy(
                         isLoading = false,
-                        error = e.message ?: "Errore sconosciuto"
+                        error = "Errore imprevisto: ${e.message}"
                     )
                 }
             }
@@ -90,7 +105,6 @@ class AddUtenteViewModel @Inject constructor(
         updateUserState { it.copy(photourl = newValue) }
     }
 
-
     fun onNumeroTelefonoChanged(newValue: String) {
         updateUserState { it.copy(numeroTelefono = newValue) }
     }
@@ -104,7 +118,6 @@ class AddUtenteViewModel @Inject constructor(
         updateUserState { it.copy(codiceFiscale = cleanValue) }
     }
 
-    // Nel tuo ViewModel
     fun onDataNascitaChanged(newValue: String) {
         // Semplicemente mantieni solo i numeri, massimo 8 cifre
         val digits = newValue.filter { it.isDigit() }.take(8)
@@ -114,7 +127,6 @@ class AddUtenteViewModel @Inject constructor(
     fun onLuogoNascitaChanged(newValue: String) {
         updateUserState { it.copy(luogoNascita = newValue) }
     }
-
 
     fun onCurrentStepUp() {
         val canProceed = canProceedToNextStep(_uiState.value.currentStep)
@@ -206,5 +218,4 @@ class AddUtenteViewModel @Inject constructor(
             }
         }
     }
-
 }

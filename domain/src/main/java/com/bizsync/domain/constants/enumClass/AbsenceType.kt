@@ -1,7 +1,5 @@
 package com.bizsync.domain.constants.enumClass
 
-
-// com.bizsync.domain.model.AbsenceType
 enum class AbsenceType {
     VACATION,
     ROL,

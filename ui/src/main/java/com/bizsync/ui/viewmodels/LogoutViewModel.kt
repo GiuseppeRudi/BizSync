@@ -3,8 +3,9 @@ package com.bizsync.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bizsync.backend.hash.HashStorage
-import com.bizsync.cache.dao.*
+import com.bizsync.domain.constants.enumClass.CleanupStep
+import com.bizsync.domain.usecases.PerformLogoutCleanupUseCase
+import com.bizsync.ui.model.LogoutCleanupUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,12 +15,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LogoutViewModel @Inject constructor(
-    private val absenceDao: AbsenceDao,
-    private val timbraturaDao: TimbraturaDao,
-    private val turnoDao: TurnoDao,
-    private val contrattoDao: ContrattoDao,
-    private val userDao: UserDao,
-    private val hashStorage: HashStorage
+    private val performLogoutCleanupUseCase: PerformLogoutCleanupUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LogoutCleanupUiState())
@@ -28,24 +24,15 @@ class LogoutViewModel @Inject constructor(
     fun startCleanup() {
         viewModelScope.launch {
             try {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = true,
-                    currentStep = CleanupStep.STARTING
-                )
-
-                // Step 1: Pulizia cache locale
-                _uiState.value = _uiState.value.copy(currentStep = CleanupStep.CLEARING_CACHE)
-                clearAllDatabaseTables()
-
-                // Step 2: Pulizia SharedPreferences
-                _uiState.value = _uiState.value.copy(currentStep = CleanupStep.CLEARING_PREFERENCES)
-                hashStorage.clearAllHashes()
-
-                // Step 3: Completamento
-                _uiState.value = _uiState.value.copy(
-                    currentStep = CleanupStep.COMPLETED,
-                    isLoading = false
-                )
+                performLogoutCleanupUseCase()
+                    .collect { progress ->
+                        _uiState.value = LogoutCleanupUiState(
+                            isLoading = progress.isLoading,
+                            currentStep = progress.currentStep,
+                            errorMessage = progress.errorMessage,
+                            databaseCleanupResult = progress.databaseResult
+                        )
+                    }
 
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
@@ -57,40 +44,8 @@ class LogoutViewModel @Inject constructor(
         }
     }
 
-    private suspend fun clearAllDatabaseTables() {
-        // Pulisci tutte le tabelle del database
-        try {
-            // Assenze
-            absenceDao.clearAll()
 
-            // Timbrature - Aggiungi questa query al TimbraturaDao
-            timbraturaDao.clearAll()
-
-            // Turni - Aggiungi questa query al TurnoDao
-            turnoDao.clearAll()
-
-            // Contratti
-            contrattoDao.deleteAll()
-
-            // Utenti
-            userDao.deleteAll()
-
-        } catch (e: Exception) {
-            throw Exception("Errore durante la pulizia del database: ${e.message}")
-        }
+    fun resetState() {
+        _uiState.value = LogoutCleanupUiState()
     }
-}
-
-data class LogoutCleanupUiState(
-    val isLoading: Boolean = false,
-    val currentStep: CleanupStep = CleanupStep.STARTING,
-    val errorMessage: String? = null
-)
-
-enum class CleanupStep(val message: String) {
-    STARTING("Inizializzazione..."),
-    CLEARING_CACHE("Pulizia cache locale..."),
-    CLEARING_PREFERENCES("Rimozione preferenze..."),
-    COMPLETED("Pulizia completata!"),
-    ERROR("Errore durante la pulizia")
 }

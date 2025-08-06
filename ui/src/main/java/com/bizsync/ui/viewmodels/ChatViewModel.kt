@@ -2,9 +2,6 @@ package com.bizsync.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bizsync.backend.repository.ChatRepository
-import com.bizsync.cache.dao.UserDao
-import com.bizsync.cache.mapper.toDomainList
 import com.bizsync.domain.constants.enumClass.MessageType
 import com.bizsync.domain.model.*
 import com.bizsync.ui.mapper.toDomain
@@ -14,12 +11,24 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import android.util.Log
+import com.bizsync.domain.constants.sealedClass.Resource
+import com.bizsync.domain.usecases.CreatePrivateChatUseCase
+import com.bizsync.domain.usecases.InitializeChatUseCase
+import com.bizsync.domain.usecases.LoadChatsUseCase
+import com.bizsync.domain.usecases.LoadMessagesUseCase
+import com.bizsync.domain.usecases.LoadUsersUseCase
+import com.bizsync.domain.usecases.SendMessageUseCase
+import com.google.firebase.auth.FirebaseAuth
 import javax.inject.Inject
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
-    private val chatRepository: ChatRepository,
-    private val userDao: UserDao
+    private val loadUsersUseCase: LoadUsersUseCase,
+    private val initializeChatUseCase: InitializeChatUseCase,
+    private val loadChatsUseCase: LoadChatsUseCase,
+    private val loadMessagesUseCase: LoadMessagesUseCase,
+    private val sendMessageUseCase: SendMessageUseCase,
+    private val createPrivateChatUseCase: CreatePrivateChatUseCase
 ) : ViewModel() {
 
     companion object {
@@ -35,8 +44,6 @@ class ChatViewModel @Inject constructor(
     private val _messages = MutableStateFlow<List<Message>>(emptyList())
     val messages: StateFlow<List<Message>> = _messages.asStateFlow()
 
-    // ⭐ CORREZIONE: Sempre usare _uiState.value.currentUser direttamente
-
     private var chatListJob: kotlinx.coroutines.Job? = null
     private var messagesJob: kotlinx.coroutines.Job? = null
 
@@ -46,19 +53,39 @@ class ChatViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                val users = userDao.getDipendenti()
-                val domainUser = user.toDomain()
+                // ✅ Usa Use Case invece di DAO diretto
+                when (val result = loadUsersUseCase()) {
+                    is Resource.Success -> {
+                        val domainUser = user.toDomain()
+                        Log.d(TAG, "✅ Users loaded: ${result.data.size} employees")
 
-                Log.d(TAG, "✅ Users loaded: ${users.size} employees")
-                _uiState.update {
-                    it.copy(
-                        allEmployees = users.toDomainList(),
-                        isLoading = false,
-                        currentUser = domainUser
-                    )
+                        _uiState.update {
+                            it.copy(
+                                allEmployees = result.data,
+                                isLoading = false,
+                                currentUser = domainUser
+                            )
+                        }
+                    }
+
+                    is Resource.Error -> {
+                        Log.e(TAG, "❌ Error loading users: ${result.message}")
+                        _uiState.update { it.copy(isLoading = false) }
+                    }
+
+                    is Resource.Empty -> {
+                        Log.w(TAG, "⚠️ No users found")
+                        _uiState.update {
+                            it.copy(
+                                allEmployees = emptyList(),
+                                isLoading = false,
+                                currentUser = user.toDomain()
+                            )
+                        }
+                    }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "❌ Error loading users: ${e.message}")
+                Log.e(TAG, "🚨 Exception loading users: ${e.message}")
                 _uiState.update { it.copy(isLoading = false) }
             }
         }
@@ -69,7 +96,6 @@ class ChatViewModel @Inject constructor(
         Log.d(TAG, "👥 Available employees: ${employees.size}")
 
         if (!_uiState.value.isLoading) {
-            // ⭐ CORREZIONE: Aggiorna sia l'UI state che la variabile locale
             _uiState.update { it.copy(currentUser = user, allEmployees = employees) }
 
             loadChats(user, employees)
@@ -78,9 +104,21 @@ class ChatViewModel @Inject constructor(
                 try {
                     val dipartimenti = employees.map { it.dipartimento }.distinct()
                     Log.d(TAG, "🏢 Initializing default chats for departments: $dipartimenti")
-                    chatRepository.initializeDefaultChats(user.idAzienda, dipartimenti)
+
+                    // ✅ Usa Use Case invece del repository diretto
+                    when (val result = initializeChatUseCase(user.idAzienda, dipartimenti)) {
+                        is Resource.Success -> {
+                            Log.d(TAG, "✅ Default chats initialized successfully")
+                        }
+                        is Resource.Error -> {
+                            Log.e(TAG, "❌ Error initializing default chats: ${result.message}")
+                        }
+                        is Resource.Empty -> {
+                            Log.w(TAG, "⚠️ Empty result from chat initialization")
+                        }
+                    }
                 } catch (e: Exception) {
-                    Log.e(TAG, "❌ Error initializing default chats: ${e.message}")
+                    Log.e(TAG, "🚨 Exception initializing default chats: ${e.message}")
                 }
             }
         }
@@ -92,20 +130,30 @@ class ChatViewModel @Inject constructor(
         chatListJob?.cancel()
         chatListJob = viewModelScope.launch {
             try {
-                chatRepository.getChatsForUser(user, employees)
-                    .collect { chats ->
-                        Log.d(TAG, "📬 Received ${chats.size} chats")
 
-                        // Calcola messaggi non letti per ogni chat
-                        val chatsWithUnread = chats.map { chat ->
-                            val unreadCount = chatRepository.getUnreadCount(chat.id, user.uid)
-                            chat.copy(messaggiNonLetti = unreadCount)
+
+                // ✅ Usa Use Case invece del repository diretto
+                loadChatsUseCase(user, employees)
+                    .collect { result ->
+                        when (result) {
+                            is Resource.Success -> {
+                                Log.d(TAG, "📬 Received ${result.data.size} chats")
+                                _uiState.update { it.copy(chats = result.data, isLoading = false) }
+                            }
+
+                            is Resource.Error -> {
+                                Log.e(TAG, "❌ Error loading chats: ${result.message}")
+                                _uiState.update { it.copy(isLoading = false) }
+                            }
+
+                            is Resource.Empty -> {
+                                Log.w(TAG, "⚠️ No chats found")
+                                _uiState.update { it.copy(chats = emptyList(), isLoading = false) }
+                            }
                         }
-
-                        _uiState.update { it.copy(chats = chatsWithUnread, isLoading = false) }
                     }
             } catch (e: Exception) {
-                Log.e(TAG, "❌ Error loading chats: ${e.message}")
+                Log.e(TAG, "🚨 Exception loading chats: ${e.message}")
                 _uiState.update { it.copy(isLoading = false) }
             }
         }
@@ -133,13 +181,27 @@ class ChatViewModel @Inject constructor(
         messagesJob?.cancel()
         messagesJob = viewModelScope.launch {
             try {
-                chatRepository.getMessagesForChat(chatId, userId)
-                    .collect { messages ->
-                        Log.d(TAG, "📨 Received ${messages.size} messages")
-                        _messages.value = messages
+                // ✅ Usa Use Case invece del repository diretto
+                loadMessagesUseCase(chatId, userId)
+                    .collect { result ->
+                        when (result) {
+                            is Resource.Success -> {
+                                Log.d(TAG, "📨 Received ${result.data.size} messages")
+                                _messages.value = result.data
+                            }
+
+                            is Resource.Error -> {
+                                Log.e(TAG, "❌ Error loading messages: ${result.message}")
+                            }
+
+                            is Resource.Empty -> {
+                                Log.w(TAG, "⚠️ No messages found")
+                                _messages.value = emptyList()
+                            }
+                        }
                     }
             } catch (e: Exception) {
-                Log.e(TAG, "❌ Error loading messages: ${e.message}")
+                Log.e(TAG, "🚨 Exception loading messages: ${e.message}")
             }
         }
     }
@@ -162,16 +224,28 @@ class ChatViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                chatRepository.sendMessage(
+                // ✅ Usa Use Case invece del repository diretto
+                when (val result = sendMessageUseCase(
                     chatId = chat.id,
                     senderId = user.uid,
                     senderNome = "${user.nome} ${user.cognome}",
                     content = content,
                     tipo = tipo
-                )
-                Log.d(TAG, "✅ Message sent successfully")
+                )) {
+                    is Resource.Success -> {
+                        Log.d(TAG, "✅ Message sent successfully")
+                    }
+
+                    is Resource.Error -> {
+                        Log.e(TAG, "❌ Error sending message: ${result.message}")
+                    }
+
+                    is Resource.Empty -> {
+                        Log.w(TAG, "⚠️ Empty result from send message")
+                    }
+                }
             } catch (e: Exception) {
-                Log.e(TAG, "❌ Error sending message: ${e.message}")
+                Log.e(TAG, "🚨 Exception sending message: ${e.message}")
             }
         }
     }
@@ -191,15 +265,26 @@ class ChatViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                val chatId = chatRepository.createPrivateChat(user, otherUser)
-                Log.d(TAG, "✅ Private chat created with ID: $chatId")
+                // ✅ Usa Use Case invece del repository diretto
+                when (val result = createPrivateChatUseCase(user, otherUser)) {
+                    is Resource.Success -> {
+                        Log.d(TAG, "✅ Private chat created with ID: ${result.data}")
 
-                // Ricarica le chat per mostrare la nuova chat
-                loadChats(user, _uiState.value.allEmployees)
+                        // Ricarica le chat per mostrare la nuova chat
+                        loadChats(user, _uiState.value.allEmployees)
+                        Log.d(TAG, "🔄 Chats reloaded after creating private chat")
+                    }
 
-                Log.d(TAG, "🔄 Chats reloaded after creating private chat")
+                    is Resource.Error -> {
+                        Log.e(TAG, "❌ Error creating private chat: ${result.message}")
+                    }
+
+                    is Resource.Empty -> {
+                        Log.w(TAG, "⚠️ Empty result from create private chat")
+                    }
+                }
             } catch (e: Exception) {
-                Log.e(TAG, "❌ Error creating private chat: ${e.message}", e)
+                Log.e(TAG, "🚨 Exception creating private chat: ${e.message}", e)
             }
         }
     }

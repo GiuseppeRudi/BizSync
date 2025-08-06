@@ -46,20 +46,42 @@ import com.kizitonwose.calendar.compose.WeekCalendar
 import com.kizitonwose.calendar.compose.weekcalendar.rememberWeekCalendarState
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-
 @Composable
 fun Calendar(pianificaVM: PianificaViewModel) {
     val currentDate = remember { LocalDate.now() }
-    val startDate = remember { currentDate.minusDays(500) }
-    val endDate = remember { currentDate.plusDays(500) }
+    val startDate = remember { currentDate.minusDays(100) }
+    val endDate = remember { currentDate.plusDays(100) }
 
     val pianificaState by pianificaVM.uistate.collectAsState()
     val selectionData = pianificaState.selectionData
     val weeklyShift = pianificaState.weeklyShiftRiferimento
 
     var rangeSettimana by remember { mutableStateOf<Pair<LocalDate, LocalDate>?>(null) }
-
     var weeklyShiftStatus by remember { mutableStateOf<WeeklyShiftStatus?>(null) }
+
+    // 🆕 Stato del calendario con gestione dinamica della data iniziale
+    val initialVisibleDate = selectionData ?: currentDate
+    val state = rememberWeekCalendarState(
+        startDate = startDate,
+        endDate = endDate,
+        firstVisibleWeekDate = initialVisibleDate,
+    )
+
+    // 🆕 Auto-scroll quando selectionData cambia
+    LaunchedEffect(selectionData) {
+        val targetDate = selectionData ?: currentDate
+
+        Log.d("Calendar", "Auto-scroll verso: $targetDate (selectionData: $selectionData)")
+
+        try {
+            // Anima verso la settimana che contiene la data target
+            state.animateScrollToWeek(targetDate)
+        } catch (e: Exception) {
+            Log.w("Calendar", "Errore durante l'animazione scroll: ${e.message}")
+            // Fallback: scroll senza animazione
+            state.scrollToWeek(targetDate)
+        }
+    }
 
     LaunchedEffect(weeklyShift) {
         rangeSettimana = if (weeklyShift != null) {
@@ -74,12 +96,6 @@ fun Calendar(pianificaVM: PianificaViewModel) {
     Column(
         modifier = Modifier.background(Color.White),
     ) {
-        val state = rememberWeekCalendarState(
-            startDate = startDate,
-            endDate = endDate,
-            firstVisibleWeekDate = currentDate,
-        )
-
         CompositionLocalProvider(LocalContentColor provides Color.White) {
             WeekCalendar(
                 modifier = Modifier.padding(vertical = 4.dp),

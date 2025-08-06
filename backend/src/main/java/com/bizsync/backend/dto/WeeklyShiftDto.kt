@@ -11,7 +11,7 @@ data class WeeklyShiftDto(
     val updatedAt: Timestamp? = null,
     val status: String = "NOT_PUBLISHED",
     val dipartimentiAttivi: List<AreaLavoroDto> = emptyList(),
-    val dipendentiAttivi: List<UserDto> = emptyList(),
+    val dipendentiAttivi: List<DipendenteDto> = emptyList(),
 
     val weekEnd: String = "",
     val publishedAt: Timestamp? = null,
