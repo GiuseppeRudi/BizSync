@@ -264,5 +264,24 @@ class TurnoRemoteRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun getTurnoById(firebaseId: String): Resource<Turno> {
+        return try {
+            val doc = firestore.collection("turni")
+                .document(firebaseId)
+                .get()
+                .await()
+
+            if (doc.exists()) {
+                val turno = doc.toObject(Turno::class.java)
+                turno?.let {
+                    Resource.Success(it)
+                } ?: Resource.Error("Errore conversione turno")
+            } else {
+                Resource.Empty
+            }
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "Errore recupero turno")
+        }
+    }
 }
 

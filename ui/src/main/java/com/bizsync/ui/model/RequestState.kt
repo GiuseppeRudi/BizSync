@@ -1,6 +1,8 @@
 package com.bizsync.ui.model
 
 import com.bizsync.domain.model.Contratto
+import com.bizsync.domain.model.Turno
+import com.bizsync.domain.model.User
 import com.bizsync.ui.components.DialogStatusType
 
 
@@ -12,4 +14,7 @@ data class RequestState(
     val resultMsg: String? = null,
     val contracts : List<Contratto> = emptyList(),
     val statusMsg: DialogStatusType = DialogStatusType.ERROR,
+
+    val affectedShifts: Map<String, List<Turno>> = emptyMap(),
+    val availableEmployees: Map<String, List<User>> = emptyMap()
 )

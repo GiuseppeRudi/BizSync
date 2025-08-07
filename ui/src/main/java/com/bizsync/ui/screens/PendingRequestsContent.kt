@@ -21,7 +21,9 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.LocalHospital
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -36,6 +38,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,6 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.bizsync.domain.constants.enumClass.AbsenceType
 import com.bizsync.domain.model.Contratto
+import com.bizsync.ui.components.SickLeaveManagementDialog
 import com.bizsync.ui.model.AbsenceUi
 import com.bizsync.ui.viewmodels.RequestViewModel
 
@@ -88,7 +92,6 @@ fun PendingRequestsContent(
         }
     }
 }
-
 @Composable
 private fun PendingRequestCard(
     request: AbsenceUi,
@@ -97,20 +100,33 @@ private fun PendingRequestCard(
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var dialogType by remember { mutableStateOf<DialogType?>(null) }
+    var showSickLeaveDialog by remember { mutableStateOf(false) }
 
     val requestState by requestVM.uiState.collectAsState()
-
-    // Trova il contratto del dipendente che ha fatto la richiesta
     val employeeContract = requestState.contracts.find { it.idDipendente == request.idUser }
+
+    // Se è una malattia, gestiscila automaticamente
+    if (request.typeUi.type == AbsenceType.SICK_LEAVE) {
+        LaunchedEffect(request.id) {
+            requestVM.handleSickLeaveRequest(request, employeeContract)
+        }
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(
+            containerColor = if (request.typeUi.type == AbsenceType.SICK_LEAVE) {
+                Color(0xFFFFEBEE) // Sfondo rosso chiaro per malattie
+            } else {
+                Color.White
+            }
+        )
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
+            // Header con informazioni base
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -129,17 +145,44 @@ private fun PendingRequestCard(
                     )
                 }
 
-                Surface(
-                    color = request.statusUi.color.copy(alpha = 0.1f),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(
-                        text = request.statusUi.displayName,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        color = request.statusUi.color,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Medium
-                    )
+                if (request.typeUi.type == AbsenceType.SICK_LEAVE) {
+                    // Badge speciale per malattia
+                    Surface(
+                        color = Color(0xFFD32F2F),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.LocalHospital,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "MALATTIA",
+                                color = Color.White,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                } else {
+                    Surface(
+                        color = request.statusUi.color.copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            text = request.statusUi.displayName,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            color = request.statusUi.color,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
             }
 
@@ -157,52 +200,105 @@ private fun PendingRequestCard(
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedButton(
-                    onClick = {
-                        dialogType = DialogType.REJECT
-                        showDialog = true
-                    },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = Color.Red
-                    ),
-                    border = BorderStroke(1.dp, Color.Red)
+            // Pulsanti azioni - Diversi per malattia
+            if (request.typeUi.type == AbsenceType.SICK_LEAVE) {
+                // Per malattia: solo pulsante gestione turni
+                Button(
+                    onClick = { showSickLeaveDialog = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFD32F2F)
+                    )
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Close,
+                        imageVector = Icons.Default.Settings,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Rifiuta")
+                    Text("Gestisci Malattia e Turni")
                 }
 
-                Button(
-                    onClick = {
-                        dialogType = DialogType.APPROVE
-                        showDialog = true
-                    },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF4CAF50)
-                    )
+                Text(
+                    text = "⚠️ La malattia verrà approvata automaticamente dopo la gestione dei turni",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFFD32F2F),
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            } else {
+                // Per altre richieste: pulsanti approva/rifiuta standard
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Approva")
+                    OutlinedButton(
+                        onClick = {
+                            dialogType = DialogType.REJECT
+                            showDialog = true
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = Color.Red
+                        ),
+                        border = BorderStroke(1.dp, Color.Red)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Rifiuta")
+                    }
+
+                    Button(
+                        onClick = {
+                            dialogType = DialogType.APPROVE
+                            showDialog = true
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF4CAF50)
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Approva")
+                    }
                 }
             }
         }
     }
 
+    // Dialog per malattia
+    if (showSickLeaveDialog) {
+        val affectedShifts = requestState.affectedShifts[request.id] ?: emptyList()
+        val availableEmployees = requestState.availableEmployees
+
+        SickLeaveManagementDialog(
+            request = request,
+            affectedShifts = affectedShifts,
+            availableEmployees = availableEmployees,
+            onDismiss = { showSickLeaveDialog = false },
+            onUncoverShift = { turno ->
+                requestVM.uncoverShift(turno)
+            },
+            onReplaceEmployee = { turno, newEmployee ->
+                requestVM.replaceEmployeeInShift(turno, request.idUser, newEmployee.uid)
+            },
+            onConfirmSickLeave = {
+                requestVM.approveSickLeave(approver, request, employeeContract)
+
+                showSickLeaveDialog = false
+            }
+        )
+    }
+
+    // Dialog standard per altre richieste
     if (showDialog && dialogType != null) {
         ActionDialog(
             type = dialogType!!,
@@ -221,6 +317,7 @@ private fun PendingRequestCard(
         )
     }
 }
+
 @Composable
 private fun ActionDialog(
     type: DialogType,

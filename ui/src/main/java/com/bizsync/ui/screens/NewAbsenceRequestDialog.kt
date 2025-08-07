@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.LocalHospital
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -90,8 +91,9 @@ fun NewAbsenceRequestScreen(
     val showStartDatePicker = uiState.showStartDatePicker
     val showEndDatePicker = uiState.showEndDatePicker
 
-    val minimumDate = remember { calculateMinimumAbsenceDate() }
-
+    val minimumDate = remember(addAbsence.typeUi.type) {
+        calculateMinimumAbsenceDate(addAbsence.typeUi.type)
+    }
 
     val status = uiState.statusMsg
     val userState by userVM.uiState.collectAsState()
@@ -192,9 +194,13 @@ fun NewAbsenceRequestScreen(
         val hasValidDates = addAbsence.startDate != null && addAbsence.endDate != null
         val hasValidReason = addAbsence.reason.isNotEmpty()
 
-        // Validazione date con anticipo
-        val isDateValid = addAbsence.startDate?.let { isValidAbsenceDate(it) } ?: false
-        val isEndDateValid = addAbsence.endDate?.let { isValidAbsenceDate(it) } ?: false
+        val isDateValid = addAbsence.startDate?.let {
+            isValidAbsenceDate(it, addAbsence.typeUi.type)
+        } ?: false
+        val isEndDateValid = addAbsence.endDate?.let {
+            isValidAbsenceDate(it, addAbsence.typeUi.type)
+        } ?: false
+
 
         if (!hasValidDates || !hasValidReason || !isDateValid || !isEndDateValid) {
             false
@@ -253,7 +259,13 @@ fun NewAbsenceRequestScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            AnticipationWarningCard(minimumDate = minimumDate)
+            // Mostra AnticipationWarningCard solo se non è malattia
+            if (addAbsence.typeUi.type != AbsenceType.SICK_LEAVE) {
+                AnticipationWarningCard(minimumDate = minimumDate)
+            } else {
+                // Card informativa per malattia
+                SickLeaveInfoCard()
+            }
 
             AbsenceTypeSelector(
                 selectedType = addAbsence.typeUi,
@@ -338,7 +350,7 @@ fun NewAbsenceRequestScreen(
                         .atZone(ZoneId.systemDefault())
                         .toLocalDate()
 
-                    if (isValidAbsenceDate(selectedDate)) {
+                    if (isValidAbsenceDate(selectedDate, addAbsence.typeUi.type)) {
                         absenceVM.updateAddAbsenceStartDate(selectedDate)
 
                         if (addAbsence.endDate != null && addAbsence.endDate!!.isBefore(selectedDate)) {
@@ -364,7 +376,7 @@ fun NewAbsenceRequestScreen(
                         .atZone(ZoneId.systemDefault())
                         .toLocalDate()
 
-                    if (isValidAbsenceDate(selectedDate) &&
+                    if (isValidAbsenceDate(selectedDate, addAbsence.typeUi.type) &&
                         (addAbsence.startDate == null || !selectedDate.isBefore(addAbsence.startDate))) {
                         absenceVM.updateAddAbsenceEndDate(selectedDate)
                     }
@@ -375,7 +387,7 @@ fun NewAbsenceRequestScreen(
                 absenceVM.setShowEndDatePicker(false)
             },
             initialDate = addAbsence.endDate ?: addAbsence.startDate,
-            minimumDate = minimumDate // 🆕 Limita le date selezionabili
+            minimumDate = minimumDate
         )
     }
 
@@ -389,6 +401,56 @@ fun NewAbsenceRequestScreen(
 }
 
 
+
+@Composable
+fun SickLeaveInfoCard() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+        ),
+        border = BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    Icons.Default.LocalHospital,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(24.dp)
+                )
+                Text(
+                    text = "Richiesta di Malattia",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+
+            Text(
+                text = "Le richieste di malattia vengono approvate automaticamente e possono essere inviate anche per il giorno stesso.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onErrorContainer
+            )
+
+            Text(
+                text = "⚠️ Ricorda di fornire il certificato medico appena disponibile",
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.error
+            )
+        }
+    }
+}
 @Composable
 fun AnticipationWarningCard(minimumDate: LocalDate) {
     val formatter = DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale.ITALIAN)
@@ -471,7 +533,6 @@ fun AnticipationWarningCard(minimumDate: LocalDate) {
     }
 }
 
-
 @Composable
 fun AbsencePeriodSelector(
     addAbsence: AbsenceUi,
@@ -512,7 +573,8 @@ fun AbsencePeriodSelector(
                 }
             }
 
-            if (addAbsence.startDate != null && !isValidAbsenceDate(addAbsence.startDate!!)) {
+            // ✅ CORRETTO: Passa anche il tipo di assenza
+            if (addAbsence.startDate != null && !isValidAbsenceDate(addAbsence.startDate!!, addAbsence.typeUi.type)) {
                 DateValidationError(minimumDate)
             }
 
@@ -578,7 +640,9 @@ private fun FullDaysSelector(
                 selectedDate = addAbsence.startDate,
                 modifier = Modifier.weight(1f),
                 onClick = { absenceVM.setShowStartDatePicker(true) },
-                isError = addAbsence.startDate != null && !isValidAbsenceDate(addAbsence.startDate!!)
+                // ✅ CORRETTO: Passa anche il tipo di assenza
+                isError = addAbsence.startDate != null &&
+                        !isValidAbsenceDate(addAbsence.startDate!!, addAbsence.typeUi.type)
             )
 
             DateButton(
@@ -586,7 +650,9 @@ private fun FullDaysSelector(
                 selectedDate = addAbsence.endDate,
                 modifier = Modifier.weight(1f),
                 onClick = { absenceVM.setShowEndDatePicker(true) },
-                isError = addAbsence.endDate != null && !isValidAbsenceDate(addAbsence.endDate!!)
+                // ✅ CORRETTO: Passa anche il tipo di assenza
+                isError = addAbsence.endDate != null &&
+                        !isValidAbsenceDate(addAbsence.endDate!!, addAbsence.typeUi.type)
             )
         }
 
@@ -600,7 +666,6 @@ private fun FullDaysSelector(
         )
     }
 }
-
 @Composable
 private fun SingleDayHourlySelector(
     addAbsence: AbsenceUi,
@@ -613,7 +678,9 @@ private fun SingleDayHourlySelector(
             selectedDate = addAbsence.startDate,
             modifier = Modifier.fillMaxWidth(),
             onClick = { absenceVM.setShowStartDatePicker(true) },
-            isError = addAbsence.startDate != null && !isValidAbsenceDate(addAbsence.startDate!!)
+            // ✅ CORRETTO: Passa anche il tipo di assenza
+            isError = addAbsence.startDate != null &&
+                    !isValidAbsenceDate(addAbsence.startDate!!, addAbsence.typeUi.type)
         )
 
         if (addAbsence.startDate != null) {
@@ -808,24 +875,25 @@ private fun InfoCard(title: String, description: String) {
     }
 }
 
+
 /**
  * Calcola la data minima selezionabile per le richieste di assenza
- * Le richieste devono essere inviate con 2 settimane di anticipo
+ * Le richieste devono essere inviate con 2 settimane di anticipo (ESCLUSE LE MALATTIE)
  */
-fun calculateMinimumAbsenceDate(): LocalDate {
+fun calculateMinimumAbsenceDate(absenceType: AbsenceType?): LocalDate {
+    // Per malattia, permetti data odierna
+    if (absenceType == AbsenceType.SICK_LEAVE) {
+        return LocalDate.now()
+    }
+
     val oggi = LocalDate.now()
-
-    // Trova il lunedì della settimana corrente
     val lunediSettimanaCorrente = oggi.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-
-    // Aggiungi 2 settimane (14 giorni)
     return lunediSettimanaCorrente.plusWeeks(2)
 }
 
 /**
  * Verifica se una data è valida per una richiesta di assenza
  */
-fun isValidAbsenceDate(date: LocalDate): Boolean {
-    return !date.isBefore(calculateMinimumAbsenceDate())
+fun isValidAbsenceDate(date: LocalDate, absenceType: AbsenceType?): Boolean {
+    return !date.isBefore(calculateMinimumAbsenceDate(absenceType))
 }
-

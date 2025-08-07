@@ -26,4 +26,9 @@ interface TurnoSyncRepository {
     ): Resource<String>
 
 
+    suspend fun updateTurnoImmediate(turno: Turno): Resource<String>
+
+
+    suspend fun deleteTurnoImmediate(turnoId: String): Resource<String>
+
 }

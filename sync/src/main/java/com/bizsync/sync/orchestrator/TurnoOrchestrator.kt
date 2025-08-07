@@ -30,6 +30,128 @@ class TurnoOrchestrator @Inject constructor(
         turnoDao.deleteOlderThan(endOfWeek)
     }
 
+    /**
+     * Aggiorna immediatamente un turno sia in cache che su Firebase (se esiste)
+     * Bypassa la logica di sincronizzazione normale
+     * Usato per sostituzioni immediate (es. malattia)
+     */
+    override suspend fun updateTurnoImmediate(turno: Turno): Resource<String> {
+        return try {
+            Log.d("TURNO_UPDATE_IMMEDIATE", "🔄 Aggiornamento immediato turno: ${turno.id}")
+
+            // 1. Recupera il turno esistente dalla cache
+            val existingTurno = turnoDao.getTurnoById(turno.id)
+
+            if (existingTurno == null) {
+                Log.e("TURNO_UPDATE_IMMEDIATE", "❌ Turno non trovato in cache: ${turno.id}")
+                return Resource.Error("Turno non trovato")
+            }
+
+            // 2. Prepara il turno aggiornato mantenendo i metadati
+            val turnoEntity = turno.toEntity().copy(
+                idFirebase = existingTurno.idFirebase,
+                isSynced = true, // Marcalo come sincronizzato perché lo aggiorneremo subito
+                isDeleted = false,
+                createdAt = existingTurno.createdAt,
+                updatedAt = com.google.firebase.Timestamp.now()
+            )
+
+            // 3. Aggiorna in cache locale
+            turnoDao.update(turnoEntity)
+            Log.d("TURNO_UPDATE_IMMEDIATE", "✅ Cache locale aggiornata")
+
+            // 4. Se ha un ID Firebase, aggiorna anche su Firebase
+            if (existingTurno.idFirebase.isNotEmpty()) {
+                Log.d("TURNO_UPDATE_IMMEDIATE", "☁️ Aggiornamento su Firebase: ${existingTurno.idFirebase}")
+
+                when (val result = turnoRemoteRepositoryImpl.updateTurnoOnFirebase(turno.copy(idFirebase = existingTurno.idFirebase))) {
+                    is Resource.Success -> {
+                        Log.d("TURNO_UPDATE_IMMEDIATE", "✅ Firebase aggiornato con successo")
+                        Resource.Success("Turno aggiornato con successo (locale + remoto)")
+                    }
+                    is Resource.Error -> {
+                        // Firebase fallito, ma cache locale è aggiornata
+                        // Marco come non sincronizzato per retry futuro
+                        turnoDao.updateTurnoSyncStatus(turno.id, existingTurno.idFirebase, false)
+                        Log.w("TURNO_UPDATE_IMMEDIATE", "⚠️ Aggiornamento Firebase fallito: ${result.message}")
+                        Resource.Success("Turno aggiornato localmente, sincronizzazione remota pendente")
+                    }
+                    else -> {
+                        Resource.Success("Turno aggiornato localmente")
+                    }
+                }
+            } else {
+                Log.d("TURNO_UPDATE_IMMEDIATE", "✅ Turno aggiornato solo in locale (non presente su Firebase)")
+                Resource.Success("Turno aggiornato con successo (solo locale)")
+            }
+
+        } catch (e: Exception) {
+            Log.e("TURNO_UPDATE_IMMEDIATE", "🚨 Errore aggiornamento immediato: ${e.message}", e)
+            Resource.Error("Errore durante l'aggiornamento: ${e.message}")
+        }
+    }
+
+    /**
+     * Elimina immediatamente un turno sia dalla cache che da Firebase (se esiste)
+     * Bypassa la logica di soft delete e sincronizzazione
+     * Usato per turni scoperti (es. malattia senza sostituto)
+     */
+    override suspend fun deleteTurnoImmediate(turnoId: String): Resource<String> {
+        return try {
+            Log.d("TURNO_DELETE_IMMEDIATE", "🗑️ Eliminazione immediata turno: $turnoId")
+
+            // 1. Recupera il turno dalla cache
+            val turnoEntity = turnoDao.getTurnoById(turnoId)
+
+            if (turnoEntity == null) {
+                Log.e("TURNO_DELETE_IMMEDIATE", "❌ Turno non trovato: $turnoId")
+                return Resource.Error("Turno non trovato")
+            }
+
+            // 2. Se ha un ID Firebase, elimina da Firebase
+            if (turnoEntity.idFirebase.isNotEmpty()) {
+                Log.d("TURNO_DELETE_IMMEDIATE", "☁️ Eliminazione da Firebase: ${turnoEntity.idFirebase}")
+
+                when (val result = turnoRemoteRepositoryImpl.deleteTurnoFromFirebase(turnoEntity.idFirebase)) {
+                    is Resource.Success -> {
+                        Log.d("TURNO_DELETE_IMMEDIATE", "✅ Eliminato da Firebase")
+                    }
+                    is Resource.Error -> {
+                        Log.w("TURNO_DELETE_IMMEDIATE", "⚠️ Errore eliminazione Firebase: ${result.message}")
+                        // Continua comunque con l'eliminazione locale
+                    }
+                    else -> {
+                        Log.d("TURNO_DELETE_IMMEDIATE", "ℹ️ Turno non trovato su Firebase")
+                    }
+                }
+            }
+
+            // 3. Elimina dalla cache locale (hard delete)
+            turnoDao.deleteTurno(turnoEntity)
+            Log.d("TURNO_DELETE_IMMEDIATE", "✅ Eliminato dalla cache locale")
+
+            Resource.Success("Turno eliminato completamente")
+
+        } catch (e: Exception) {
+            Log.e("TURNO_DELETE_IMMEDIATE", "🚨 Errore eliminazione immediata: ${e.message}", e)
+            Resource.Error("Errore durante l'eliminazione: ${e.message}")
+        }
+    }
+
+    // Metodo helper per verificare se un turno esiste su Firebase
+    private suspend fun turnoExistsOnFirebase(firebaseId: String): Boolean {
+        return try {
+            if (firebaseId.isEmpty()) return false
+
+            when (val result = turnoRemoteRepositoryImpl.getTurnoById(firebaseId)) {
+                is Resource.Success -> true
+                else -> false
+            }
+        } catch (e: Exception) {
+            false
+        }
+    }
+
 
     override suspend fun saveTurno(
         turno: Turno,

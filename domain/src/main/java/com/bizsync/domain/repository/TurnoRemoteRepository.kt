@@ -16,6 +16,8 @@ interface TurnoRemoteRepository {
         idEmployee: String? = null
     ): Resource<List<Turno>>
 
+    suspend fun getTurnoById(firebaseId: String): Resource<Turno>
+
     suspend fun generateTurni(
         dipartimento: AreaLavoro,
         giornoSelezionato: LocalDate,
