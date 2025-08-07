@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 @HiltViewModel
@@ -378,7 +379,10 @@ class PianificaViewModel @Inject constructor(
             val publishableWeek = WeeklyPublicationCalculator.getPublishableWeekStart()
                 ?: return Resource.Error("Errore calcolo settimana pubblicabile")
 
+            val generatedId = generateWeeklyShiftId(azienda, publishableWeek)
+
             val weeklyShift = WeeklyShift(
+                id = generatedId,
                 idAzienda = azienda.idAzienda,
                 dipartimentiAttivi = azienda.areeLavoro,
                 dipendentiAttivi = _uistate.value.dipendenti,
@@ -398,6 +402,12 @@ class PianificaViewModel @Inject constructor(
             Resource.Error(e.message ?: "Errore creazione pianificazione")
         }
     }
+
+    private fun generateWeeklyShiftId(azienda: Azienda, weekStart: LocalDate): String {
+        val weekKey = weekStart.format(DateTimeFormatter.ISO_LOCAL_DATE)
+        return "${azienda.idAzienda}_$weekKey"
+    }
+
 
     private fun canPublishToday(): Pair<Boolean, LocalDate?> {
         val publishableWeek = WeeklyPublicationCalculator.getPublishableWeekStart()

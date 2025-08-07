@@ -195,7 +195,7 @@ class ChatRepositoryImpl @Inject constructor(
 
     // Inizializza le chat di default (generale e dipartimenti) con idAzienda
     override suspend fun initializeDefaultChats(idAzienda: String, dipartimenti: List<String>) {
-        Log.d("ChatRepositoryImpl", "Inizializzazione chat per azienda: $idAzienda")
+        Log.d("ChatRepositoryImpl", "DIPARTIMENTI azienda: $dipartimenti")
 
         val currentUser = FirebaseAuth.getInstance().currentUser
         if (currentUser == null) {

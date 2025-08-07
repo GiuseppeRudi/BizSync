@@ -127,7 +127,7 @@ class WeeklyShiftRepositoryImpl @Inject constructor(
 
             Log.d(TAG, "🔨 Creazione pianificazione: $weeklyShift")
 
-            val documentId = generateDocumentId(weeklyShift.idAzienda, weeklyShift.weekStart)
+            val documentId = weeklyShift.id
             val firestoreData = weeklyShift.toDto()
 
             Log.d(TAG, "🔨 Creazione pianificazione: $documentId")
@@ -150,6 +150,8 @@ class WeeklyShiftRepositoryImpl @Inject constructor(
         ): Resource<Unit> {
         return try {
 
+            val documentId = weeklyShift.id
+
             val weeklyShiftDto = weeklyShift.toDto()
 
             // Validazione status
@@ -158,7 +160,7 @@ class WeeklyShiftRepositoryImpl @Inject constructor(
             }
 
             collection
-                .document(weeklyShift.id)
+                .document(documentId)
                 .update(WeeklyShiftFirestore.Fields.STATUS, weeklyShiftDto.status)
                 .await()
 
@@ -170,79 +172,6 @@ class WeeklyShiftRepositoryImpl @Inject constructor(
         }
     }
 
-//    // Overload per compatibilità con il codice esistente
-//    override suspend fun updateWeeklyShiftStatus(weeklyShift: WeeklyShift): Resource<WeeklyShift> {
-//        return try {
-//            Log.d(DEBUG_TAG, "🔄 Inizio aggiornamento WeeklyShift con ID: ${weeklyShift.id}")
-//            Log.d(DEBUG_TAG, "📋 Dati da aggiornare: ${weeklyShift.toDto()}")
-//
-//            val updateResult = updateWeeklyShiftStatus(weeklyShift.id, weeklyShift.status)
-//
-//            when (updateResult) {
-//                is Resource.Success -> {
-//                    Log.d(DEBUG_TAG, "✅ WeeklyShift aggiornato correttamente")
-//                    Resource.Success(weeklyShift)
-//                }
-//                is Resource.Error -> {
-//                    Log.e(DEBUG_TAG, "❌ Errore aggiornamento WeeklyShift: ${updateResult.message}")
-//                    Resource.Error(updateResult.message)
-//                }
-//                else -> Resource.Error("Errore sconosciuto")
-//            }
-//        } catch (e: Exception) {
-//            Log.e(DEBUG_TAG, "❌ Errore durante l'aggiornamento WeeklyShift", e)
-//            Resource.Error(e.message ?: "Errore durante l'aggiornamento")
-//        }
-//    }
-
-    suspend fun getWeeklyShiftsByStatus(
-        idAzienda: String,
-        status: WeeklyShiftStatus
-    ): Resource<List<WeeklyShift>> {
-        return try {
-            Log.d(TAG, "🔍 Ricerca pianificazioni per azienda $idAzienda con status: ${status.name}")
-
-            // Validazione status
-            if (!WeeklyShiftFirestore.Validation.VALID_STATUS.contains(status.name)) {
-                return Resource.Error("Status non valido: ${status.name}")
-            }
-
-            val snapshot = collection
-                .whereEqualTo(WeeklyShiftFirestore.Fields.STATUS, status.name)
-                .limit(WeeklyShiftFirestore.QueryLimits.MAX_RESULTS.toLong())
-                .get()
-                .await()
-
-            val weeklyShifts = snapshot.documents.mapNotNull { document ->
-                try {
-                    document.toObject(WeeklyShiftDto::class.java)?.toDomain(document.id)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Errore conversione weekly shift ${document.id}: ${e.message}")
-                    null
-                }
-            }.filter { it.idAzienda == idAzienda } // Filtro per azienda a livello client
-
-            Log.d(TAG, "✅ Trovate ${weeklyShifts.size} pianificazioni con status ${status.name}")
-            Resource.Success(weeklyShifts)
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ Errore recupero pianificazioni per status", e)
-            Resource.Error("Errore recupero pianificazioni: ${e.message}")
-        }
-    }
-
-    suspend fun deleteWeeklyShift(weeklyShiftId: String): Resource<Unit> {
-        return try {
-            Log.d(TAG, "🗑️ Eliminazione pianificazione: $weeklyShiftId")
-
-            collection.document(weeklyShiftId).delete().await()
-
-            Log.d(TAG, "✅ Pianificazione eliminata con successo")
-            Resource.Success(Unit)
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ Errore eliminazione pianificazione", e)
-            Resource.Error("Errore eliminazione pianificazione: ${e.message}")
-        }
-    }
 
     private fun generateDocumentId(idAzienda: String, weekStart: LocalDate): String {
         val weekKey = weekStart.format(DateTimeFormatter.ISO_LOCAL_DATE)

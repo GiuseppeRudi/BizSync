@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
@@ -46,6 +48,9 @@ import com.kizitonwose.calendar.compose.WeekCalendar
 import com.kizitonwose.calendar.compose.weekcalendar.rememberWeekCalendarState
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.lazy.grid.items
+
 @Composable
 fun Calendar(pianificaVM: PianificaViewModel) {
     val currentDate = remember { LocalDate.now() }
@@ -55,7 +60,6 @@ fun Calendar(pianificaVM: PianificaViewModel) {
     val pianificaState by pianificaVM.uistate.collectAsState()
     val selectionData = pianificaState.selectionData
     val weeklyShift = pianificaState.weeklyShiftRiferimento
-
     var rangeSettimana by remember { mutableStateOf<Pair<LocalDate, LocalDate>?>(null) }
     var weeklyShiftStatus by remember { mutableStateOf<WeeklyShiftStatus?>(null) }
 
@@ -312,67 +316,45 @@ fun LegendItem(
 }
 
 
-
-// ✅ Preview per testare i diversi stati con i nuovi colori
+@OptIn(ExperimentalFoundationApi::class)
 @Preview(showBackground = true)
 @Composable
-fun DayPreview() {
+fun DayPreviewGrid() {
     val today = LocalDate.now()
+    val examples = listOf(
+        "Giorno normale:" to DayProps(today, isCurrentDay = false, selected = false, isInWeekRange = false),
+        "Settimana PUBBLICATA:" to DayProps(today.plusDays(1), isCurrentDay = false, selected = false, isInWeekRange = true, weeklyShiftStatus = WeeklyShiftStatus.PUBLISHED),
+        "Giorno corrente:" to DayProps(today, isCurrentDay = true, selected = false, isInWeekRange = false),
+        "Settimana BOZZA:" to DayProps(today.plusDays(2), isCurrentDay = false, selected = false, isInWeekRange = true, weeklyShiftStatus = WeeklyShiftStatus.DRAFT),
+        "Giorno selezionato:" to DayProps(today.plusDays(4), isCurrentDay = false, selected = true, isInWeekRange = true, weeklyShiftStatus = WeeklyShiftStatus.PUBLISHED),
+        "Settimana NON PUBBLICATA:" to DayProps(today.plusDays(3), isCurrentDay = false, selected = false, isInWeekRange = true, weeklyShiftStatus = WeeklyShiftStatus.NOT_PUBLISHED)
+    )
 
-    Column(
-        modifier = Modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = Modifier.padding(16.dp)
     ) {
-        Text("Giorno normale:")
-        Day(
-            date = today,
-            isCurrentDay = false,
-            selected = false,
-            isInWeekRange = false
-        )
-
-        Text("Giorno corrente:")
-        Day(
-            date = today,
-            isCurrentDay = true,
-            selected = false,
-            isInWeekRange = false
-        )
-
-        Text("Settimana PUBBLICATA (Verde):")
-        Day(
-            date = today.plusDays(1),
-            isCurrentDay = false,
-            selected = false,
-            isInWeekRange = true,
-            weeklyShiftStatus = WeeklyShiftStatus.PUBLISHED
-        )
-
-        Text("Settimana BOZZA (Giallo):")
-        Day(
-            date = today.plusDays(2),
-            isCurrentDay = false,
-            selected = false,
-            isInWeekRange = true,
-            weeklyShiftStatus = WeeklyShiftStatus.DRAFT
-        )
-
-        Text("Settimana NON PUBBLICATA (Rosso):")
-        Day(
-            date = today.plusDays(3),
-            isCurrentDay = false,
-            selected = false,
-            isInWeekRange = true,
-            weeklyShiftStatus = WeeklyShiftStatus.NOT_PUBLISHED
-        )
-
-        Text("Giorno selezionato nella settimana pubblicata:")
-        Day(
-            date = today.plusDays(4),
-            isCurrentDay = false,
-            selected = true,
-            isInWeekRange = true,
-            weeklyShiftStatus = WeeklyShiftStatus.PUBLISHED
-        )
+        items(examples) { (label, props) ->
+            Column {
+                Text(label, style = MaterialTheme.typography.bodySmall)
+                Day(
+                    date = props.date,
+                    isCurrentDay = props.isCurrentDay,
+                    selected = props.selected,
+                    isInWeekRange = props.isInWeekRange,
+                    weeklyShiftStatus = props.weeklyShiftStatus
+                )
+            }
+        }
     }
 }
+
+private data class DayProps(
+    val date: LocalDate,
+    val isCurrentDay: Boolean,
+    val selected: Boolean,
+    val isInWeekRange: Boolean,
+    val weeklyShiftStatus: WeeklyShiftStatus = WeeklyShiftStatus.PUBLISHED
+)

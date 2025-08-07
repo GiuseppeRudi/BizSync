@@ -1,44 +1,18 @@
 package com.bizsync.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.EventBusy
-import androidx.compose.material.icons.filled.Schedule
-import com.bizsync.domain.utils.WeeklyWindowCalculator
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.bizsync.ui.navigation.LocalScaffoldViewModel
 import com.bizsync.ui.navigation.LocalUserViewModel
-import com.bizsync.ui.components.Calendar
 import com.bizsync.ui.viewmodels.PianificaViewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import com.bizsync.domain.constants.enumClass.WeeklyShiftStatus
-import com.bizsync.domain.model.DettagliGiornalieri
-import com.bizsync.domain.model.StatisticheSettimanali
-import com.bizsync.domain.model.Turno
-import com.bizsync.domain.model.User
-import com.bizsync.domain.model.WeeklyShift
-import com.bizsync.ui.viewmodels.PianificaEmployeeViewModel
-import java.time.format.DateTimeFormatter
 
 
 @Composable

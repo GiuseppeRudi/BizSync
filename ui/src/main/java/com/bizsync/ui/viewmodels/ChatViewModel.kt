@@ -102,10 +102,19 @@ class ChatViewModel @Inject constructor(
 
             viewModelScope.launch {
                 try {
-                    val dipartimenti = employees.map { it.dipartimento }.distinct()
-                    Log.d(TAG, "🏢 Initializing default chats for departments: $dipartimenti")
+                    val dipartimentiList = employees
+                        .filter { !it.isManager }       // prendo solo quelli che non sono manager
+                        .map { it.dipartimento }         // mappo sul dipartimento
+                        .toMutableList()                 // se serve mutabile
 
-                    // ✅ Usa Use Case invece del repository diretto
+                    // Se l’utente non è manager, aggiungo il suo dipartimento
+                    if (!user.isManager) {
+                        dipartimentiList += user.dipartimento
+                    }
+
+                    // Rimuovo eventuali duplicati
+                    val dipartimenti = dipartimentiList.distinct()
+
                     when (val result = initializeChatUseCase(user.idAzienda, dipartimenti)) {
                         is Resource.Success -> {
                             Log.d(TAG, "✅ Default chats initialized successfully")

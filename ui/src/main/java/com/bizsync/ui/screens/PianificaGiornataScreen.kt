@@ -333,15 +333,13 @@ private fun calcolaStatoDipartimento(
     )
 }
 
-/**
- * Rileva i buchi nella copertura oraria
- */
+
 private fun rilevaBuchiOrari(
     orari: Pair<LocalTime, LocalTime>,
     turni: List<Turno>
 ): List<BucoOrario> {
+    // 1. Se non ci sono turni, tutto l’orario è un buco
     if (turni.isEmpty()) {
-        // Se non ci sono turni, tutto l'orario è un buco
         val durataMinuti = calcolaMinutiTotali(orari.first, orari.second)
         return listOf(
             BucoOrario(
@@ -352,72 +350,66 @@ private fun rilevaBuchiOrari(
         )
     }
 
-    val buchi = mutableListOf<BucoOrario>()
+    // 2. Ordina e trasforma in lista di intervalli [start, end]
+    val intervalli = turni
+        .map { it.orarioInizio to it.orarioFine }
+        .sortedBy { it.first }
 
-    try {
-        val inizioGiornata = orari.first
-        val fineGiornata = orari.second
-
-        // Ordina i turni per orario di inizio
-        val turniOrdinati = turni.sortedBy { it.orarioInizio }
-
-        // Controlla buco prima del primo turno
-        val primoTurno = turniOrdinati.first()
-        val inizioPrimoTurno = primoTurno.orarioInizio
-
-        if (inizioGiornata.isBefore(inizioPrimoTurno)) {
-            val durataMinuti = Duration.between(inizioGiornata, inizioPrimoTurno).toMinutes().toInt()
-            buchi.add(
-                BucoOrario(
-                    orarioInizio = inizioGiornata.toString(),
-                    orarioFine = inizioPrimoTurno.toString(),
-                    durataMinuti = durataMinuti
-                )
-            )
-        }
-
-        // Controlla buchi tra i turni
-        for (i in 0 until turniOrdinati.size - 1) {
-            val turnoCorrente = turniOrdinati[i]
-            val turnoSuccessivo = turniOrdinati[i + 1]
-
-            val fineCorrente = turnoCorrente.orarioFine
-            val inizioSuccessivo = turnoSuccessivo.orarioInizio
-
-            if (fineCorrente.isBefore(inizioSuccessivo)) {
-                val durataMinuti = Duration.between(fineCorrente, inizioSuccessivo).toMinutes().toInt()
-                buchi.add(
-                    BucoOrario(
-                        orarioInizio = fineCorrente.toString(),
-                        orarioFine = inizioSuccessivo.toString(),
-                        durataMinuti = durataMinuti
-                    )
-                )
+    // 3. Fai il merge degli intervalli sovrapposti o contigui
+    val merged = mutableListOf<Pair<LocalTime, LocalTime>>()
+    for ((start, end) in intervalli) {
+        if (merged.isEmpty()) {
+            merged.add(start to end)
+        } else {
+            val (lastStart, lastEnd) = merged.last()
+            if (!start.isAfter(lastEnd)) {
+                // si sovrappone o tocca: estendi l’ultimo blocco
+                merged[merged.lastIndex] = lastStart to maxOf(lastEnd, end)
+            } else {
+                // separato: nuovo blocco
+                merged.add(start to end)
             }
         }
+    }
 
-        // Controlla buco dopo l'ultimo turno
-        val ultimoTurno = turniOrdinati.last()
-        val fineUltimoTurno = ultimoTurno.orarioFine
+    // 4. Ora calcola i buchi fra orari.first → merged[0].first,
+    //    poi tra merged[i].second → merged[i+1].first,
+    //    infine merged.last().second → orari.second
+    val buchi = mutableListOf<BucoOrario>()
+    val inizioGiornata = orari.first
+    val fineGiornata  = orari.second
 
-        if (fineUltimoTurno.isBefore(fineGiornata)) {
-            val durataMinuti = Duration.between(fineUltimoTurno, fineGiornata).toMinutes().toInt()
+    // Buco prima del primo blocco
+    val (mFirstStart, _) = merged.first()
+    if (inizioGiornata.isBefore(mFirstStart)) {
+        buchi.add(
+            BucoOrario(inizioGiornata.toString(), mFirstStart.toString(),
+                Duration.between(inizioGiornata, mFirstStart).toMinutes().toInt())
+        )
+    }
+    // Buchi fra blocchi
+    for (i in 0 until merged.size - 1) {
+        val (_, endI) = merged[i]
+        val (startNext, _) = merged[i + 1]
+        if (endI.isBefore(startNext)) {
             buchi.add(
-                BucoOrario(
-                    orarioInizio = fineUltimoTurno.toString(),
-                    orarioFine = fineGiornata.toString(),
-                    durataMinuti = durataMinuti
-                )
+                BucoOrario(endI.toString(), startNext.toString(),
+                    Duration.between(endI, startNext).toMinutes().toInt())
             )
         }
-
-    } catch (e: Exception) {
-        // In caso di errore, non restituire buchi
-        return emptyList()
+    }
+    // Buco dopo l’ultimo blocco
+    val (_, mLastEnd) = merged.last()
+    if (mLastEnd.isBefore(fineGiornata)) {
+        buchi.add(
+            BucoOrario(mLastEnd.toString(), fineGiornata.toString(),
+                Duration.between(mLastEnd, fineGiornata).toMinutes().toInt())
+        )
     }
 
     return buchi
 }
+
 
 /**
  * Rileva le sovrapposizioni tra turni
