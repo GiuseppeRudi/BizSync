@@ -349,7 +349,6 @@ class PianificaManagerViewModel @Inject constructor(
     fun toIntSafe(input: String?): Int? {
         return input?.toIntOrNull()
     }
-
     fun calcolaDipendentiSettimana(
         dipendenti: List<User>,
         assenzeSettimana: List<Absence>
@@ -376,15 +375,18 @@ class PianificaManagerViewModel @Inject constructor(
                     if (!giornoInAssenza(giorno, assenza)) continue
 
                     when {
-                        assenza.totalDays != null -> {
-                            isTotale = true
-                            break
-                        }
-                        assenza.totalHours != null && assenza.startTime != null && assenza.endTime != null -> {
+                        // ASSENZA PARZIALE: Ha orari specifici
+                        assenza.startTime != null && assenza.endTime != null && assenza.totalHours != null -> {
                             parziale = AssenzaParziale(
                                 inizio = assenza.startTime!!,
                                 fine = assenza.endTime!!
                             )
+                        }
+
+                        // ASSENZA TOTALE: totalDays > 0 (non solo != null!)
+                        assenza.totalDays != null && assenza.totalDays!! > 0 -> {
+                            isTotale = true
+                            break
                         }
                     }
                 }
@@ -433,45 +435,114 @@ class PianificaManagerViewModel @Inject constructor(
         }
     }
 
+//    fun setTurniGiornalieriDipartimento(dipartimentoId: String, dayOfWeek: DayOfWeek) {
+//        val turniDelGiorno = _uiState.value.turniSettimanali[dayOfWeek] ?: emptyList()
+//
+//        val turniGiornalieriDip = turniDelGiorno.filter { turno ->
+//            turno.dipartimento == dipartimentoId
+//        }
+//
+//        _uiState.update {
+//            it.copy(turniGiornalieriDip = turniGiornalieriDip)
+//        }
+//    }
+
     fun setTurniGiornalieriDipartimento(dipartimentoId: String) {
-        val turniMap = _uiState.value.turniSettimanali
-        val giornalieri = turniMap.values.flatten()
-            .filter { it.dipartimento == dipartimentoId }
+        val turniGiornalieriDip = _uiState.value.turniGiornalieri[dipartimentoId] ?: emptyList()
+
         _uiState.update {
-            it.copy(turniGiornalieriDip = giornalieri)
+            it.copy(turniGiornalieriDip = turniGiornalieriDip)
         }
     }
 
     fun setTurniSettimanali(startWeek: LocalDate, idAzienda: String) {
         viewModelScope.launch {
+            Log.d("PianificaGiornata", "🚀 === setTurniSettimanali START ===")
+            Log.d("PianificaGiornata", "📅 startWeek: $startWeek")
+            Log.d("PianificaGiornata", "🏢 idAzienda: $idAzienda")
+            Log.d("PianificaGiornata", "📊 Current turniSettimanali size BEFORE: ${_uiState.value.turniSettimanali.values.flatten().size}")
+
             // Inizio caricamento
-            _uiState.update { it.copy(isLoadingTurni = true) }
+            _uiState.update {
+                Log.d("PianificaGiornata", "⏳ Setting isLoadingTurni = true")
+                it.copy(isLoadingTurni = true)
+            }
+
+            Log.d("PianificaGiornata", "🌐 Calling fetchTurniSettimaanaUseCase...")
 
             when (val result = fetchTurniSettimaanaUseCase(startWeek, idAzienda)) {
                 is Resource.Success -> {
                     val turni = result.data
+                    Log.d("PianificaGiornata", "✅ SUCCESS: Fetched ${turni.size} turni from API")
+
+                    // Log alcuni turni per debug
+                    turni.take(3).forEachIndexed { index, turno ->
+                        Log.d("PianificaGiornata", "   Turno $index: ${turno.titolo} - ${turno.data} (${turno.data.dayOfWeek})")
+                    }
+
                     val grouped = turni.groupBy { it.data.dayOfWeek }
+                    Log.d("PianificaGiornata", "📋 Grouped turni by day:")
+                    grouped.forEach { (day, turniDay) ->
+                        Log.d("PianificaGiornata", "   $day: ${turniDay.size} turni")
+                    }
+
                     val allDays = DayOfWeek.entries.associateWith { grouped[it] ?: emptyList() }
+                    Log.d("PianificaGiornata", "📊 Final allDays structure:")
+                    allDays.forEach { (day, turniDay) ->
+                        Log.d("PianificaGiornata", "   $day: ${turniDay.size} turni")
+                    }
 
                     _uiState.update {
-                        it.copy(
+                        Log.d("PianificaGiornata", "💾 Updating state with SUCCESS data...")
+                        val newState = it.copy(
                             turniSettimanali = allDays,
-                            isLoadingTurni = false // Fine caricamento
+                            isLoadingTurni = false
                         )
+                        Log.d("PianificaGiornata", "📊 New turniSettimanali size: ${newState.turniSettimanali.values.flatten().size}")
+                        newState
                     }
+
+                    Log.d("PianificaGiornata", "✅ SUCCESS update completed")
                 }
 
-                is Resource.Error, is Resource.Empty -> {
+                is Resource.Error -> {
+                    Log.e("PianificaGiornata", "❌ ERROR: ${result.message}")
+                    Log.e("PianificaGiornata", "❌ Setting turniSettimanali to EMPTY due to error")
+
                     val allDays = DayOfWeek.entries.associateWith { emptyList<Turno>() }
 
                     _uiState.update {
+                        Log.d("PianificaGiornata", "💾 Updating state with ERROR (empty data)...")
                         it.copy(
                             turniSettimanali = allDays,
-                            isLoadingTurni = false // Fine caricamento anche in caso di errore
+                            isLoadingTurni = false
                         )
                     }
+
+                    Log.e("PianificaGiornata", "❌ ERROR update completed - turniSettimanali now EMPTY")
+                }
+
+                is Resource.Empty -> {
+                    Log.w("PianificaGiornata", "⚠️ EMPTY: No turni found for this week")
+                    Log.w("PianificaGiornata", "⚠️ Setting turniSettimanali to EMPTY due to empty result")
+
+                    val allDays = DayOfWeek.entries.associateWith { emptyList<Turno>() }
+
+                    _uiState.update {
+                        Log.d("PianificaGiornata", "💾 Updating state with EMPTY data...")
+                        it.copy(
+                            turniSettimanali = allDays,
+                            isLoadingTurni = false
+                        )
+                    }
+
+                    Log.w("PianificaGiornata", "⚠️ EMPTY update completed - turniSettimanali now EMPTY")
                 }
             }
+
+            Log.d("PianificaGiornata", "📊 Final turniSettimanali size AFTER: ${_uiState.value.turniSettimanali.values.flatten().size}")
+            Log.d("PianificaGiornata", "🏁 === setTurniSettimanali END ===")
+            Log.d("PianificaGiornata", "") // Riga vuota per separare
         }
     }
 
@@ -496,8 +567,6 @@ class PianificaManagerViewModel @Inject constructor(
                 setLoading(true)
 
                 setTurniSettimanaliSuspend(weekStart)
-
-                setTurniGiornalieriDipartimento(dipartimento)
 
                 _uiState.update { it.copy(hasChangeShift = false) }
             } catch (e: Exception) {
@@ -870,8 +939,17 @@ class PianificaManagerViewModel @Inject constructor(
             try {
                 _uiState.update { it.copy(loading = true) }
 
-                val turno = _uiState.value.turnoInModifica
-                Log.d(TAG, "💾 Inizio salvataggio turno: ${turno.id}")
+                val turnoRaw = _uiState.value.turnoInModifica
+
+                // ✅ GENERA ID SE È UN NUOVO TURNO
+                val turno = if (turnoRaw.id.isEmpty()) {
+                    turnoRaw.withGeneratedId() // Genera ID per nuovo turno
+                } else {
+                    turnoRaw // Mantieni ID esistente per modifica
+                }
+
+                val isNuovoTurno = turnoRaw.id.isEmpty()
+                Log.d(TAG, "💾 ${if (isNuovoTurno) "Creando nuovo turno" else "Modificando turno esistente"}: ${turno.id}")
 
                 when (val result = saveTurnoUseCase(turno, dipartimento, giornoSelezionato, idAzienda)) {
                     is Resource.Success -> {
@@ -880,7 +958,7 @@ class PianificaManagerViewModel @Inject constructor(
                             it.copy(
                                 hasChangeShift = true,
                                 loading = false,
-                                turnoInModifica = Turno(),
+                                turnoInModifica = Turno(), // ✅ Reset a turno vuoto (ID vuoto)
                                 successMessage = result.data
                             )
                         }

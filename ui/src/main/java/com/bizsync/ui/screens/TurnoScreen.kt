@@ -33,12 +33,14 @@ import com.bizsync.domain.constants.enumClass.ZonaLavorativa
 import com.bizsync.domain.model.AreaLavoro
 import com.bizsync.domain.model.DipendentiGiorno
 import com.bizsync.domain.model.StatoDipendente
+import com.bizsync.domain.model.Turno
 import com.bizsync.domain.model.TurnoFrequente
 import com.bizsync.domain.model.User
 import com.bizsync.ui.components.NoteSection
 import com.bizsync.ui.components.PauseManagerDialog
 import com.bizsync.ui.components.TitoloTurnoField
 import com.bizsync.ui.components.TurniFrequentiSelectorCompact
+import com.bizsync.ui.model.ManagerState
 import com.bizsync.ui.viewmodels.PianificaManagerViewModel
 import java.time.DayOfWeek
 import java.time.Duration
@@ -128,60 +130,95 @@ fun TurnoScreen(
                 }
             )
         },
+        bottomBar = {
+            // Bottom Bar con pulsanti di azione
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.surface,
+                shadowElevation = 8.dp
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 5.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Pulsante Annulla
+                    OutlinedButton(
+                        onClick = {
+                            managerVM.pulisciTurnoInModifica()
+                            onBack()
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Annulla")
+                    }
+
+                    // Pulsante Salva
+                    Button(
+                        onClick = {
+                            managerVM.saveTurno(
+                                dipartimento = dipartimento.nomeArea,
+                                giornoSelezionato = giornoSelezionato!!,
+                                idAzienda = userState.azienda.idAzienda
+                            )
+                        },
+                        modifier = Modifier.weight(1f),
+                        enabled = !isLoading
+                    ) {
+                        Text(if (managerState.isNuovoTurno) "Crea Turno" else "Salva Modifiche")
+                    }
+                }
+            }
+        },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .padding(innerPadding)
-                .padding(16.dp)
+                .padding(horizontal = 16.dp, vertical = 0.dp) // orizzontale 16, verticale 8
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
 
+            // Campo titolo
+            TitoloTurnoField(
+                value = turnoCorrente.titolo,
+                onValueChange = { managerVM.aggiornaTitolo(it) },
+                isError = turnoCorrente.titolo.length > 50,
+                errorMessage = if (turnoCorrente.titolo.length > 50)
+                    "Il titolo non può superare i 50 caratteri" else "",
+            )
 
-
-                // Campo titolo
-                TitoloTurnoField(
-                    value = turnoCorrente.titolo,
-                    onValueChange = { managerVM.aggiornaTitolo(it) },
-                    isError = turnoCorrente.titolo.length > 50,
-                    errorMessage = if (turnoCorrente.titolo.length > 50)
-                        "Il titolo non può superare i 50 caratteri" else "",
-                )
-
-
-
-                // Messaggio informativo se non ci sono turni frequenti
-                if (turniFrequenti.isEmpty()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                        )
+            // Messaggio informativo se non ci sono turni frequenti
+            if (turniFrequenti.isEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Default.Info,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Configura turni frequenti nell'azienda per velocizzare la creazione",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                        Icon(
+                            Icons.Default.Info,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Configura turni frequenti nell'azienda per velocizzare la creazione",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
-
+            }
 
             Spacer(Modifier.height(16.dp))
-
 
             TimeRangePicker(
                 startTime = turnoCorrente.orarioInizio,
@@ -191,9 +228,7 @@ fun TurnoScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-
             Spacer(Modifier.height(16.dp))
-
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -243,6 +278,7 @@ fun TurnoScreen(
 
             MembriSelectionDialog(
                 showDialog = showMembriDialog,
+                managerState = managerState,
                 disponibiliMembri = disponibilitaMembriTurno,
                 membriSelezionati = turnoCorrente.idDipendenti,
                 zoneLavorativeAssegnate = turnoCorrente.zoneLavorative,
@@ -257,8 +293,6 @@ fun TurnoScreen(
                 }
             )
 
-
-
             Spacer(Modifier.height(16.dp))
 
             // Gestione note
@@ -269,37 +303,6 @@ fun TurnoScreen(
                 }
             )
 
-            Spacer(Modifier.height(100.dp))
-
-            // Pulsanti di azione
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                // Pulsante Annulla
-                OutlinedButton(
-                    onClick = {
-                        managerVM.pulisciTurnoInModifica()
-                        onBack()
-                    },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text("Annulla")
-                }
-
-                // Pulsante Salva
-                Button(
-                    onClick = {
-                        managerVM.saveTurno(
-                            dipartimento = dipartimento.nomeArea,
-                            giornoSelezionato = giornoSelezionato!!,
-                            idAzienda = userState.azienda.idAzienda
-                        )
-                    },
-                    modifier = Modifier.weight(1f),
-                    enabled = !isLoading
-                ) { Text(if (managerState.isNuovoTurno) "Crea Turno" else "Salva Modifiche") }
-            }
         }
     }
 }
@@ -438,6 +441,7 @@ private fun ZonaLavorativa.getShortName(): String = when (this) {
 @Composable
 fun MembriSelectionDialog(
     showDialog: Boolean,
+    managerState : ManagerState,
     disponibiliMembri: DipendentiGiorno,
     membriSelezionati: List<String>,
     zoneLavorativeAssegnate: Map<String, ZonaLavorativa> = emptyMap(),
@@ -575,6 +579,7 @@ fun MembriSelectionDialog(
                             dipendente = dipendente,
                             isSelected = isSelected,
                             zonaLavorativa = zonaCorrente,
+                            managerState = managerState,
                             orarioInizio = orarioInizio,
                             orarioFine = orarioFine,
                             stato = stato,
@@ -629,11 +634,11 @@ fun MembriSelectionDialog(
         }
     }
 }
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DipendenteSelectionCard(
     dipendente: User,
+    managerState: ManagerState,
     isSelected: Boolean,
     zonaLavorativa: ZonaLavorativa,
     orarioInizio: LocalTime,
@@ -644,21 +649,30 @@ private fun DipendenteSelectionCard(
 ) {
     var showZonaDropdown by remember { mutableStateOf(false) }
 
+    // Controlla disponibilità del dipendente
+    val disponibilitaInfo = calcolaDisponibilita(
+        stato, orarioInizio, orarioFine,
+        dipendente = dipendente,
+        turniEsistenti = managerState.turniGiornalieriDip,
+        turnoCorrente =  managerState.turnoInModifica
+    )
+    val isDisponibile = disponibilitaInfo.first
+    val motivoIndisponibilita = disponibilitaInfo.second
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) {
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-            } else {
-                MaterialTheme.colorScheme.surface
+            containerColor = when {
+                !isDisponibile -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                isSelected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                else -> MaterialTheme.colorScheme.surface
             }
         ),
-        border = if (isSelected) {
-            BorderStroke(
-                2.dp,
-                MaterialTheme.colorScheme.primary
-            )
-        } else null
+        border = when {
+            !isDisponibile -> BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f))
+            isSelected -> BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+            else -> null
+        }
     ) {
         Column(
             modifier = Modifier.padding(12.dp)
@@ -670,7 +684,8 @@ private fun DipendenteSelectionCard(
             ) {
                 Checkbox(
                     checked = isSelected,
-                    onCheckedChange = onSelectionChanged
+                    onCheckedChange = if (isDisponibile) onSelectionChanged else null,
+                    enabled = isDisponibile
                 )
 
                 Spacer(modifier = Modifier.width(12.dp))
@@ -679,21 +694,58 @@ private fun DipendenteSelectionCard(
                     Text(
                         text = "${dipendente.nome} ${dipendente.cognome}",
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Medium,
+                        color = if (isDisponibile) {
+                            MaterialTheme.colorScheme.onSurface
+                        } else {
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        }
                     )
                     Text(
                         text = dipendente.email,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                            alpha = if (isDisponibile) 1f else 0.6f
+                        )
                     )
                 }
 
                 // Indicator stato
-                DipendenteStatusIndicator(stato, orarioInizio, orarioFine)
             }
 
-            // Sezione zona lavorativa (visibile solo se selezionato)
-            if (isSelected) {
+            // Messaggio di indisponibilità
+            if (!isDisponibile && motivoIndisponibilita.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Block,
+                            contentDescription = "Non disponibile",
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = motivoIndisponibilita,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
+
+            // Sezione zona lavorativa (visibile solo se selezionato E disponibile)
+            if (isSelected && isDisponibile) {
                 Spacer(modifier = Modifier.height(8.dp))
 
                 HorizontalDivider(
@@ -776,6 +828,84 @@ private fun DipendenteSelectionCard(
     }
 }
 
+
+/**
+* Calcola se il dipendente è disponibile per l'orario specificato
+* Controlla assenze E turni già assegnati
+*
+* @param stato Stato del dipendente (assenze)
+* @param orarioInizio Orario inizio del nuovo turno
+* @param orarioFine Orario fine del nuovo turno
+* @param dipendente Il dipendente da controllare
+* @param turniEsistenti Lista dei turni già esistenti per quel giorno
+* @param turnoCorrente Turno attualmente in modifica (null se creazione nuovo)
+*
+* @return Pair<Boolean, String> - disponibilità e motivazione
+*/
+private fun calcolaDisponibilita(
+    stato: StatoDipendente?,
+    orarioInizio: LocalTime,
+    orarioFine: LocalTime,
+    dipendente: User,
+    turniEsistenti: List<Turno> = emptyList(),
+    turnoCorrente: Turno? = null // Per escludere il turno in modifica
+): Pair<Boolean, String> {
+    if (stato == null) return true to ""
+
+    // 1. Controlla assenza totale
+    if (stato.isAssenteTotale) {
+        return false to "Non disponibile per l'intera giornata"
+    }
+
+    // 2. Controlla assenza parziale
+    stato.assenzaParziale?.let { assenza ->
+        val assenzaInizio = assenza.inizio
+        val assenzaFine = assenza.fine
+
+        // Verifica se l'assenza si sovrappone con il turno
+        val siSovrappone = !(orarioFine.isBefore(assenzaInizio) || orarioInizio.isAfter(assenzaFine))
+
+        if (siSovrappone) {
+            val formatter = DateTimeFormatter.ofPattern("HH:mm")
+            return false to "Assente dalle ${assenzaInizio.format(formatter)} alle ${assenzaFine.format(formatter)}"
+        }
+    }
+
+    // 3. NUOVO: Controlla turni già assegnati
+    val turniSovrapposti = turniEsistenti.filter { turnoEsistente ->
+        // Esclude il turno corrente se stiamo modificando
+        if (turnoCorrente != null && turnoEsistente.id == turnoCorrente.id) {
+            return@filter false
+        }
+
+        // Controlla se il dipendente è assegnato a questo turno
+        if (dipendente.uid !in turnoEsistente.idDipendenti) {
+            return@filter false
+        }
+
+        // Controlla sovrapposizione oraria
+        val turnoInizio = turnoEsistente.orarioInizio
+        val turnoFine = turnoEsistente.orarioFine
+
+        // Due intervalli si sovrappongono se NON sono disgiunti
+        val siSovrappone = orarioInizio.isBefore(turnoFine) && orarioFine.isAfter(turnoInizio)
+
+        siSovrappone
+    }
+
+    if (turniSovrapposti.isNotEmpty()) {
+        val turnoSovrapposto = turniSovrapposti.first()
+        val formatter = DateTimeFormatter.ofPattern("HH:mm")
+        val inizioEsistente = turnoSovrapposto.orarioInizio.format(formatter)
+        val fineEsistente = turnoSovrapposto.orarioFine.format(formatter)
+
+        return false to "Già assegnato al turno '${turnoSovrapposto.titolo}' dalle $inizioEsistente alle $fineEsistente"
+    }
+
+    return true to ""
+}
+
+
 // Extension functions per ZonaLavorativa
 private fun ZonaLavorativa.getDisplayName(): String = when (this) {
     ZonaLavorativa.IN_SEDE -> "In Sede"
@@ -789,35 +919,6 @@ private fun ZonaLavorativa.getIcon() = when (this) {
     ZonaLavorativa.TRASFERTA -> Icons.Default.FlightTakeoff
 }
 
-@Composable
-private fun DipendenteStatusIndicator(
-    stato: StatoDipendente?,
-    orarioInizio: LocalTime,
-    orarioFine: LocalTime
-) {
-    when {
-        stato?.isAssenteTotale == true -> {
-            Surface(
-                color = MaterialTheme.colorScheme.error,
-                shape = CircleShape,
-                modifier = Modifier.size(8.dp)
-            ) {}
-        }
-        stato?.assenzaParziale != null -> {
-            Surface(
-                color = MaterialTheme.colorScheme.tertiary,
-                shape = CircleShape,
-                modifier = Modifier.size(8.dp)
-            ) {}
-        }
-        else -> {
-            Surface(
-                color = MaterialTheme.colorScheme.primary,
-                shape = CircleShape,
-                modifier = Modifier.size(8.dp)
-            ) {}
-        }
-    }
-}
+
 
 

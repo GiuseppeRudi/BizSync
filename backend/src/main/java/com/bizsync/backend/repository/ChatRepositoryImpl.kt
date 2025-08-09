@@ -15,6 +15,8 @@ import com.google.firebase.firestore.Query
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -26,44 +28,105 @@ class ChatRepositoryImpl @Inject constructor(
     private val chatsCollection = firestore.collection(ChatFirestore.COLLECTION)
 
     override fun getChatsForUser(user: User, allEmployees: List<User>): Flow<List<Chat>> = callbackFlow {
-        val listener = chatsCollection
-            .whereEqualTo(ChatFirestore.Fields.ID_AZIENDA, user.idAzienda)
-            .orderBy(ChatFirestore.Fields.ULTIMO_MESSAGGIO_TIMESTAMP, Query.Direction.DESCENDING)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    close(error)
-                    return@addSnapshotListener
-                }
-
-                val chats = snapshot?.documents?.mapNotNull { doc ->
-                    val chatDto = doc.toObject(ChatDto::class.java) ?: return@mapNotNull null
-
-                    // Filtra le chat in base al ruolo dell'utente
-                    when {
-                        // Manager vede tutto della sua azienda
-                        user.isManager -> chatDto.toDomain(user.uid)
-
-                        // Chat generale - tutti la vedono (della propria azienda)
-                        chatDto.tipo == ChatFirestore.TipoChat.GENERALE -> chatDto.toDomain(user.uid)
-
-                        // Chat dipartimento - solo se appartiene al dipartimento E alla stessa azienda
-                        chatDto.tipo == ChatFirestore.TipoChat.DIPARTIMENTO &&
-                                chatDto.dipartimento == user.dipartimento &&
-                                chatDto.idAzienda == user.idAzienda -> chatDto.toDomain(user.uid)
-
-                        // Chat privata - solo se è partecipante E della stessa azienda
-                        chatDto.tipo == ChatFirestore.TipoChat.PRIVATA &&
-                                user.uid in chatDto.partecipanti &&
-                                chatDto.idAzienda == user.idAzienda -> chatDto.toDomain(user.uid)
-
-                        else -> null
+        val generalChatFlow = callbackFlow<List<Chat>> {
+            val listener = chatsCollection
+                .whereEqualTo(ChatFirestore.Fields.ID_AZIENDA, user.idAzienda)
+                .whereEqualTo(ChatFirestore.Fields.TIPO, ChatFirestore.TipoChat.GENERALE)
+                .orderBy(ChatFirestore.Fields.ULTIMO_MESSAGGIO_TIMESTAMP, Query.Direction.DESCENDING)
+                .addSnapshotListener { snapshot, error ->
+                    if (error != null) {
+                        close(error)
+                        return@addSnapshotListener
                     }
-                } ?: emptyList()
 
-                trySend(chats)
+                    val chats = snapshot?.documents?.mapNotNull { doc ->
+                        doc.toObject(ChatDto::class.java)?.toDomain(user.uid)
+                    } ?: emptyList()
+
+                    trySend(chats)
+                }
+            awaitClose { listener.remove() }
+        }
+
+        val privateChatFlow = callbackFlow<List<Chat>> {
+            val listener = chatsCollection
+                .whereEqualTo(ChatFirestore.Fields.ID_AZIENDA, user.idAzienda)
+                .whereEqualTo(ChatFirestore.Fields.TIPO, ChatFirestore.TipoChat.PRIVATA)
+                .whereArrayContains(ChatFirestore.Fields.PARTECIPANTI, user.uid)
+                .orderBy(ChatFirestore.Fields.ULTIMO_MESSAGGIO_TIMESTAMP, Query.Direction.DESCENDING)
+                .addSnapshotListener { snapshot, error ->
+                    if (error != null) {
+                        close(error)
+                        return@addSnapshotListener
+                    }
+
+                    val chats = snapshot?.documents?.mapNotNull { doc ->
+                        doc.toObject(ChatDto::class.java)?.toDomain(user.uid)
+                    } ?: emptyList()
+
+                    trySend(chats)
+                }
+            awaitClose { listener.remove() }
+        }
+
+        val departmentChatFlow = if (user.isManager) {
+            // Manager vede tutte le chat dipartimento
+            callbackFlow<List<Chat>> {
+                val listener = chatsCollection
+                    .whereEqualTo(ChatFirestore.Fields.ID_AZIENDA, user.idAzienda)
+                    .whereEqualTo(ChatFirestore.Fields.TIPO, ChatFirestore.TipoChat.DIPARTIMENTO)
+                    .orderBy(ChatFirestore.Fields.ULTIMO_MESSAGGIO_TIMESTAMP, Query.Direction.DESCENDING)
+                    .addSnapshotListener { snapshot, error ->
+                        if (error != null) {
+                            close(error)
+                            return@addSnapshotListener
+                        }
+
+                        val chats = snapshot?.documents?.mapNotNull { doc ->
+                            doc.toObject(ChatDto::class.java)?.toDomain(user.uid)
+                        } ?: emptyList()
+
+                        trySend(chats)
+                    }
+                awaitClose { listener.remove() }
             }
+        } else if (user.dipartimento.isNotEmpty()) {
+            // Dipendente vede solo il suo dipartimento
+            callbackFlow<List<Chat>> {
+                val listener = chatsCollection
+                    .whereEqualTo(ChatFirestore.Fields.ID_AZIENDA, user.idAzienda)
+                    .whereEqualTo(ChatFirestore.Fields.TIPO, ChatFirestore.TipoChat.DIPARTIMENTO)
+                    .whereEqualTo(ChatFirestore.Fields.DIPARTIMENTO, user.dipartimento)
+                    .orderBy(ChatFirestore.Fields.ULTIMO_MESSAGGIO_TIMESTAMP, Query.Direction.DESCENDING)
+                    .addSnapshotListener { snapshot, error ->
+                        if (error != null) {
+                            close(error)
+                            return@addSnapshotListener
+                        }
 
-        awaitClose { listener.remove() }
+                        val chats = snapshot?.documents?.mapNotNull { doc ->
+                            doc.toObject(ChatDto::class.java)?.toDomain(user.uid)
+                        } ?: emptyList()
+
+                        trySend(chats)
+                    }
+                awaitClose { listener.remove() }
+            }
+        } else {
+            // Nessun dipartimento, emetti lista vuota
+            flowOf(emptyList<Chat>())
+        }
+
+        // Combina i tre flow
+        combine(generalChatFlow, privateChatFlow, departmentChatFlow) { general, private, department ->
+            (general + private + department)
+                .distinctBy { it.id }
+                .sortedByDescending { it.ultimoMessaggioTimestamp }
+        }.collect {
+            trySend(it)
+        }
+
+        awaitClose { }
     }
 
     override fun getMessagesForChat(chatId: String, userId: String): Flow<List<Message>> = callbackFlow {
@@ -99,7 +162,6 @@ class ChatRepositoryImpl @Inject constructor(
 
         awaitClose { listener.remove() }
     }
-
 
     override suspend fun sendMessage(
         chatId: String,
@@ -204,7 +266,6 @@ class ChatRepositoryImpl @Inject constructor(
             Log.d("ChatRepositoryImpl", "✅ Utente autenticato: ${currentUser.uid}")
         }
 
-
         Log.d("ChatRepositoryImpl", "➡️ Controllo esistenza chat GENERALE per azienda: $idAzienda")
         val generalChat = chatsCollection
             .whereEqualTo(ChatFirestore.Fields.TIPO, ChatFirestore.TipoChat.GENERALE)
@@ -212,7 +273,6 @@ class ChatRepositoryImpl @Inject constructor(
             .get()
             .await()
         Log.d("ChatRepositoryImpl", "📦 Risultato query GENERALE: ${generalChat.size()} documenti trovati")
-
 
         if (generalChat.isEmpty) {
             chatsCollection.add(

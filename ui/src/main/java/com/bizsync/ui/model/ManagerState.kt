@@ -15,17 +15,17 @@ data class ManagerState(
     val turniSettimanali: Map<DayOfWeek, List<Turno>> = emptyMap(),
     val turniGiornalieri: Map<String, List<Turno>> = emptyMap(),
     val turniGiornalieriDip: List<Turno> = emptyList(),
-    val showDialogCreateShift: Boolean = false,
 
+    val showDialogCreateShift: Boolean = false,
     val turnoToDelete: Turno? = null,
     val showDeleteConfirmDialog: Boolean = false,
 
-    val dipendenti : List<User> = emptyList(),
-
-    val dipendentiSettimana: Map<DayOfWeek, DipendentiGiorno> = emptyMap(),
-    val statoSettimanaleDipendenti: Map<String, StatoSettimanaleDipendente> = emptyMap(),
     val assenze : List<Absence> = emptyList(),
     val contratti : List<Contratto> = emptyList(),
+    val statoSettimanaleDipendenti: Map<String, StatoSettimanaleDipendente> = emptyMap(),
+
+    val dipendenti : List<User> = emptyList(),
+    val dipendentiSettimana: Map<DayOfWeek, DipendentiGiorno> = emptyMap(),
     val disponibilitaMembriTurno : DipendentiGiorno = DipendentiGiorno(),
 
     val turnoInModifica: Turno = Turno(),

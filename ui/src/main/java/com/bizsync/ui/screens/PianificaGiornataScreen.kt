@@ -76,9 +76,12 @@ fun PianificaGiornata(
         }
     }
 
+    val turniSettimanali = managerState.turniSettimanali
     Log.d("PianificaGiornata", "selectionDate: $giornoSelezionato")
     Log.d("PianificaGiornata", "dipartimentiDelGiorno: $dipartimentiDelGiorno")
     Log.d("PianificaGiornata", "turniDelGiorno: $turniGiorno")
+    Log.d("PianificaGiornata", "turniSettimanali: $turniSettimanali")
+
 
 
     if (managerState.loading) {
@@ -315,10 +318,10 @@ private fun calcolaStatoDipartimento(
     // Determina lo stato finale
     val stato = when {
         turniDipartimento.isEmpty() -> DipartimentoStatus.INCOMPLETE
-        sovrapposizioni.isNotEmpty() -> DipartimentoStatus.PARTIAL // Problemi da risolvere
-        buchi.isNotEmpty() -> DipartimentoStatus.PARTIAL // Copertura incompleta
-        percentualeCopertura >= 0.95f -> DipartimentoStatus.COMPLETE // Copertura quasi totale
-        percentualeCopertura >= 0.5f -> DipartimentoStatus.PARTIAL // Copertura parziale
+        sovrapposizioni.isNotEmpty() -> DipartimentoStatus.PARTIAL
+        buchi.isNotEmpty() -> DipartimentoStatus.PARTIAL
+        percentualeCopertura >= 0.95f -> DipartimentoStatus.COMPLETE
+        percentualeCopertura >= 0.5f -> DipartimentoStatus.PARTIAL
         else -> DipartimentoStatus.INCOMPLETE
     }
 

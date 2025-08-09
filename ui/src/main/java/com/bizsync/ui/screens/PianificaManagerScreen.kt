@@ -56,15 +56,17 @@ fun PianificaManagerScreen(
 
         pianificaVM.setWeeklyShiftIdentical(riferimento != null && attuale != null && riferimento.id == attuale.id)
 
-        riferimento?.let {
-            dipartimenti = it.dipartimentiAttivi
-            pianificaVM.syncTurniAvvio(it.weekStart)
-            managerVM.setTurniSettimanali(it.weekStart, userState.azienda.idAzienda)
-            managerVM.inizializzaDatiWeeklyRiferimento(it.dipendentiAttivi)
+        val isIdentical = pianificaState.weeklyisIdentical
+
+        if(riferimento!=null && (attuale==null || (attuale!=null && isIdentical))) {
+            dipartimenti = riferimento.dipartimentiAttivi
+            pianificaVM.syncTurniAvvio(riferimento.weekStart)
+            managerVM.setTurniSettimanali(riferimento.weekStart, userState.azienda.idAzienda)
+            managerVM.inizializzaDatiWeeklyRiferimento(riferimento.dipendentiAttivi)
 
         }
 
-        if (attuale != null && riferimento?.id != attuale.id) {
+        if (attuale != null) {
             dipartimenti = attuale.dipartimentiAttivi
             managerVM.inizializzaDatiDipendenti(attuale.dipendentiAttivi)
             managerVM.setTurniSettimanali(attuale.weekStart, userState.azienda.idAzienda)
@@ -127,6 +129,7 @@ fun PianificaManagerScreen(
             when (currentScreen) {
 
                 PianificaScreenManager.MAIN -> {
+
                     PianificaGiornata(
                         dipartimenti = dipartimenti,
                         giornoSelezionato = selectionData,

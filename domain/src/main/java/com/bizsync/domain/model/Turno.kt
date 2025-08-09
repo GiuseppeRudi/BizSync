@@ -7,7 +7,7 @@ import java.time.LocalTime
 import java.util.UUID
 
 data class Turno(
-    val id: String = UUID.randomUUID().toString(),
+    val id: String = "",
     val titolo: String = "",
     val idAzienda : String = "",
     val idDipendenti : List<String> = emptyList(),
@@ -27,6 +27,14 @@ data class Turno(
     val createdAt: LocalDate = LocalDate.now(),
     val updatedAt: LocalDate = LocalDate.now()
 ) {
+    fun withGeneratedId(): Turno {
+        return if (id.isEmpty()) {
+            this.copy(id = UUID.randomUUID().toString())
+        } else {
+            this
+        }
+    }
+
     fun getZonaLavorativaDipendente(idDipendente: String): ZonaLavorativa {
         return zoneLavorative[idDipendente] ?: ZonaLavorativa.IN_SEDE
     }

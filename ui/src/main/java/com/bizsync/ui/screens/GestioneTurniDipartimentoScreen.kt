@@ -79,9 +79,8 @@ fun GestioneTurniDipartimentoScreen(
             Log.d("AVVIO", "GESTIONE TURNI DIARTERNALI")
             managerVM.caricaTurniSettimanaEDipartimento(weeklyShift.weekStart,  dipartimento.nomeArea)
         }
-        else {
-            managerVM.setTurniGiornalieriDipartimento(dipartimento.nomeArea)
-        }
+        managerVM.setTurniGiornalieriDipartimento(dipartimento.nomeArea)
+
     }
 
     LaunchedEffect(hasChangeShift) {
@@ -90,9 +89,8 @@ fun GestioneTurniDipartimentoScreen(
             onHasUnsavedChanges(true)
             managerVM.caricaTurniSettimanaEDipartimento(weeklyShift.weekStart,  dipartimento.nomeArea)
         }
-        else {
-            managerVM.setTurniGiornalieriDipartimento(dipartimento.nomeArea)
-        }
+        managerVM.setTurniGiornalieriDipartimento(dipartimento.nomeArea)
+
     }
 
 
@@ -195,6 +193,7 @@ fun GestioneTurniDipartimentoScreen(
 
         if (managerState.showAIResultDialog) {
             AIResultDialog(
+                dipendenti = managerState.dipendenti,
                 turniGenerati = managerState.turniGeneratiAI,
                 message = managerState.aiGenerationMessage,
                 onConfirm = { managerVM.confermaAITurni() },
@@ -273,8 +272,11 @@ fun DeleteTurnoConfirmDialog(
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onErrorContainer
                             )
+                            val assignedCount = turnoToDelete.idDipendenti.size
+                            val assignedLabel = if (assignedCount == 1) "dipendente assegnato" else "dipendenti assegnati"
+
                             Text(
-                                text = "${turnoToDelete.idDipendenti.size} dipendenti assegnati",
+                                text = "$assignedCount $assignedLabel",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onErrorContainer
                             )
