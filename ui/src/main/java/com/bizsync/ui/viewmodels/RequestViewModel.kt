@@ -4,6 +4,7 @@ import com.bizsync.ui.model.RequestState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bizsync.domain.constants.enumClass.AbsenceStatus
+import com.bizsync.domain.constants.enumClass.SickLeaveStatus
 import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.model.Contratto
 import com.bizsync.domain.model.RequestDecisionResult
@@ -51,7 +52,6 @@ class RequestViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             try {
-                // 1. Verifica che le date siano valide
                 val startDate = request.startDate
                 val endDate = request.endDate
 
@@ -65,16 +65,16 @@ class RequestViewModel @Inject constructor(
                     return@launch
                 }
 
-                // 2. Cerca turni assegnati nel periodo di malattia
+                // Cerca turni assegnati nel periodo di malattia
                 val affectedShifts = getTurniByDateRangeUseCase(
                     idAzienda = request.idAzienda,
-                    startDate = startDate,  // Ora è garantito non-null
-                    endDate = endDate,      // Ora è garantito non-null
+                    startDate = startDate,
+                    endDate = endDate,
                     idDipendente = request.idUser
                 )
 
                 if (affectedShifts.isNotEmpty()) {
-                    // 3. Per ogni turno, trova dipendenti disponibili
+                    // Caso 1: Ci sono turni da gestire
                     val availableEmployeesMap = mutableMapOf<String, List<User>>()
 
                     for (turno in affectedShifts) {
@@ -83,7 +83,6 @@ class RequestViewModel @Inject constructor(
 
                         for (employee in allEmployees) {
                             if (employee.uid != request.idUser) {
-                                // Verifica se il dipendente è disponibile
                                 val isAvailable = checkEmployeeAvailabilityUseCase(
                                     employeeId = employee.uid,
                                     date = turno.data,
@@ -96,24 +95,24 @@ class RequestViewModel @Inject constructor(
                                 }
                             }
                         }
-
                         availableEmployeesMap[turno.id] = availableForShift
                     }
 
-                    // 4. Aggiorna UI con turni e dipendenti disponibili
                     _uiState.update {
                         it.copy(
                             affectedShifts = mapOf(request.id to affectedShifts),
-                            availableEmployees = availableEmployeesMap
+                            availableEmployees = availableEmployeesMap,
+                            sickLeaveStatus = mapOf(request.id to SickLeaveStatus.REQUIRES_SHIFT_MANAGEMENT)
                         )
                     }
                 } else {
-                    // Nessun turno da gestire, approva automaticamente
-                    approveSickLeave(
-                        approver = "Sistema",
-                        request = request,
-                        employeeContract = employeeContract
-                    )
+                    // ✅ Caso 2: Nessun turno coinvolto - SEGNA COME VERIFICATA MA NON APPROVA
+                    _uiState.update {
+                        it.copy(
+                            sickLeaveStatus = mapOf(request.id to SickLeaveStatus.VERIFIED_NO_SHIFTS),
+                            affectedShifts = mapOf(request.id to emptyList())
+                        )
+                    }
                 }
 
             } catch (e: Exception) {

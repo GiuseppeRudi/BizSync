@@ -164,7 +164,7 @@ private fun RequestsListContent(absenceVM: AbsenceViewModel, onBack: () -> Unit)
                     start = 16.dp,
                     end = 16.dp
                 ),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 item {
                     StatisticsCard(contratto = contratto, absenceVM)

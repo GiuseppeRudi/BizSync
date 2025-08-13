@@ -51,6 +51,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.bizsync.domain.constants.enumClass.AbsenceType
+import com.bizsync.domain.constants.enumClass.SickLeaveStatus
 import com.bizsync.domain.model.Contratto
 import com.bizsync.ui.components.SickLeaveManagementDialog
 import com.bizsync.ui.model.AbsenceUi
@@ -79,7 +80,7 @@ fun PendingRequestsContent(
     } else {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
+            contentPadding = PaddingValues(8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(requests) { request ->
@@ -101,12 +102,17 @@ private fun PendingRequestCard(
     var showDialog by remember { mutableStateOf(false) }
     var dialogType by remember { mutableStateOf<DialogType?>(null) }
     var showSickLeaveDialog by remember { mutableStateOf(false) }
+    var showSickLeaveAcknowledgment by remember { mutableStateOf(false) } // ✅ NUOVO
 
     val requestState by requestVM.uiState.collectAsState()
     val employeeContract = requestState.contracts.find { it.idDipendente == request.idUser }
 
-    // Se è una malattia, gestiscila automaticamente
-    if (request.typeUi.type == AbsenceType.SICK_LEAVE) {
+    // ✅ STATO DELLA MALATTIA
+    val sickLeaveStatus = requestState.sickLeaveStatus[request.id] ?: SickLeaveStatus.PENDING_VERIFICATION
+
+    // Se è una malattia, gestiscila automaticamente al primo caricamento
+    if (request.typeUi.type == AbsenceType.SICK_LEAVE &&
+        sickLeaveStatus == SickLeaveStatus.PENDING_VERIFICATION) {
         LaunchedEffect(request.id) {
             requestVM.handleSickLeaveRequest(request, employeeContract)
         }
@@ -117,7 +123,7 @@ private fun PendingRequestCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (request.typeUi.type == AbsenceType.SICK_LEAVE) {
-                Color(0xFFFFEBEE) // Sfondo rosso chiaro per malattie
+                Color(0xFFFFEBEE)
             } else {
                 Color.White
             }
@@ -146,7 +152,6 @@ private fun PendingRequestCard(
                 }
 
                 if (request.typeUi.type == AbsenceType.SICK_LEAVE) {
-                    // Badge speciale per malattia
                     Surface(
                         color = Color(0xFFD32F2F),
                         shape = RoundedCornerShape(12.dp)
@@ -171,6 +176,7 @@ private fun PendingRequestCard(
                         }
                     }
                 } else {
+                    // Badge stato normale per altre richieste
                     Surface(
                         color = request.statusUi.color.copy(alpha = 0.1f),
                         shape = RoundedCornerShape(12.dp)
@@ -186,47 +192,106 @@ private fun PendingRequestCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             RequestDetailsSection(request)
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             employeeContract?.let { contract ->
-                ContractImpactSection(
-                    request = request,
-                    contract = contract
-                )
-                Spacer(modifier = Modifier.height(12.dp))
+                ContractImpactSection(request = request, contract = contract)
+                Spacer(modifier = Modifier.height(6.dp))
             }
 
-            // Pulsanti azioni - Diversi per malattia
+            // ✅ PULSANTI AZIONI - GESTIONE MALATTIA MIGLIORATA
             if (request.typeUi.type == AbsenceType.SICK_LEAVE) {
-                // Per malattia: solo pulsante gestione turni
-                Button(
-                    onClick = { showSickLeaveDialog = true },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFD32F2F)
-                    )
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Settings,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Gestisci Malattia e Turni")
-                }
+                when (sickLeaveStatus) {
+                    SickLeaveStatus.PENDING_VERIFICATION -> {
+                        // In verifica
+                        Button(
+                            onClick = { },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = false,
+                            colors = ButtonDefaults.buttonColors(
+                                disabledContainerColor = Color.Gray.copy(alpha = 0.3f)
+                            )
+                        ) {
+                            Text("🔄 Verifica in corso...")
+                        }
+                    }
 
-                Text(
-                    text = "⚠️ La malattia verrà approvata automaticamente dopo la gestione dei turni",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFFD32F2F),
-                    modifier = Modifier.padding(top = 8.dp)
-                )
+                    SickLeaveStatus.REQUIRES_SHIFT_MANAGEMENT -> {
+                        // Richiede gestione turni
+                        Button(
+                            onClick = { showSickLeaveDialog = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFD32F2F)
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Gestisci Turni Coinvolti")
+                        }
+
+
+                        val count = requestState.affectedShifts[request.id]?.size ?: 0
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(top = 8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Warning, // o altra icona "emergenza"
+                                contentDescription = null,
+                                tint = Color(0xFFD32F2F),
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = if (count == 1) {
+                                    "È stato trovato 1 turno da gestire"
+                                } else {
+                                    "Sono stati trovati $count turni da gestire"
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFFD32F2F)
+                            )
+                        }
+                    }
+
+                    SickLeaveStatus.VERIFIED_NO_SHIFTS -> {
+                        // ✅ NESSUN TURNO COINVOLTO - PRESO VISIONE
+                        Button(
+                            onClick = { showSickLeaveAcknowledgment = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF4CAF50)
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Preso Visione - Approva")
+                        }
+
+                        Text(
+                            text = "✅ Verifica completata: nessun turno coinvolto nel periodo",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF4CAF50),
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
+                }
             } else {
-                // Per altre richieste: pulsanti approva/rifiuta standard
+                // Pulsanti standard per altre richieste
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -274,7 +339,20 @@ private fun PendingRequestCard(
         }
     }
 
-    // Dialog per malattia
+    // ✅ DIALOG PER PRESO VISIONE (NESSUN TURNO)
+    if (showSickLeaveAcknowledgment) {
+        SickLeaveAcknowledgmentDialog(
+            request = request,
+            contract = employeeContract,
+            onDismiss = { showSickLeaveAcknowledgment = false },
+            onConfirm = {
+                requestVM.approveSickLeave(approver, request, employeeContract)
+                showSickLeaveAcknowledgment = false
+            }
+        )
+    }
+
+    // Dialog per gestione turni (quando ci sono turni coinvolti)
     if (showSickLeaveDialog) {
         val affectedShifts = requestState.affectedShifts[request.id] ?: emptyList()
         val availableEmployees = requestState.availableEmployees
@@ -292,7 +370,6 @@ private fun PendingRequestCard(
             },
             onConfirmSickLeave = {
                 requestVM.approveSickLeave(approver, request, employeeContract)
-
                 showSickLeaveDialog = false
             }
         )
@@ -316,6 +393,149 @@ private fun PendingRequestCard(
             }
         )
     }
+}
+
+// ✅ NUOVO DIALOG PER PRESO VISIONE
+@Composable
+private fun SickLeaveAcknowledgmentDialog(
+    request: AbsenceUi,
+    contract: Contratto?,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = Color(0xFF4CAF50),
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Verifica Malattia Completata",
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        },
+        text = {
+            Column {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFFE8F5E8)
+                    ),
+                    border = BorderStroke(1.dp, Color(0xFF4CAF50))
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Text(
+                            text = "✅ Controllo automatico completato",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF2E7D32)
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = "Il sistema ha verificato che nel periodo di malattia richiesto (${request.formattedDateRange}) non sono presenti turni assegnati al dipendente.",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = "• Dipendente: ${request.submittedName}",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Text(
+                            text = "• Durata: ${request.formattedTotalDays}",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Text(
+                            text = "• Turni coinvolti: 0",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF4CAF50),
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Impatto contrattuale se disponibile
+                contract?.let {
+                    val impactInfo = calculateContractImpact(request, it)
+                    impactInfo?.let { impact ->
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (impact.exceedsLimit) {
+                                    Color(0xFFFFEBEE)
+                                } else {
+                                    Color(0xFFE8F5E8)
+                                }
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(12.dp)
+                            ) {
+                                Text(
+                                    text = "Impatto Contrattuale",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                Text(
+                                    text = "${impact.type}: ${impact.currentUsed} + ${impact.requestedAmount} = ${impact.totalAfterRequest} / ${impact.maxAllowed} ${impact.unit}",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+
+                                if (impact.exceedsLimit) {
+                                    Text(
+                                        text = "⚠️ Supererà il limite contrattuale",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color(0xFFD32F2F),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "La malattia verrà approvata automaticamente poiché non interferisce con la pianificazione dei turni.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF2E7D32)
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF4CAF50)
+                )
+            ) {
+                Text("Preso Visione - Approva")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Annulla")
+            }
+        }
+    )
 }
 
 @Composable

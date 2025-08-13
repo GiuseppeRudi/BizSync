@@ -1,5 +1,6 @@
 package com.bizsync.ui.model
 
+import com.bizsync.domain.constants.enumClass.SickLeaveStatus
 import com.bizsync.domain.model.Contratto
 import com.bizsync.domain.model.Turno
 import com.bizsync.domain.model.User
@@ -16,5 +17,7 @@ data class RequestState(
     val statusMsg: DialogStatusType = DialogStatusType.ERROR,
 
     val affectedShifts: Map<String, List<Turno>> = emptyMap(),
-    val availableEmployees: Map<String, List<User>> = emptyMap()
-)
+    val availableEmployees: Map<String, List<User>> = emptyMap(),
+    val sickLeaveStatus: Map<String, SickLeaveStatus> = emptyMap(),
+
+    )

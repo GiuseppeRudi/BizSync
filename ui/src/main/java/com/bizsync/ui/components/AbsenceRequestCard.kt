@@ -91,7 +91,7 @@ fun AbsenceRequestCard(request: AbsenceUi) {
             }
 
             // Hours se presenti
-            request.formattedHours?.let {
+            request.formattedHours?.takeIf { it != "00:00 - 00:00" }?.let {
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -107,6 +107,7 @@ fun AbsenceRequestCard(request: AbsenceUi) {
                     Text(text = it)
                 }
             }
+
 
             Spacer(modifier = Modifier.height(8.dp))
 

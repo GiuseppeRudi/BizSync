@@ -226,6 +226,7 @@ fun NewAbsenceRequestScreen(
     Scaffold(
         topBar = {
             TopAppBar(
+
                 title = { Text("Nuova Richiesta Assenza") },
                 navigationIcon = {
                     IconButton(onClick = {
@@ -252,12 +253,11 @@ fun NewAbsenceRequestScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 16.dp, vertical = 2.dp)
                 .verticalScroll(rememberScrollState())
                 .imePadding(),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+            verticalArrangement = Arrangement.spacedBy(15.dp)
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
 
             // Mostra AnticipationWarningCard solo se non è malattia
             if (addAbsence.typeUi.type != AbsenceType.SICK_LEAVE) {
@@ -721,23 +721,8 @@ private fun FlexibleSelector(
     isFlexibleModeFullDay: Boolean,
     minimumDate: LocalDate
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
 
-        Spacer(modifier = Modifier.width(8.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-
-
-            Text(
-                text = "Tipo di assenza",
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium
-            )
-        }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 FilterChip(

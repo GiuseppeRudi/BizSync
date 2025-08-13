@@ -101,7 +101,7 @@ fun SickLeaveManagementDialog(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     LazyColumn(
-                        modifier = Modifier.height(400.dp),
+                        modifier = Modifier.height(440.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(affectedShifts) { turno ->
@@ -117,62 +117,42 @@ fun SickLeaveManagementDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f)
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Default.Info,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.tertiary,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "La malattia verrà approvata automaticamente",
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                }
             }
         },
         confirmButton = {
-            Button(
-                onClick = {
-                    // Applica le azioni selezionate
-                    selectedActions.forEach { (turnoId, action) ->
-                        val turno = affectedShifts.find { it.id == turnoId }
-                        turno?.let {
-                            when (action) {
-                                is ShiftAction.Uncover -> onUncoverShift(it)
-                                is ShiftAction.Replace -> onReplaceEmployee(it, action.replacement)
-                                ShiftAction.None -> { /* Non fare nulla */ }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                TextButton(onClick = onDismiss) {
+                    Text("Annulla")
+                }
+
+                Button(
+                    onClick = {
+                        // Applica le azioni selezionate
+                        selectedActions.forEach { (turnoId, action) ->
+                            val turno = affectedShifts.find { it.id == turnoId }
+                            turno?.let {
+                                when (action) {
+                                    is ShiftAction.Uncover -> onUncoverShift(it)
+                                    is ShiftAction.Replace -> onReplaceEmployee(it, action.replacement)
+                                    ShiftAction.None -> { /* Non fare nulla */ }
+                                }
                             }
                         }
-                    }
-                    onConfirmSickLeave()
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF4CAF50)
-                ),
-                enabled = affectedShifts.isEmpty() ||
-                        affectedShifts.all { selectedActions[it.id] != null }
-            ) {
-                Text("Conferma e Approva Malattia")
+                        onConfirmSickLeave()
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF4CAF50)
+                    ),
+                    enabled = affectedShifts.isEmpty() ||
+                            affectedShifts.all { selectedActions[it.id] != null }
+                ) {
+                    Text("Conferma")
+                }
             }
         },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Annulla")
-            }
-        }
     )
 }
 
@@ -210,8 +190,10 @@ private fun ShiftManagementCard(
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Medium
                     )
+                    val dateFormatter = DateTimeFormatter.ofPattern("dd/MM")
+                    val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
                     Text(
-                        text = "${turno.data.format(DateTimeFormatter.ofPattern("dd/MM"))} • ${turno.orarioInizio}-${turno.orarioFine}",
+                    text = "${turno.data.format(dateFormatter)} • ${turno.orarioInizio.format(timeFormatter)}-${turno.orarioFine.format(timeFormatter)}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

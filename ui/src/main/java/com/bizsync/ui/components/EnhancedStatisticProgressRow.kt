@@ -22,7 +22,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-
 @Composable
 fun EnhancedStatisticProgressRow(
     label: String,
@@ -82,6 +81,7 @@ fun EnhancedStatisticProgressRow(
 
         Spacer(modifier = Modifier.height(6.dp))
 
+        // ✅ PROGRESS BAR CORRETTA con segmenti separati
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -92,6 +92,10 @@ fun EnhancedStatisticProgressRow(
                 )
         ) {
             val approvedProgress = if (max > 0) (approved.toFloat() / max.toFloat()).coerceIn(0f, 1f) else 0f
+            val pendingProgress = if (max > 0) (pending.toFloat() / max.toFloat()).coerceIn(0f, 1f) else 0f
+            val totalProgress = (approvedProgress + pendingProgress).coerceIn(0f, 1f)
+
+            // ✅ PRIMO SEGMENTO: Approvate (verde)
             if (approvedProgress > 0) {
                 Box(
                     modifier = Modifier
@@ -104,17 +108,23 @@ fun EnhancedStatisticProgressRow(
                 )
             }
 
-            val totalProgress = if (max > 0) (total.toFloat() / max.toFloat()).coerceIn(0f, 1f) else 0f
-            if (pending > 0 && totalProgress > approvedProgress) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(totalProgress)
-                        .height(8.dp)
-                        .background(
-                            if (totalProgress > 1f) Color(0xFFD32F2F) else Color(0xFFFF9800),
-                            RoundedCornerShape(4.dp)
-                        )
-                )
+            // ✅ SECONDO SEGMENTO: In attesa (arancione) - INIZIA DOPO quello verde
+            if (pending > 0 && approvedProgress < 1f) {
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    // Spazio per la parte approvata
+                    Spacer(modifier = Modifier.fillMaxWidth(approvedProgress))
+
+                    // Parte in attesa
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(pendingProgress / (1f - approvedProgress))
+                            .height(8.dp)
+                            .background(
+                                if (totalProgress > 1f) Color(0xFFD32F2F) else Color(0xFFFF9800),
+                                RoundedCornerShape(4.dp)
+                            )
+                    )
+                }
             }
         }
 
@@ -134,7 +144,7 @@ fun EnhancedStatisticProgressRow(
                 val remaining = (max - total).coerceAtLeast(0)
 
                 Text(
-                    "Utilizzato: $approvedPercentage%${if (pending > 0) " (+${totalPercentage - approvedPercentage}% pending)" else ""}",
+                    "Utilizzato: $approvedPercentage%${if (pending > 0) " (+${totalPercentage - approvedPercentage}% in attesa)" else ""}",
                     fontSize = 11.sp,
                     color = Color.Gray
                 )
