@@ -116,11 +116,12 @@ fun PianificaDipendentiScreen(
         }
     }
 
+
     LaunchedEffect(selectionData) {
         pianificaVM.backToMain()
 
         if(selectionData != null) {
-            pianificaVM.getWeeklyShiftCorrente(selectionData)
+            pianificaVM.getWeeklyShiftCorrente(selectionData,userState.user.idAzienda)
 
             employeeVM.setTurniGiornalieri(selectionData)
         }

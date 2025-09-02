@@ -62,6 +62,7 @@ class PianificaManagerViewModel @Inject constructor(
         _uiState.update { it.copy(loading = loading) }
     }
 
+
     fun generateTurniWithAI(
         dipartimento: AreaLavoro,
         giornoSelezionato: LocalDate,
@@ -71,6 +72,9 @@ class PianificaManagerViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 _uiState.update { it.copy(isGeneratingTurni = true) }
+
+                setturniDipartimento(giornoSelezionato.dayOfWeek, dipartimento.nomeArea)
+                setDipendentiStato()
 
                 val result = generateTurniAIUseCase(
                     dipartimento = dipartimento,
@@ -435,17 +439,7 @@ class PianificaManagerViewModel @Inject constructor(
         }
     }
 
-//    fun setTurniGiornalieriDipartimento(dipartimentoId: String, dayOfWeek: DayOfWeek) {
-//        val turniDelGiorno = _uiState.value.turniSettimanali[dayOfWeek] ?: emptyList()
-//
-//        val turniGiornalieriDip = turniDelGiorno.filter { turno ->
-//            turno.dipartimento == dipartimentoId
-//        }
-//
-//        _uiState.update {
-//            it.copy(turniGiornalieriDip = turniGiornalieriDip)
-//        }
-//    }
+
 
     fun setTurniGiornalieriDipartimento(dipartimentoId: String) {
         val turniGiornalieriDip = _uiState.value.turniGiornalieri[dipartimentoId] ?: emptyList()
@@ -561,13 +555,20 @@ class PianificaManagerViewModel @Inject constructor(
         }
     }
 
-    fun caricaTurniSettimanaEDipartimento(weekStart: LocalDate, dipartimento: String) {
+    fun caricaTurniSettimanaEDipartimento(weekStart: LocalDate, dayOfWeek: DayOfWeek, dipartimentiAttivi : List<AreaLavoro>) {
         viewModelScope.launch {
             try {
                 setLoading(true)
 
                 setTurniSettimanaliSuspend(weekStart)
 
+                val dipartimentiDelGiorno = dipartimentiAttivi
+                    .filter { it.orariSettimanali.containsKey(dayOfWeek) }
+                    .sortedBy { it.orariSettimanali[dayOfWeek]?.first ?: LocalTime.MIN }
+
+                setTurniGiornalieri(dayOfWeek, dipartimentiDelGiorno)
+
+                Log.d("VERIFICA", _uiState.value.turniSettimanali.toString())
                 _uiState.update { it.copy(hasChangeShift = false) }
             } catch (e: Exception) {
                 Log.e(TAG, "❌ Errore durante il caricamento turni: ${e.message}")

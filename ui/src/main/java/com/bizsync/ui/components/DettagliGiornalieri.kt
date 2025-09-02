@@ -27,7 +27,6 @@ import androidx.compose.ui.unit.dp
 import com.bizsync.domain.model.DettagliGiornalieri
 import com.bizsync.domain.model.Turno
 import com.bizsync.domain.model.User
-import com.bizsync.ui.screens.TurnoAssegnatoCard
 import java.time.format.DateTimeFormatter
 
 

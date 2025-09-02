@@ -10,7 +10,7 @@ import javax.inject.Inject
 class GetWeeklyShiftCorrenteUseCase @Inject constructor(
     private val weeklyShiftRemoteRepository: WeeklyShiftRepository
 ) {
-    suspend operator fun invoke(weekStart: LocalDate): Resource<WeeklyShift?> {
-        return weeklyShiftRemoteRepository.getWeeklyShiftCorrente(weekStart)
+    suspend operator fun invoke(weekStart: LocalDate,idAzienda : String): Resource<WeeklyShift?> {
+        return weeklyShiftRemoteRepository.getWeeklyShiftCorrente(weekStart,idAzienda)
     }
 }

@@ -28,33 +28,12 @@ class WeeklyShiftRepositoryImpl @Inject constructor(
 
     private val collection = firestore.collection(WeeklyShiftFirestore.COLLECTION)
 
-    override suspend fun getWeeklyShiftCorrente(weekStart: LocalDate): Resource<WeeklyShift?> {
-        return try {
-            val weekStartString = weekStart.toString()
-            Log.d(TAG, "🔍 Ricerca weekly shift corrente per weekStart: $weekStartString")
-
-            val snapshot = collection
-                .whereEqualTo(WeeklyShiftFirestore.Fields.WEEK_START, weekStartString)
-                .limit(WeeklyShiftFirestore.QueryLimits.MAX_RESULTS.toLong())
-                .get()
-                .await()
-
-            if (!snapshot.isEmpty) {
-                val document = snapshot.documents.first()
-                val weeklyShift = document
-                    .toObject(WeeklyShiftDto::class.java)
-                    ?.toDomain(document.id)
-
-                Log.d(TAG, "✅ Weekly shift trovato con status: ${weeklyShift?.status}")
-                Resource.Success(weeklyShift)
-            } else {
-                Log.d(TAG, "❌ Nessuna weekly shift trovata per $weekStartString")
-                Resource.Success(null)
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ Errore nel recupero weekly shift", e)
-            Resource.Error("Errore nel recupero weekly shift: ${e.message}")
-        }
+    override suspend fun getWeeklyShiftCorrente(
+        weekStart: LocalDate,
+        idAzienda: String
+        ): Resource<WeeklyShift?> {
+        // Usa accesso diretto invece della query
+        return getWeeklyShift(idAzienda, weekStart)
     }
 
     override suspend fun getThisWeekPublishedShift(

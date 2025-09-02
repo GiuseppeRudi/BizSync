@@ -125,10 +125,11 @@ class AbsenceRemoteRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getAllAbsences(idUser: String): Resource<List<Absence>> {
+    override suspend fun getAllAbsences(idUser: String, idAzienda: String): Resource<List<Absence>> {
         return try {
             val snapshot = db.collection(AbsencesFirestore.COLLECTION)
                 .whereEqualTo(AbsencesFirestore.Fields.IDUSER, idUser)
+                .whereEqualTo(AbsencesFirestore.Fields.IDAZIENDA, idAzienda)
                 .get()
                 .await()
 

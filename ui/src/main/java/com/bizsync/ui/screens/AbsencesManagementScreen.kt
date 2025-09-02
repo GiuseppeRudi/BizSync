@@ -37,7 +37,7 @@ fun AbsencesManagementScreen(onBackClick: () -> Unit) {
 
 
     LaunchedEffect(Unit) {
-        absenceVM.fetchAllAbsences(userState.user.uid)
+        absenceVM.fetchAllAbsences(userState.user.uid, userState.user.idAzienda)
     }
 
     if (!absenceState.hasLoadedAbsences) {

@@ -113,11 +113,11 @@ class AbsenceViewModel @Inject constructor(
         }
     }
 
-    fun fetchAllAbsences(idUser: String) {
+    fun fetchAllAbsences(idUser: String, idAzienda : String) {
         viewModelScope.launch {
             try {
                 // ✅ Use Case invece del repository diretto
-                when (val result = getAllAbsencesUseCase(idUser)) {
+                when (val result = getAllAbsencesUseCase(idUser, idAzienda )) {
                     is Resource.Success -> {
                         _uiState.update {
                             it.copy(

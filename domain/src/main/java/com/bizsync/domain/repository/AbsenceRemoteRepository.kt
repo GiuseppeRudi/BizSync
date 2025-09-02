@@ -7,7 +7,7 @@ import java.time.LocalDate
 
 interface AbsenceRemoteRepository {
     suspend fun salvaAbsence(absence: Absence): Resource<String>
-    suspend fun getAllAbsences(idUser: String): Resource<List<Absence>>
+    suspend fun getAllAbsences(idUser: String, idAzienda: String): Resource<List<Absence>>
     suspend fun getAllAbsencesByAzienda(idAzienda: String): Resource<List<Absence>>
     suspend fun updateAbsence(absence: Absence): Resource<Unit>
 

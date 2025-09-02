@@ -6,7 +6,7 @@ import java.time.LocalDate
 
 interface WeeklyShiftRepository {
     suspend fun getThisWeekPublishedShift(idAzienda: String, weekStart: LocalDate): Resource<Any?>
-    suspend fun getWeeklyShiftCorrente(weekStart: LocalDate): Resource<WeeklyShift?>
+    suspend fun getWeeklyShiftCorrente(weekStart: LocalDate, idAzienda: String): Resource<WeeklyShift?>
     suspend fun getWeeklyShift(idAzienda: String, weekStart: LocalDate): Resource<WeeklyShift?>
     suspend fun createWeeklyShift(weeklyShift: WeeklyShift): Resource<String>
     suspend fun updateWeeklyShiftStatus(weeklyShift: WeeklyShift): Resource<Unit>

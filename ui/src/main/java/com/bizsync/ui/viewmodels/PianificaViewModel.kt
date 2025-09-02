@@ -63,7 +63,7 @@ class PianificaViewModel @Inject constructor(
         _currentScreen.value = PianificaScreenManager.GESTIONE_TURNI_DIPARTIMENTO
     }
 
-    fun getWeeklyShiftCorrente(selectionDate: LocalDate) {
+    fun getWeeklyShiftCorrente(selectionDate: LocalDate,idAzienda: String) {
         val currentWeekStart = WeeklyWindowCalculator.getWeekStartFromDate(selectionDate)
         val weeklyShiftAttuale = _uistate.value.weeklyShiftAttuale
 
@@ -75,7 +75,7 @@ class PianificaViewModel @Inject constructor(
                 Log.d(TAG, "Recupero turni per settimana con start: $weekStart")
 
                 try {
-                    when (val result = getWeeklyShiftCorrenteUseCase(weekStart)) {
+                    when (val result = getWeeklyShiftCorrenteUseCase(weekStart,idAzienda)) {
                         is Resource.Success -> {
                             Log.d(TAG, "Weekly shift corrente trovato: ${result.data}")
                             _uistate.update {
