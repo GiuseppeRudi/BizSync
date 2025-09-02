@@ -72,7 +72,7 @@ fun AddAzienda(
 
     LaunchedEffect(isAgencyUpdateAddAzienda, isAgencyAddedUser) {
         if (isAgencyUpdateAddAzienda) {
-            userviewmodel.onAddAziendaRole(addAziendaState.azienda.idAzienda)
+            userviewmodel.onAddAziendaRole(addAziendaState.azienda)
         }
         if (isAgencyAddedUser && isAgencyUpdateAddAzienda) {
             onTerminate()
@@ -117,7 +117,7 @@ fun AddAzienda(
 
         NavigationButtons(
             currentStep = currentStep,
-            totalSteps = 5,
+            totalSteps = 4,
             onPrevious = { addaziendaviewmodel.onCurrentStepDown() },
             onNext = { addaziendaviewmodel.onCurrentStepUp() },
             onComplete = { addaziendaviewmodel.aggiungiAzienda() },

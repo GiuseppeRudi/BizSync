@@ -48,6 +48,11 @@ class AziendaRemoteRepositoryImpl @Inject constructor(private val db : FirebaseF
         return try {
             val success = aree.isNotEmpty() && turni.isNotEmpty()
 
+            // Controlla come viene passato idAzienda
+            Log.d("AZIENDA", "idAzienda ricevuto: '$idAzienda'")
+            Log.d("AZIENDA", "aree ricevute: '$aree'")
+            Log.d("AZIENDA", "turni ricevuti: '$turni'")
+
             if (success) {
 
 
@@ -56,7 +61,7 @@ class AziendaRemoteRepositoryImpl @Inject constructor(private val db : FirebaseF
                     .set(
                         mapOf(
                             AziendeFirestore.Fields.AREE to aree.toDtoList(),
-                            AziendeFirestore.Fields.TURNI to turni // se `TurnoFrequente` è serializzabile
+                            AziendeFirestore.Fields.TURNI to turni
                         ),
                         SetOptions.merge()
                     )

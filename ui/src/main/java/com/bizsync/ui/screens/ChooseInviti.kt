@@ -44,10 +44,7 @@ fun ChooseInvito(onTerminate: () -> Unit) {
     val user = userState.user
     val checkAcceptInvite = userState.checkAcceptInvite
 
-    LaunchedEffect(Unit) {
-
-            invitiVM.fetchInvites(user.email)
-    }
+    LaunchedEffect(Unit) { invitiVM.fetchInvites(user.email) }
 
     LaunchedEffect(checkAcceptInvite) {
         if (checkAcceptInvite) {
@@ -133,7 +130,6 @@ private fun EmptyInvitesState() {
         }
     }
 }
-
 @Composable
 private fun InvitesContent(
     invites: List<InvitoUi>,
@@ -162,17 +158,16 @@ private fun InvitesContent(
             InviteCard(
                 invite = invite,
                 onAccept = {
-                    invitiVM.acceptInvite(invite, user.uid)
-                    if (inviteState.updateInvite == true) {
-                        userVM.onAcceptInvite(invite, inviteState.contratto)
-                    }
+                    // MODIFICATO: Passa userVM come parametro
+                    invitiVM.acceptInvite(invite, user.uid, userVM)
                 },
-                onDecline = { invitiVM.declineInvite(invite) }
+                onDecline = {
+                    invitiVM.declineInvite(invite)
+                }
             )
         }
     }
 }
-
 @Composable
 private fun InviteCard(
     invite: InvitoUi,

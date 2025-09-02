@@ -3,6 +3,7 @@ package com.bizsync.ui.viewmodels
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bizsync.domain.constants.sealedClass.Resource
 import com.bizsync.domain.constants.sealedClass.Resource.*
 import com.bizsync.domain.constants.sealedClass.RuoliAzienda
 import com.bizsync.domain.model.AreaLavoro
@@ -16,6 +17,7 @@ import com.bizsync.domain.usecases.UpdateAcceptInviteUseCase
 import com.bizsync.ui.components.DialogStatusType
 import com.bizsync.ui.mapper.toDomain
 import com.bizsync.ui.mapper.toUi
+import com.bizsync.ui.model.AziendaUi
 import com.bizsync.ui.model.EditableUserFields
 import com.bizsync.ui.model.InvitoUi
 import com.bizsync.ui.model.UserState
@@ -64,20 +66,20 @@ class UserViewModel @Inject constructor(
         _uiState.update { it.copy(user = user) }
     }
 
-    fun onAddAziendaRole(idAzienda: String) {
+    fun onAddAziendaRole(azienda: AziendaUi) {
         viewModelScope.launch {
             val idUtente = _uiState.value.user.uid
-            val result = aggiornaAziendaUserUseCase(idAzienda, idUtente, RuoliAzienda.Proprietario)
+            val result = aggiornaAziendaUserUseCase(azienda.idAzienda, idUtente, RuoliAzienda.Proprietario)
 
             when (result) {
                 is Success -> {
                     _uiState.update {
                         it.copy(
                             user = _uiState.value.user.copy(
-                                idAzienda = idAzienda,
+                                idAzienda = azienda.idAzienda,
                                 posizioneLavorativa = RuoliAzienda.Proprietario.route,
                                 isManager = RuoliAzienda.Proprietario.isPrivileged
-                            ), hasLoadedAgency = true
+                            ), hasLoadedAgency = true, azienda = azienda
                         )
                     }
                 }
@@ -91,6 +93,53 @@ class UserViewModel @Inject constructor(
         _uiState.update { it.copy(resultMsg = null, statusMsg = DialogStatusType.ERROR) }
     }
 
+    suspend fun updateUserAfterAcceptInvite(invite: InvitoUi, contratto: Contratto) {
+        viewModelScope.launch {
+            val uid = _uiState.value.user.uid
+            val result = updateAcceptInviteUseCase(invite.toDomain(), uid)
+
+            if (result is Success) {
+                val currentUser = _uiState.value.user
+
+                _uiState.update {
+                    it.copy(
+                        user = currentUser.copy(
+                            idAzienda = invite.idAzienda,
+                            isManager = invite.manager,
+                            posizioneLavorativa = invite.posizioneLavorativa,
+                            dipartimento = invite.dipartimento
+                        ),
+                        contratto = contratto
+                    )
+                }
+
+                val idAzienda = _uiState.value.user.idAzienda
+                val azienda = getAziendaByIdUseCase(idAzienda)
+
+                when (azienda) {
+                    is Success -> {
+                        _uiState.update {
+                            it.copy(
+                                azienda = azienda.data.toUi(),
+                                hasLoadedAgency = true,
+                                checkAcceptInvite = true
+                            )
+                        }
+                    }
+
+                    is Error -> {
+                        _uiState.update { it.copy(resultMsg = azienda.message) }
+                    }
+
+                    is Empty -> {
+                        _uiState.update { it.copy(resultMsg = "Azienda non trovata", statusMsg = DialogStatusType.ERROR) }
+                    }
+                }
+            } else {
+                _uiState.update { it.copy(resultMsg = "Errore nell'accettare l'invito ", statusMsg = DialogStatusType.ERROR) }
+            }
+        }
+    }
     fun checkUser(userId: String) {
         viewModelScope.launch(Dispatchers.IO) {
             val result = getUserByIdUseCase(userId)
@@ -186,55 +235,7 @@ class UserViewModel @Inject constructor(
         _uiState.update { it.copy(resultMsg = null) }
     }
 
-    fun onAcceptInvite(invite: InvitoUi, contratto: Contratto) {
-        viewModelScope.launch {
-            val uid = _uiState.value.user.uid
-            val result = updateAcceptInviteUseCase(invite.toDomain(), uid)
 
-            if (result is Success) {
-                val currentUser = _uiState.value.user
-
-                _uiState.update {
-                    it.copy(
-                        user = currentUser.copy(
-                            idAzienda = invite.idAzienda,
-                            isManager = invite.manager,
-                            posizioneLavorativa = invite.posizioneLavorativa,
-                            dipartimento = invite.dipartimento
-                        ),
-                        contratto = contratto
-                    )
-                }
-
-                val idAzienda = _uiState.value.user.idAzienda
-                val azienda = getAziendaByIdUseCase(idAzienda)
-
-                when (azienda) {
-                    is Success -> {
-                        _uiState.update {
-                            it.copy(
-                                azienda = azienda.data.toUi(),
-                                hasLoadedAgency = true,
-                                resultMsg = "Invito accettato con successo. Complimenti",
-                                statusMsg = DialogStatusType.SUCCESS,
-                                checkAcceptInvite = true
-                            )
-                        }
-                    }
-
-                    is Error -> {
-                        _uiState.update { it.copy(resultMsg = azienda.message) }
-                    }
-
-                    is Empty -> {
-                        _uiState.update { it.copy(resultMsg = "Azienda non trovata", statusMsg = DialogStatusType.ERROR) }
-                    }
-                }
-            } else {
-                _uiState.update { it.copy(resultMsg = "Errore nell'accettare l'invito ", statusMsg = DialogStatusType.ERROR) }
-            }
-        }
-    }
 
     fun updateTurniAree(aree: List<AreaLavoro>, turni: List<TurnoFrequente>) {
         val currentAgency = _uiState.value.azienda

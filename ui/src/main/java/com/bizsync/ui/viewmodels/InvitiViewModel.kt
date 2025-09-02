@@ -102,95 +102,74 @@ class InvitiViewModel @Inject constructor(
         }
     }
 
-    fun acceptInvite(invite: InvitoUi, idUtente: String) = viewModelScope.launch {
-        // FIX 2: Imposta loading durante l'operazione
+    // Nel InvitiViewModel.kt
+    fun acceptInvite(
+        invite: InvitoUi,
+        idUtente: String,
+        userVM: UserViewModel  // NUOVO PARAMETRO
+    ) = viewModelScope.launch {
         _uiState.update { it.copy(isLoading = true) }
 
         try {
             val oggi = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
             val newInvite = invite.copy(acceptedDate = oggi, stato = StatusInvite.ACCEPTED)
 
-            val result = updateInvitoUseCase(newInvite.toDomain())
+            // 1. AGGIORNA INVITO
+            val inviteResult = updateInvitoUseCase(newInvite.toDomain())
 
-            Log.d("INVITI_DEBUG", "Update invite result: $result")
-
-            when (result) {
-                is Success -> {
-                    // Crea oggetto contratto
-                    val contratto = Contratto(
-                        idDipendente = idUtente,
-                        idAzienda = newInvite.idAzienda,
-                        emailDipendente = newInvite.email,
-                        posizioneLavorativa = newInvite.posizioneLavorativa,
-                        dipartimento = newInvite.dipartimento,
-                        tipoContratto = newInvite.tipoContratto,
-                        oreSettimanali = newInvite.oreSettimanali,
-                        settoreAziendale = newInvite.settoreAziendale,
-                        dataInizio = oggi,
-                        ccnlInfo = newInvite.ccnlInfo
+            if (inviteResult is Resource.Error) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        resultMsg = "Errore aggiornamento invito: ${inviteResult.message}",
+                        statusMsg = DialogStatusType.ERROR
                     )
-
-                    // Salva contratto
-                    val contrattoResult = saveContractUseCase(contratto)
-
-                    Log.d("INVITI_DEBUG", "Contract save result: $contrattoResult")
-
-                    when (contrattoResult) {
-                        is Success -> {
-                            val contrattoConId = contratto.copy(id = contrattoResult.data)
-                            _uiState.update {
-                                it.copy(
-                                    updateInvite = true,
-                                    contratto = contrattoConId,
-                                    isLoading = false,
-                                    resultMsg = "Invito accettato con successo!",
-                                    statusMsg = DialogStatusType.SUCCESS
-                                )
-                            }
-                        }
-
-                        is Resource.Error -> {
-                            _uiState.update {
-                                it.copy(
-                                    isLoading = false,
-                                    resultMsg = "Invito accettato ma errore nel salvataggio contratto: ${contrattoResult.message}",
-                                    statusMsg = DialogStatusType.ERROR
-                                )
-                            }
-                        }
-
-                        else -> {
-                            _uiState.update {
-                                it.copy(
-                                    isLoading = false,
-                                    resultMsg = "Errore sconosciuto nel salvataggio contratto",
-                                    statusMsg = DialogStatusType.ERROR
-                                )
-                            }
-                        }
-                    }
                 }
-
-                is Resource.Error -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            resultMsg = result.message,
-                            statusMsg = DialogStatusType.ERROR
-                        )
-                    }
-                }
-
-                else -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            resultMsg = "Errore sconosciuto nell'accettazione invito",
-                            statusMsg = DialogStatusType.ERROR
-                        )
-                    }
-                }
+                return@launch
             }
+
+            // 2. SALVA CONTRATTO
+            val contratto = Contratto(
+                idDipendente = idUtente,
+                idAzienda = newInvite.idAzienda,
+                emailDipendente = newInvite.email,
+                posizioneLavorativa = newInvite.posizioneLavorativa,
+                dipartimento = newInvite.dipartimento,
+                tipoContratto = newInvite.tipoContratto,
+                oreSettimanali = newInvite.oreSettimanali,
+                settoreAziendale = newInvite.settoreAziendale,
+                dataInizio = oggi,
+                ccnlInfo = newInvite.ccnlInfo
+            )
+
+            val contrattoResult = saveContractUseCase(contratto)
+
+            if (contrattoResult is Resource.Error) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        resultMsg = "Errore salvataggio contratto: ${contrattoResult.message}",
+                        statusMsg = DialogStatusType.ERROR
+                    )
+                }
+                return@launch
+            }
+
+            if (contrattoResult is Resource.Success)
+            {
+                val contrattoConId = contratto.copy(id = contrattoResult.data)
+                userVM.updateUserAfterAcceptInvite(invite, contrattoConId)
+            }
+
+            // 4. AGGIORNA STATO INVITI
+            _uiState.update {
+                it.copy(
+                    isLoading = false,
+                    resultMsg = "Invito accettato con successo!",
+                    statusMsg = DialogStatusType.SUCCESS
+                )
+            }
+
         } catch (e: Exception) {
             Log.e("INVITI_DEBUG", "Exception in acceptInvite", e)
             _uiState.update {
