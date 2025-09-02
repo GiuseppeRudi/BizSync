@@ -28,3 +28,15 @@ Thumbs.db
 
 # Nodi specifici di Kotlin
 *.kts
+
+/local.properties
+
+!build.gradle.kts
+!app/build.gradle.kts
+!backend/build.gradle.kts
+!domain/build.gradle.kts
+!sync/build.gradle.kts
+!ui/build.gradle.kts
+!cache/build.gradle.kts
+!settings.gradle.kts
+
