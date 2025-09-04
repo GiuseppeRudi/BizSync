@@ -45,18 +45,18 @@ import androidx.compose.ui.unit.sp
 import com.bizsync.domain.constants.enumClass.ChatType
 import com.bizsync.domain.model.AreaLavoro
 import com.bizsync.domain.model.Chat
+import com.bizsync.domain.model.User
 import java.text.SimpleDateFormat
 import java.util.Locale
-
 
 @Composable
 fun ChatRoomItem(
     chat: Chat,
-    dipartimenti : List<AreaLavoro>,
+    dipartimenti: List<AreaLavoro>,
+    employees: List<User> = emptyList(), // ← AGGIUNGI QUESTO
+    currentUser: User? = null, // ← E QUESTO
     onClick: () -> Unit
 ) {
-
-
     val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
 
     Card(
@@ -72,30 +72,26 @@ fun ChatRoomItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Avatar/Icon
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(
-                        when (chat.tipo) {
-                            ChatType.GENERALE -> Color(0xFF3498DB)
-                            ChatType.DIPARTIMENTO -> getDepartmentColor(chat.dipartimento , dipartimenti)
-                            ChatType.PRIVATA -> Color(0xFF95A5A6)
-                        }
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = when (chat.tipo) {
-                        ChatType.GENERALE -> Icons.Default.Public
-                        ChatType.DIPARTIMENTO -> getDepartmentIcon(chat.dipartimento, dipartimenti )
-                        ChatType.PRIVATA -> Icons.Default.Person
-                    },
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp)
-                )
+            // Avatar/Icon - MODIFICATO
+            if (chat.tipo == ChatType.PRIVATA) {
+                // Per chat private, usa l'avatar dell'altro utente
+                val otherUserId = chat.partecipanti.find { it != currentUser?.uid }
+                val otherUser = employees.find { it.uid == otherUserId }
+
+                if (otherUser != null) {
+                    EmployeeAvatar(
+                        photoUrl = otherUser.photourl,
+                        nome = otherUser.nome,
+                        cognome = otherUser.cognome,
+                        size = 48.dp
+                    )
+                } else {
+                    // Fallback per avatar generico
+                    DefaultChatIcon(chat, dipartimenti)
+                }
+            } else {
+                // Per altre chat, usa l'icona normale
+                DefaultChatIcon(chat, dipartimenti)
             }
 
             Spacer(modifier = Modifier.width(12.dp))
@@ -181,6 +177,34 @@ fun ChatRoomItem(
     }
 }
 
+
+@Composable
+private fun DefaultChatIcon(chat: Chat, dipartimenti: List<AreaLavoro>) {
+    Box(
+        modifier = Modifier
+            .size(48.dp)
+            .clip(CircleShape)
+            .background(
+                when (chat.tipo) {
+                    ChatType.GENERALE -> Color(0xFF3498DB)
+                    ChatType.DIPARTIMENTO -> getDepartmentColor(chat.dipartimento, dipartimenti)
+                    ChatType.PRIVATA -> Color(0xFF95A5A6)
+                }
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = when (chat.tipo) {
+                ChatType.GENERALE -> Icons.Default.Public
+                ChatType.DIPARTIMENTO -> getDepartmentIcon(chat.dipartimento, dipartimenti)
+                ChatType.PRIVATA -> Icons.Default.Person
+            },
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier.size(24.dp)
+        )
+    }
+}
 
 val departmentIcons = listOf(
     Icons.Default.People,

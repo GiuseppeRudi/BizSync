@@ -197,9 +197,12 @@ fun ChatRoomListScreen(
                     ChatRoomItem(
                         chat = chat,
                         dipartimenti = dipartimenti,
+                        employees = employees, // ← AGGIUNGI
+                        currentUser = currentUser, // ← AGGIUNGI
                         onClick = { onChatRoomClick(chat) }
                     )
                 }
+
 
                 // Sezione Chat Dipartimenti (visibile per manager o dipendenti del dipartimento)
                 val departmentChats = if (currentUser.isManager) {
@@ -222,8 +225,10 @@ fun ChatRoomListScreen(
                     items(departmentChats) { chat ->
                         ChatRoomItem(
                             chat = chat,
-                            onClick = { onChatRoomClick(chat) },
-                            dipartimenti = dipartimenti
+                            dipartimenti = dipartimenti,
+                            employees = employees, // ← AGGIUNGI
+                            currentUser = currentUser, // ← AGGIUNGI
+                            onClick = { onChatRoomClick(chat) }
                         )
                     }
                 }
@@ -244,8 +249,10 @@ fun ChatRoomListScreen(
                     items(privateChats) { chat ->
                         ChatRoomItem(
                             chat = chat,
-                            onClick = { onChatRoomClick(chat) },
-                            dipartimenti = dipartimenti
+                            dipartimenti = dipartimenti,
+                            employees = employees, // ← AGGIUNGI
+                            currentUser = currentUser, // ← AGGIUNGI
+                            onClick = { onChatRoomClick(chat) }
                         )
                     }
                 }

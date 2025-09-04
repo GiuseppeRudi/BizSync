@@ -35,7 +35,6 @@ class MainActivity : ComponentActivity() {
         val user = FirebaseAuth.getInstance().currentUser
         if (result.resultCode == RESULT_OK && user != null) {
             currentUserLogin.value = true
-            showToast("Benvenuto: ${user.displayName}")
         } else {
             showToast("Login annullato o fallito")
         }
