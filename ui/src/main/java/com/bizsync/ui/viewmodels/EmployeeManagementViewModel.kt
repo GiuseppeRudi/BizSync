@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bizsync.domain.constants.enumClass.EmployeeSection
 import com.bizsync.domain.constants.sealedClass.Resource
+import com.bizsync.domain.model.Turno
 import com.bizsync.domain.usecases.GetContrattoUseCase
 import com.bizsync.domain.usecases.GetDipendentiUseCase
 import com.bizsync.domain.usecases.GetFutureShiftsUseCase
@@ -83,7 +84,7 @@ class EmployeeManagementViewModel @Inject constructor(
     fun loadEmployeePastShifts(
         employeeId: String,
         startDate: LocalDate = LocalDate.now().minusMonths(3),
-        endDate: LocalDate = LocalDate.now(),
+        endDate: LocalDate = LocalDate.now().minusDays(1),
         idAzienda: String
     ) {
         viewModelScope.launch {
@@ -91,6 +92,14 @@ class EmployeeManagementViewModel @Inject constructor(
                 _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
                 Log.d("ShiftsViewModel", "Caricamento turni passati per $employeeId dal $startDate al $endDate")
+
+                // Funzione helper per filtrare i turni passati
+                fun filterPastShifts(turni: List<Turno>): List<Turno> {
+                    return turni
+                        .filter { it.idDipendenti.contains(employeeId) }
+                        .filter { it.data <= endDate }
+                        .sortedByDescending { it.data }
+                }
 
                 // 1. Prova prima dalla cache
                 val tuttiTurni = getPastShiftsUseCase(idAzienda, startDate, endDate)
@@ -106,40 +115,76 @@ class EmployeeManagementViewModel @Inject constructor(
                         is Resource.Success -> {
                             Log.d("ShiftsViewModel", "Caricati ${result.data.size} turni da Firebase")
 
-                            // Salva in cache i nuovi turni
-                            saveTurniLocalUseCase(result.data)
+                            // GESTIONE DUPLICATI: confronta con cache esistente
+                            val turniDaFirebase = result.data
+                            val turniEsistenti = getPastShiftsUseCase(idAzienda, startDate, endDate) // Ricarica cache completa
 
-                            // Aggiorna lo stato con i turni da Firebase
-                            val turniPassati = result.data.filter {
-                                it.data <= LocalDate.now()
+                            // Identifica turni veramente nuovi (non già in cache)
+                            val turniNuovi = turniDaFirebase.filter { turnoDaFirebase ->
+                                turniEsistenti.none { turnoEsistente ->
+                                    // Confronta per ID o combinazione univoca
+                                    turnoEsistente.id == turnoDaFirebase.id ||
+                                            (turnoEsistente.data == turnoDaFirebase.data &&
+                                                    turnoEsistente.orarioInizio == turnoDaFirebase.orarioInizio &&
+                                                    turnoEsistente.orarioFine == turnoDaFirebase.orarioFine &&
+                                                    turnoEsistente.idDipendenti == turnoDaFirebase.idDipendenti)
+                                }
                             }
+
+                            Log.d("ShiftsViewModel", "Identificati ${turniNuovi.size} turni nuovi da salvare")
+
+                            // Salva SOLO i turni nuovi in cache
+                            if (turniNuovi.isNotEmpty()) {
+                                saveTurniLocalUseCase(turniNuovi)
+                                Log.d("ShiftsViewModel", "Salvati ${turniNuovi.size} turni nuovi in cache")
+                            }
+
+                            // Combina cache aggiornata + Firebase per risultato finale
+                            val tuttiTurniAggiornati = (turniEsistenti + turniNuovi).distinctBy {
+                                // Rimuovi eventuali duplicati residui
+                                "${it.id}_${it.data}_${it.orarioInizio}"
+                            }
+
+                            val turniPassati = filterPastShifts(tuttiTurniAggiornati)
+
+                            Log.d("ShiftsViewModel", "Trovati ${turniPassati.size} turni passati dopo filtro")
+
                             _uiState.update { it.copy(shifts = turniPassati) }
+                            Log.d("ShiftsViewModel", "UI aggiornata con ${turniPassati.size} turni finali")
                         }
+
                         is Resource.Error -> {
                             Log.e("ShiftsViewModel", "Errore Firebase: ${result.message}")
+                            val turniPassati = filterPastShifts(turniDelDipendente)
                             _uiState.update {
                                 it.copy(
-                                    shifts = turniDelDipendente,
+                                    shifts = turniPassati,
                                     errorMessage = "Alcuni dati potrebbero non essere aggiornati: ${result.message}"
                                 )
                             }
+                            Log.d("ShiftsViewModel", "Fallback cache: ${turniPassati.size} turni passati")
                         }
+
                         is Resource.Empty -> {
                             Log.d("ShiftsViewModel", "Nessun turno trovato su Firebase")
-                            _uiState.update { it.copy(shifts = turniDelDipendente) }
+                            val turniPassati = filterPastShifts(turniDelDipendente)
+                            _uiState.update { it.copy(shifts = turniPassati) }
+                            Log.d("ShiftsViewModel", "Cache vuota Firebase: ${turniPassati.size} turni passati")
                         }
                     }
                 } else {
                     // Usa i dati dalla cache
                     Log.d("ShiftsViewModel", "Utilizzando dati dalla cache")
-                    _uiState.update { it.copy(shifts = turniDelDipendente) }
+                    val turniPassati = filterPastShifts(turniDelDipendente)
+                    _uiState.update { it.copy(shifts = turniPassati) }
+                    Log.d("ShiftsViewModel", "Solo cache: ${turniPassati.size} turni passati")
                 }
 
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(errorMessage = "Errore nei turni passati: ${e.message}")
                 }
-                Log.e("EmployeeManagementViewModel", "Error loading past shifts", e)
+                Log.e("ShiftsViewModel", "Error loading past shifts", e)
             } finally {
                 _uiState.update { it.copy(isLoading = false) }
             }

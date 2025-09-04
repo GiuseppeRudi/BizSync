@@ -73,8 +73,7 @@ class BadgeOrchestrator @Inject constructor(
             }
 
             // Controlla le timbrature esistenti per questo turno
-            val timbratureEsistenti = timbraturaDao.getByTurnoAndDipendente(turnoCorrente.id, userId)
-            val timbratureDomain = timbratureEsistenti.map { it.toDomain() }
+            val timbratureDomain = timbraturaRemoteRepositoryImpl.getByTurnoAndDipendente(turnoCorrente.id, userId)
 
             val haTimbratoEntrata = timbratureDomain.any { it.tipoTimbratura == TipoTimbratura.ENTRATA }
             val haTimbratoUscita = timbratureDomain.any { it.tipoTimbratura == TipoTimbratura.USCITA }

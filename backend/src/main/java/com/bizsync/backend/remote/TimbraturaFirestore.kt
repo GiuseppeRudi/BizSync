@@ -8,6 +8,8 @@ object TimbraturaFirestore {
     object Fields {
         const val ID = "id"
         const val ID_AZIENDA = "idAzienda"
+        const val ID_TURNO = "idTurno"
+
         const val ID_DIPENDENTE = "idDipendente"
 
         const val DIPARTIMENTO = "dipartimento"

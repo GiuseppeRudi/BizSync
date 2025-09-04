@@ -60,7 +60,7 @@ fun ChatScreen(
 
 
 
-    LaunchedEffect( employees) {
+    LaunchedEffect( employees, Unit) {
         viewModel.initializeChat(currentUser, employees)
     }
 

@@ -76,7 +76,7 @@ fun ShiftsScreen(
             employeeVm.loadEmployeePastShifts(
                 employeeId = employee.uid,
                 startDate = dateRange.first,
-                endDate = dateRange.second,
+                endDate = dateRange.second.minusDays(1),
                 idAzienda = userState.azienda.idAzienda
             )
         } else {
@@ -366,14 +366,15 @@ fun HistoricalInfoCard(dateRange: Pair<LocalDate, LocalDate>) {
         }
     }
 }
-
 @Composable
 fun ShiftCard(shift: Turno, isHistorical: Boolean) {
 
+    val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.getDefault())
+    val timeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault())
 
-    val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.getDefault())
-    val formattedDate = shift.data.format(formatter)
-
+    val formattedDate = shift.data.format(dateFormatter)
+    val formattedStartTime = shift.orarioInizio.format(timeFormatter)
+    val formattedEndTime = shift.orarioFine.format(timeFormatter)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -422,7 +423,7 @@ fun ShiftCard(shift: Turno, isHistorical: Boolean) {
                     modifier = Modifier.padding(top = 4.dp)
                 )
                 Text(
-                    text = "${shift.orarioInizio} - ${shift.orarioFine}",
+                    text = "$formattedStartTime - $formattedEndTime",
                     fontSize = 12.sp,
                     color = Color(0xFF95A5A6),
                     modifier = Modifier.padding(top = 2.dp)

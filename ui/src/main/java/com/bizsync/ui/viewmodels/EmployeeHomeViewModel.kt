@@ -117,7 +117,7 @@ class EmployeeHomeViewModel @Inject constructor(
                 val startOfDay = today.atStartOfDay().toString()
                 val endOfDay = today.atTime(23, 59, 59).toString()
 
-                val timbrature = getTimbratureByDateUseCase(startOfDay, endOfDay).first()
+                val timbrature = getTimbratureByDateUseCase(startOfDay, endOfDay,userId).first()
                 Log.d(TAG, "loadTodayTurnoSuspend: UseCase returned ${timbrature.size} timbrature")
 
                 val turnoWithDetails = createTurnoWithDetails(turno, timbrature)
@@ -150,7 +150,7 @@ class EmployeeHomeViewModel @Inject constructor(
             val startOfDay = today.atStartOfDay().toString()
             val endOfDay = today.atTime(23, 59, 59).toString()
 
-            val timbrature = getTimbratureByDateUseCase(startOfDay, endOfDay).first()
+            val timbrature = getTimbratureByDateUseCase(startOfDay, endOfDay,userId).first()
             Log.d(TAG, "loadTimbratureOggiSuspend: UseCase returned ${timbrature.size} entities")
 
             withContext(Dispatchers.Main) {

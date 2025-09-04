@@ -22,7 +22,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class ChatRepositoryImpl @Inject constructor(
+class  ChatRepositoryImpl @Inject constructor(
     private val firestore: FirebaseFirestore
 ) : ChatRepository {
     private val chatsCollection = firestore.collection(ChatFirestore.COLLECTION)

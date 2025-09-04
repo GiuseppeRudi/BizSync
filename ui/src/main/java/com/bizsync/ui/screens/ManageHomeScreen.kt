@@ -662,7 +662,9 @@ fun Avatar(
     modifier: Modifier = Modifier
 ) {
     val initials = name.split(" ")
-        .take(2).joinToString("") { it.first().uppercase() }
+        .filter { it.isNotBlank() } // Rimuove stringhe vuote/con solo spazi
+        .take(2)
+        .joinToString("") { it.first().uppercase() }
 
     Box(
         modifier = modifier
@@ -673,7 +675,7 @@ fun Avatar(
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = initials,
+            text = initials.ifEmpty { "?" }, // Fallback se non ci sono iniziali
             style = MaterialTheme.typography.bodySmall,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
