@@ -1,42 +1,37 @@
-# Cartelle generate da Gradle
-/.gradle/
-/build/
-/out/
+# Gradle and Kotlin-generated files
+.gradle/
+.kotlin/
+**/build/
+out/
 
-# File di configurazione IDE
-/.idea/
-/*.iml
+# Android Studio and IntelliJ IDEA
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
 
-# File di log
-/logs/
-/*.log
+# Machine-local configuration
+local.properties
+**/google-services.json
+keystore.properties
+*.keystore
+*.jks
 
-# Cache di Android Studio
-/captures/
-/.externalNativeBuild/
+# Logs and temporary working files
+logs/
+*.log
+tmp/
+temp/
+*.tmp
+*.bak
 
-# Keystore (evita di committare file sensibili)
-/*.keystore
-/*.jks
+# Local environment files
+.env
+.env.*
+!.env.example
 
-# Dipendenze di Firebase
-/google-services.json
-
-# File generati da il sistema operativo
+# Operating-system metadata
 .DS_Store
 Thumbs.db
-
-# Nodi specifici di Kotlin
-*.kts
-
-/local.properties
-
-!build.gradle.kts
-!app/build.gradle.kts
-!backend/build.gradle.kts
-!domain/build.gradle.kts
-!sync/build.gradle.kts
-!ui/build.gradle.kts
-!cache/build.gradle.kts
-!settings.gradle.kts
 

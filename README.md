@@ -1,101 +1,185 @@
-# BizSync
+<p align="center">
+  <img src="app/src/main/res/drawable/logobizsync.png" alt="BizSync logo" width="140">
+</p>
 
-BizSync is an Android mobile application designed to support workforce management in small and medium-sized businesses.
+<h1 align="center">BizSync</h1>
 
-The app centralizes shift planning, employee availability, absence requests, and electronic clock-in management. It helps managers reduce manual errors through automated validation, department coverage checks, and AI-assisted shift scheduling.
+<p align="center">
+  An Android workforce-management prototype for coordinating people, shifts, absences, and attendance.
+</p>
 
-## Main Features
+<p align="center">
+  <img src="https://img.shields.io/badge/status-archived-lightgrey" alt="Project status: archived">
+  <img src="https://img.shields.io/badge/platform-Android-3DDC84?logo=android&logoColor=white" alt="Platform: Android">
+  <img src="https://img.shields.io/badge/language-Kotlin-7F52FF?logo=kotlin&logoColor=white" alt="Language: Kotlin">
+  <img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="License: GPL-3.0">
+</p>
 
-- Manager dashboard with daily business overview
-- Weekly shift planning and publication workflow
-- Department-based employee organization
-- Manual shift creation with conflict and availability checks
-- AI-assisted shift generation based on department coverage
-- Absence request management with approval rules
-- Electronic clock-in system for employees
-- Virtual employee badge with QR code
-- Geolocation-based validation for on-site shifts
-- Local data storage and synchronization with the server
+> [!IMPORTANT]
+> **Project status — Archived.** BizSync was developed as a Bachelor's degree thesis project and is preserved as an academic snapshot. It is not under active development and should not be considered production-ready.
 
-## Technologies Used
+## Overview
 
-- Kotlin
-- Jetpack Compose
-- Firebase
-- Room Database
-- Gradle Kotlin DSL
-- Clean Architecture
+BizSync explores how a single mobile application can support the daily workforce-management needs of small and medium-sized organizations. It provides role-specific experiences for managers and employees, with a particular focus on weekly scheduling, absence handling, attendance tracking, and reliable synchronization between local and remote data.
 
-## Project Structure
+The prototype is written in Kotlin, uses Jetpack Compose for its interface, and follows a modular Clean Architecture approach. Firebase provides authentication and remote services, while Room supports local persistence.
 
-```text
-BizSync/
-├── app/                 # Main Android application module
-├── backend/             # Backend and remote data management logic
-├── cache/               # Local persistence and cache management
-├── domain/              # Business logic, models, and use cases
-├── sync/                # Data synchronization module
-├── ui/                  # User interface components and screens
-├── gradle/              # Gradle configuration files
-├── build.gradle.kts     # Root Gradle build configuration
-├── settings.gradle.kts  # Gradle project settings
-├── gradle.properties    # Global Gradle properties
-├── gradlew              # Gradle wrapper for Unix systems
-├── gradlew.bat          # Gradle wrapper for Windows
-└── README.md            # Project documentation
-```
+## Product walkthrough
+
+Managers configure their organization, departments, employees, and contracts before preparing the weekly schedule. Shifts can be created manually, reused from frequent patterns, or generated with AI assistance. Validation rules help identify employee conflicts and coverage gaps before a schedule is published.
+
+Once the schedule is available, employees can review their shifts, submit absence requests, communicate with colleagues, and clock in or out. Attendance events can be checked against the assigned shift, time tolerance, and workplace location. Local Room data is synchronized with Firebase through dedicated orchestration and hash-based change detection.
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="docs/images/ai-assisted-scheduling.jpg" alt="AI-assisted weekly shift generation" width="260">
+    </td>
+    <td align="center">
+      <img src="docs/images/absence-management.jpg" alt="Manager absence-request review" width="260">
+    </td>
+    <td align="center">
+      <img src="docs/images/employee-clock-in.jpg" alt="Employee clock-in and clock-out workflow" width="260">
+    </td>
+  </tr>
+  <tr>
+    <td align="center"><strong>AI-assisted scheduling</strong></td>
+    <td align="center"><strong>Absence management</strong></td>
+    <td align="center"><strong>Attendance tracking</strong></td>
+  </tr>
+</table>
+
+<p align="center"><sub>The archived prototype interface is in Italian and the screenshots contain demonstration data.</sub></p>
+
+## Key capabilities
+
+### Manager experience
+
+- Company, department, employee, contract, and invitation management
+- Weekly shift planning with draft and publication states
+- Manual, frequent-pattern, and AI-assisted shift creation
+- Availability, overlap, and department-coverage checks
+- Absence-request review with allowance impact and affected-shift handling
+- Attendance, operational status, and report views
+
+### Employee experience
+
+- Personal schedule and upcoming-shift overview
+- Absence and leave requests
+- Clock-in and clock-out with timing and location validation
+- Virtual employee badge with QR-code support
+- Invitations, colleague information, and in-app chat
+
+### Data and platform
+
+- Firebase Authentication and Cloud Firestore integration
+- Room-backed local cache
+- Local/remote synchronization coordinated by dedicated orchestrators
+- Dependency injection with Hilt
+- Role-aware navigation built with Jetpack Compose
 
 ## Architecture
 
-BizSync follows a **Clean Architecture** approach. The project is divided into multiple modules to separate responsibilities and improve maintainability, scalability, and testability.
+BizSync separates presentation, business rules, persistence, remote access, and synchronization into independent Gradle modules. UI models and Firebase/Room representations are mapped to domain objects at their respective boundaries.
 
-The main architectural layers are:
+<p align="center">
+  <img src="docs/images/architecture-overview.png" alt="BizSync Clean Architecture layers" width="720">
+</p>
 
-- **UI layer**: manages screens, components, and user interaction.
-- **Domain layer**: contains business rules, entities, and use cases.
-- **Data/cache layer**: handles local storage and persistence.
-- **Backend layer**: manages communication with remote services.
-- **Sync layer**: coordinates synchronization between local and remote data.
+| Module | Responsibility |
+| --- | --- |
+| `app` | Android entry point, application composition, and Hilt dependency wiring |
+| `ui` | Compose screens and components, navigation, UI models, and ViewModels |
+| `domain` | Business models, repository contracts, validation logic, and use cases |
+| `backend` | Firebase data sources, DTOs, mappers, repository implementations, and AI prompts |
+| `cache` | Room database, entities, DAOs, converters, and local repository implementations |
+| `sync` | Cache/remote orchestration, synchronization policies, and change hashes |
 
-This structure makes the application easier to extend with future features such as payroll management, task assignment, and company hierarchy support.
+The primary data flow is:
 
-## Getting Started
+```text
+Compose UI → ViewModel → Domain use case → Repository contract
+                                         ↙                   ↘
+                               Room local cache        Firebase services
+                                         ↘                   ↙
+                                      Sync orchestration
+```
 
-### Prerequisites
+## Technology stack
 
-Before running the project, make sure you have installed:
+- Kotlin and Kotlin coroutines
+- Jetpack Compose, Material 3, and Navigation Compose
+- Hilt
+- Room
+- Firebase Authentication, Firestore, App Check, Analytics, Messaging, and Firebase AI
+- Gradle Kotlin DSL
+- ZXing for QR-code support
+- Google Play Services Location
 
-- Android Studio
-- JDK compatible with the Android Gradle Plugin
-- Gradle Wrapper included in the project
-- A configured Firebase project
+## Project structure
 
-### Installation
+```text
+bizsync/
+├── app/                  # Application entry point and dependency injection
+├── backend/              # Firebase and remote-data implementations
+├── cache/                # Room persistence
+├── domain/               # Business models, contracts, and use cases
+├── sync/                 # Local/remote synchronization
+├── ui/                   # Compose interface and presentation logic
+├── docs/images/          # README diagrams and application screenshots
+└── gradle/               # Version catalog and Gradle wrapper
+```
+
+## Getting started
+
+### Requirements
+
+- Android Studio with support for the project's Android Gradle Plugin
+- JDK 11
+- Android SDK 35
+- An Android emulator or device running Android 8.0 (API 26) or later
+- A Firebase project configured for the application ID `com.bizsync.app`
+
+### Setup
 
 1. Clone the repository:
 
-```bash
-git clone https://github.com/<username>/<repository-name>.git
-```
+   ```bash
+   git clone https://github.com/GiuseppeRudi/bizsync.git
+   cd bizsync
+   ```
 
-2. Open the project in Android Studio.
+2. Open the project in Android Studio and let Gradle synchronize the modules.
 
-3. Sync the Gradle project.
+3. Register an Android application with the ID `com.bizsync.app` in Firebase.
 
-4. Configure Firebase by adding the required Firebase configuration file to the Android project.
+4. Download the Firebase configuration file and place it at:
 
-5. Build and run the application on an emulator or physical Android device.
+   ```text
+   app/google-services.json
+   ```
 
-## Future Improvements
+   This machine-specific file is intentionally excluded from version control.
 
-Possible future extensions include:
+5. Configure the Firebase services used by the prototype, including Google authentication, Cloud Firestore, App Check, and any Firebase AI access required by the selected Firebase project.
 
-- Payroll and salary management
-- Task assignment for departments and employees
-- Advanced company hierarchy management
-- Improved reporting and analytics
-- Extended AI-based planning support
+6. Run the application from Android Studio or build it with the included wrapper:
+
+   ```bash
+   # macOS or Linux
+   ./gradlew assembleDebug
+
+   # Windows
+   gradlew.bat assembleDebug
+   ```
+
+## Archive notes
+
+- The repository contains the thesis prototype, not a deployed backend or production environment.
+- Firebase project data, production credentials, and Firestore security configuration are not distributed with the source code.
+- The user interface and domain terminology reflect the original Italian academic use case.
+- External services and archived dependency versions may require configuration updates in a new environment.
 
 ## License
 
-This project is currently developed for academic and educational purposes.
+This project is available under the [GNU General Public License v3.0](LICENSE).
